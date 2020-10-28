@@ -117,9 +117,9 @@ for date in mine:
     fit = model.fit()
     results[date] = fit
     export_results[date] = {
-        "score":fit.rsquared,
+        "score": r2_score(endog * daily_mean_release.loc[day_of_year], fit.fittedvalues * daily_mean_release.loc[day_of_year]),
         "params":fit.params,
-        "fittedvalues":fit.fittedvalues,
+        "fittedvalues": fit.fittedvalues * daily_mean_release.loc[day_of_year],
         "adj_score":fit.rsquared_adj
     }
 
