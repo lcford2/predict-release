@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../pickles",
+		},
+		{
+			"path": "../excel_sheets",
+		},
+		{
+			"path": "../julia_scripts",
+		}
+	],
+	"settings": {}
+}
