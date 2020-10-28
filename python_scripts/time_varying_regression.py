@@ -4,21 +4,21 @@ import scipy
 from IPython import embed as II
 import pathlib
 import matplotlib.pyplot as plt
-from statsmodels.regression.mixed_linear_model import MixedLM, MixedLMParams
 import statsmodels.api as sm
-from statsmodels.graphics.gofplots import qqplot
-from sklearn.linear_model import LinearRegression
-from mlxtend.feature_selection import ExhaustiveFeatureSelector as EFS
 from sklearn.metrics import r2_score
 from datetime import timedelta, datetime
 import seaborn as sns
-from statsmodels.tsa.api import VAR
+from math import ceil
 import pickle 
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
 
 pickles = pathlib.Path("..", "pickles")
 
 df = pd.read_pickle(pickles / "tva_dam_data.pickle")
-# df = df[df.index.get_level_values(0).year >= year]
 
 # create a time series of previous days storage for all reservoirs
 # df["Storage_pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(1)
@@ -52,6 +52,10 @@ reservoirs = storage_trimmed.columns
 results = {}
 export_results = {}
 daily_mean_release = pd.read_pickle(pickles/"tva_daily_mean_release.pickle")
+storage_windowed_mean = pd.read_pickle(pickles/"storage_windowed_means.pickle")
+release_windowed_mean = pd.read_pickle(pickles/"release_windowed_means.pickle")
+inflow_windowed_mean = pd.read_pickle(pickles/"inflow_windowed_means.pickle")
+
 
 def make_day_window(dayofyear, windowsize=30):
     if dayofyear - windowsize <= 0:
@@ -71,15 +75,20 @@ def get_windowed_averages(data, windowsize=30):
         windowed_mean = data[data.index.dayofyear.isin(window)].mean()
         new_df[index] = windowed_mean
     return new_df
-II()
-sys.exit()
-# II()
+
+
 # this needs to be parallelized. transfer to bezier to do. 
 #* scratch that, put on github then just pull to bezier
-for date in release_trimmed.index:
+
+N = release_trimmed.index.shape[0]
+n_proc = ceil(N/size)
+mine = release_trimmed.index[rank*n_proc:(rank+1) * n_proc]
+
+for date in mine:
     endog = release_trimmed.loc[date, :]
     my_year = date.year
     day_of_year = date.timetuple().tm_yday
+    endog = endog/daily_mean_release.loc[day_of_year]
     exog_inflow = pd.DataFrame()
     exog_release = pd.DataFrame()
     exog_storage = pd.DataFrame()
@@ -97,9 +106,9 @@ for date in release_trimmed.index:
             exog_storage[f"Storage{year}"] = year_storage
             exog_release[f"Release{year}"] = year_release
 
-    exog_inflow = exog_inflow.mean(axis=1)
-    exog_storage = exog_storage.mean(axis=1)
-    exog_release = exog_release.mean(axis=1)
+    exog_inflow = exog_inflow.mean(axis=1)/inflow_windowed_mean[date]
+    exog_storage = exog_storage.mean(axis=1)/storage_windowed_mean[date]
+    exog_release = exog_release.mean(axis=1)/release_windowed_mean[date]
 
     exog = pd.DataFrame([exog_inflow, exog_release, exog_storage], index=["Inflow", "Release", "Storage"]).T
 
@@ -115,8 +124,16 @@ for date in release_trimmed.index:
     }
 
 
-with open("./regression_result_pickles/simple_regression_results.pickle", "wb") as f:
-    pickle.dump(export_results, f)
+results = comm.gather(results, root=0)
+export_results = comm.gather(export_results, root=0)
 
-with open("./regression_result_pickles/regression_results.pickle", "wb") as f:
-    pickle.dump(results, f)
+if rank == 0:
+    from collections import ChainMap
+    # gather gives you a list of whatever is on eachprocessor
+    # i want to merge the dictionaries and this is a simple way to do it
+    export_results = dict(ChainMap(*export_results))
+    with open("./normalized_results/simple_regression_results.pickle", "wb") as f:
+        pickle.dump(export_results, f)
+    results = dict(ChainMap(*results))
+    with open("./normalized_results/regression_results.pickle", "wb") as f:
+        pickle.dump(results, f)
