@@ -22,7 +22,7 @@ metric_title_map = {
 }
 
 # read results
-results_dir = pathlib.Path("regression_result_pickles")
+results_dir = pathlib.Path("normalized_results")
 with open(results_dir / "simple_regression_results.pickle", "rb") as f:
     results = pickle.load(f)
 
@@ -49,12 +49,16 @@ def plot_metrics(metrics):
     titles = ["R-Squared", "Intercept", "Inflow", "Release", "Storage"]
     ylabels = ["Value", "Fitted Value",
                "Fitted Value", "Fitted Value", "Fitted Value"]
+    metrics = metrics[metrics.index.year >= 1991]
     for ax, plot, title, ylabel in zip(axes, plots, titles, ylabels):
         metrics[plot].plot(ax=ax)
+        ax.tick_params(axis="x", which="minor", bottom=False)
+        if plot == "score":
+            ax.set_yticks([-2,-1,0,1])
         # ax.get_legend().remove()
         ax.set_title(title)
         # ax.set_ylabel(ylabel)
-    fig.align_ylabels()
+    # fig.align_ylabels()
     plt.show()
 
 def plot_scaleogram(metrics, key="score"):
@@ -95,9 +99,7 @@ def plot_reservoir_fit(value_df, resid=True, versus=True):
     plt.show()
     
 
-
-    
-
 if __name__ == "__main__":
     values_df, metrics_df = split_results(results)
-    plot_reservoir_fit(values_df)
+    # plot_reservoir_fit(values_df, resid=False, versus=False)
+    plot_metrics(metrics_df)
