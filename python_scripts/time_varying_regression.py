@@ -52,6 +52,8 @@ reservoirs = storage_trimmed.columns
 results = {}
 export_results = {}
 daily_mean_release = pd.read_pickle(pickles/"tva_daily_mean_release.pickle")
+daily_mean_storage = pd.read_pickle(pickles/"storage_daily_means.pickle")
+daily_mean_inflow = pd.read_pickle(pickles/"inflow_daily_means.pickle")
 storage_windowed_mean = pd.read_pickle(pickles/"storage_windowed_means.pickle")
 release_windowed_mean = pd.read_pickle(pickles/"release_windowed_means.pickle")
 inflow_windowed_mean = pd.read_pickle(pickles/"inflow_windowed_means.pickle")
@@ -80,9 +82,11 @@ def get_windowed_averages(data, windowsize=30):
 # this needs to be parallelized. transfer to bezier to do. 
 #* scratch that, put on github then just pull to bezier
 
-N = release_trimmed.index.shape[0]
+# N = release_trimmed.index.shape[0]
+N = ndays
 n_proc = ceil(N/size)
-mine = release_trimmed.index[rank*n_proc:(rank+1) * n_proc]
+regress_dates = storage_trimmed[storage_trimmed.index >= initial_date].index
+mine = regress_dates[rank*n_proc:(rank+1) * n_proc]
 
 for date in mine:
     endog = release_trimmed.loc[date, :]
@@ -109,8 +113,11 @@ for date in mine:
     exog_inflow = exog_inflow.mean(axis=1)/inflow_windowed_mean[date]
     exog_storage = exog_storage.mean(axis=1)/storage_windowed_mean[date]
     exog_release = exog_release.mean(axis=1)/release_windowed_mean[date]
-
-    exog = pd.DataFrame([exog_inflow, exog_release, exog_storage], index=["Inflow", "Release", "Storage"]).T
+    prev_day = date-timedelta(days=1)
+    exog_inflow_1 = inflow_trimmed.loc[prev_day, :] / daily_mean_inflow.loc[prev_day.timetuple().tm_yday]
+    exog_storage_1 = storage_trimmed.loc[prev_day, :] / daily_mean_storage.loc[prev_day.timetuple().tm_yday]
+    exog = pd.DataFrame([exog_inflow, exog_release, exog_storage, exog_inflow_1, exog_storage_1], 
+            index=["Inflow", "Release", "Storage", "PrevInflow", "PrevStorage"]).T
 
     exog = sm.add_constant(exog)
     model = sm.OLS(endog, exog)
