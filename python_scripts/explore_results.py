@@ -38,6 +38,8 @@ def split_results(results_dict):
             "Inflow": value["params"]["Inflow"],
             "Release": value["params"]["Release"],
             "Storage": value["params"]["Storage"],
+            "PrevStorage": value["params"]["PrevStorage"],
+            "PrevInflow": value["params"]["PrevInflow"]
         }
     values_df = pd.DataFrame.from_dict(values_dict).T
     metrics_df = pd.DataFrame.from_dict(metrics_dict).T
