@@ -8,6 +8,7 @@ import numpy as np
 from datetime import timedelta
 from statsmodels.graphics.regressionplots import abline_plot
 from IPython import embed as II
+import calendar
 
 # setup plotting style and sizing
 plt.style.use("seaborn-paper")
@@ -40,6 +41,8 @@ def split_results(results_dict):
         }
     values_df = pd.DataFrame.from_dict(values_dict).T
     metrics_df = pd.DataFrame.from_dict(metrics_dict).T
+    values_df = values_df.sort_index()
+    metrics_df = metrics_df.sort_index()
     return values_df, metrics_df
 
 def plot_metrics(metrics):
@@ -97,9 +100,48 @@ def plot_reservoir_fit(value_df, resid=True, versus=True):
     
     axes[-1].axis("off")
     plt.show()
+
+def plot_monthly_metrics(metrics, key="score"):
+    titles = {
+        "score":"R-Squared", 
+        "const":"Intercept",
+        "Inflow":"Inflow", 
+        "Release":"Release",
+        "Storage":"Storage"
+    }
+    ylabels = {
+        "score": "Value",
+        "const": "Fitted Value",
+        "Inflow": "Fitted Value",
+        "Release": "Fitted Value",
+        "Storage": "Fitted Value"
+    }
+    if key == "four":
+        plot_metrics = metrics.groupby(metrics.index.dayofyear).mean()
+        fig, axes = plt.subplots(2, 2, sharex="col")
+        axes = axes.flatten()
+        keys = ["score", "Storage", "Release", "Inflow"]
+        for ax, metric in zip(axes, keys):
+            plot_metrics[metric].plot.bar(ax=ax, width=0.9)
+            ax.set_title(titles[metric])
+            ax.set_ylabel(ylabels[metric])
+            ax.set_xticks(list(map(int, list(np.linspace(1,366,num=25)))))
+            # ax.set_xticklabels(calendar.month_abbr[1:], ha="right", rotation=45)
+        fig.align_ylabels()
+        plt.show()
+    else:
+        plot_metrics = metrics[key].groupby(metrics.index.month).mean()
+        fig, ax = plt.subplots(1,1)
+        plot_metrics.plot.bar(ax=ax,width=0.9)
+        ax.set_title(titles[key])
+        ax.set_ylabel(ylabels[key])
+        ax.set_xticklabels(calendar.month_abbr[1:], ha="right", rotation=45)
+        plt.show()
     
 
 if __name__ == "__main__":
     values_df, metrics_df = split_results(results)
     # plot_reservoir_fit(values_df, resid=False, versus=False)
-    plot_metrics(metrics_df)
+    # plot_metrics(metrics_df)
+    # plot_scaleogram(metrics_df, key="Release")
+    plot_monthly_metrics(metrics_df, key="four")
