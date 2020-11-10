@@ -97,14 +97,14 @@ for date in mine:
     exog_storage = pd.DataFrame()
     for year in range(1991, 2016):
         if year != my_year:
-            end_index = datetime(year, 1, 1) + timedelta(day_of_year - 2)
+            end_index = datetime(year, 1, 1) + timedelta(day_of_year - 1)
             start_index = end_index - delta30
             year_inflow = inflow_trimmed[
                 (inflow_trimmed.index >= start_index) & (inflow_trimmed.index < end_index)].mean()
             # this gets the 30 day average storage
             # year_storage = storage_trimmed[
             #     (storage_trimmed.index >= start_index) & (storage_trimmed.index < end_index)].mean()
-            year_storage = storage_trimmed.loc[end_index]
+            year_storage = storage_trimmed.loc[end_index - delta1]
             year_release = release_trimmed[
                 (release_trimmed.index >= start_index) & (release_trimmed.index < end_index)].mean()
             exog_inflow[f"Inflow{year}"] = year_inflow
@@ -123,7 +123,8 @@ for date in mine:
     model = sm.OLS(endog, exog)
     fit = model.fit()
 
-    pred_end_index = date - delta1
+    # pred_end_index = date - delta1
+    pred_end_index = date
     pred_start_index = pred_end_index - delta30
     exog_inflow = inflow_trimmed[
         (inflow_trimmed.index >= pred_start_index) & (inflow_trimmed.index < pred_end_index)].mean()
@@ -147,8 +148,8 @@ for date in mine:
         "pred_score": preds_score,
         "preds": preds * daily_mean_release.loc[day_of_year],
         "params":fit.params,
-        "fittedvalues": fit.fittedvalues * daily_mean_release.loc[day_of_year],
-        "adj_score":fit.rsquared_adj
+        "fittedvalues": fit.fittedvalues * daily_mean_release.loc[day_of_year]
+        # "adj_score":fit.rsquared_adj
     }
 
 
