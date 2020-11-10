@@ -25,14 +25,15 @@ metric_titles = {
 }
 
 # read results
-results_dir = pathlib.Path("normalized_results")
+results_dir = pathlib.Path("storage_m1_results")
 with open(results_dir / "simple_regression_results.pickle", "rb") as f:
     results = pickle.load(f)
 
 def split_results(results_dict):
-    values_dict, metrics_dict = {}, {}
+    values_dict, preds_dict, metrics_dict = {}, {}, {}
     for key, value in results_dict.items():
         values_dict[key] = value["fittedvalues"]
+        preds_dict[key] = value["preds"]
         metrics_dict[key] = {
             "score":value["score"],
             "adj_score":value["adj_score"],
@@ -41,14 +42,16 @@ def split_results(results_dict):
             "Inflow": value["params"]["Inflow"],
             "Release": value["params"]["Release"],
             "Storage": value["params"]["Storage"],
-            "PrevStorage": value["params"]["PrevStorage"],
-            "PrevInflow": value["params"]["PrevInflow"]
+            # "PrevStorage": value["params"]["PrevStorage"],
+            # "PrevInflow": value["params"]["PrevInflow"]
         }
     values_df = pd.DataFrame.from_dict(values_dict).T
+    preds_df = pd.DataFrame.from_dict(preds_dict).T
     metrics_df = pd.DataFrame.from_dict(metrics_dict).T
     values_df = values_df.sort_index()
+    preds_df = preds_df.sort_index()
     metrics_df = metrics_df.sort_index()
-    return values_df, metrics_df
+    return values_df, preds_df, metrics_df
 
 def plot_metrics(metrics):
     fig, axes = plt.subplots(7, 1, sharex=True)
@@ -142,8 +145,9 @@ def plot_monthly_metrics(metrics, key="score"):
     
 
 if __name__ == "__main__":
-    values_df, metrics_df = split_results(results)
+    values_df, preds_df, metrics_df = split_results(results)
+    II()
     # plot_reservoir_fit(values_df, resid=False, versus=True)
     # plot_metrics(metrics_df)
-    plot_scaleogram(metrics_df, key="PrevInflow")
+    # plot_scaleogram(metrics_df, key="PrevInflow")
     # plot_monthly_metrics(metrics_df, key="all")
