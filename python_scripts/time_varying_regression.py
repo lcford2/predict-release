@@ -145,7 +145,7 @@ for date in mine:
     export_results[date] = {
         "score": r2_score(endog * daily_mean_release.loc[day_of_year], fit.fittedvalues * daily_mean_release.loc[day_of_year]),
         "pred_score": preds_score,
-        "preds": preds,
+        "preds": preds * daily_mean_release.loc[day_of_year],
         "params":fit.params,
         "fittedvalues": fit.fittedvalues * daily_mean_release.loc[day_of_year],
         "adj_score":fit.rsquared_adj
