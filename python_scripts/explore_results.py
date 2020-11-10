@@ -36,7 +36,7 @@ def split_results(results_dict):
         preds_dict[key] = value["preds"]
         metrics_dict[key] = {
             "score":value["score"],
-            "adj_score":value["adj_score"],
+            # "adj_score":value["adj_score"],
             "pred_score":value["pred_score"],
             "const": value["params"]["const"],
             "Inflow": value["params"]["Inflow"],
@@ -111,6 +111,24 @@ def plot_reservoir_fit(value_df, resid=True, versus=True):
     axes[-1].axis("off")
     plt.show()
 
+
+def plot_reservoir_fit_preds(value_df, preds_df):
+    sns.set_context("paper")
+    df = pd.read_pickle("../pickles/tva_dam_data.pickle")
+    df = df["Release"].unstack().loc[value_df.index, value_df.columns]
+    # II()
+    fig, axes = plt.subplots(4, 7)
+    axes = axes.flatten()
+    for ax, column in zip(axes, value_df.columns):
+        # df[column].plot(ax=ax)
+        value_df[column].plot(ax=ax, alpha=1)
+        preds_df[column].plot(ax=ax, alpha=0.6)
+        ax.set_title(column)
+
+    axes[-1].axis("off")
+    plt.show()
+
+
 def plot_monthly_metrics(metrics, key="score"):
     ylabels = {
         "score": "Value",
@@ -147,6 +165,7 @@ def plot_monthly_metrics(metrics, key="score"):
 if __name__ == "__main__":
     values_df, preds_df, metrics_df = split_results(results)
     II()
+    # plot_reservoir_fit_preds(values_df, preds_df)
     # plot_reservoir_fit(values_df, resid=False, versus=True)
     # plot_metrics(metrics_df)
     # plot_scaleogram(metrics_df, key="PrevInflow")
