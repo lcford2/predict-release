@@ -10,6 +10,7 @@ from datetime import timedelta, datetime
 import seaborn as sns
 from math import ceil
 import pickle 
+import sys
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
@@ -47,6 +48,7 @@ release_trimmed = release_trimmed[release_trimmed.index >= datetime(1990, 10, 16
 initial_date = datetime(1991, 1, 1)
 ndays = (storage_trimmed.index[-1] - initial_date).days
 delta30 = timedelta(days=30)
+delta1 = timedelta(days=1)
 regression_index = list(storage_trimmed[storage_trimmed.index >= initial_date].index)
 reservoirs = storage_trimmed.columns
 results = {}
@@ -79,9 +81,6 @@ def get_windowed_averages(data, windowsize=30):
     return new_df
 
 
-# this needs to be parallelized. transfer to bezier to do. 
-#* scratch that, put on github then just pull to bezier
-
 # N = release_trimmed.index.shape[0]
 N = ndays
 n_proc = ceil(N/size)
@@ -98,12 +97,14 @@ for date in mine:
     exog_storage = pd.DataFrame()
     for year in range(1991, 2016):
         if year != my_year:
-            end_index = datetime(year, 1, 1) + timedelta(day_of_year - 1)
+            end_index = datetime(year, 1, 1) + timedelta(day_of_year - 2)
             start_index = end_index - delta30
             year_inflow = inflow_trimmed[
                 (inflow_trimmed.index >= start_index) & (inflow_trimmed.index < end_index)].mean()
-            year_storage = storage_trimmed[
-                (storage_trimmed.index >= start_index) & (storage_trimmed.index < end_index)].mean()
+            # this gets the 30 day average storage
+            # year_storage = storage_trimmed[
+            #     (storage_trimmed.index >= start_index) & (storage_trimmed.index < end_index)].mean()
+            year_storage = storage_trimmed.loc[end_index]
             year_release = release_trimmed[
                 (release_trimmed.index >= start_index) & (release_trimmed.index < end_index)].mean()
             exog_inflow[f"Inflow{year}"] = year_inflow
@@ -111,20 +112,40 @@ for date in mine:
             exog_release[f"Release{year}"] = year_release
 
     exog_inflow = exog_inflow.mean(axis=1)/inflow_windowed_mean[date]
-    exog_storage = exog_storage.mean(axis=1)/storage_windowed_mean[date]
+    # exog_storage = exog_storage.mean(axis=1)/storage_windowed_mean[date]
+    exog_storage = exog_storage.mean(axis=1)/daily_mean_storage.loc[(date - delta1).timetuple().tm_yday]
     exog_release = exog_release.mean(axis=1)/release_windowed_mean[date]
-    prev_day = date-timedelta(days=1)
-    exog_inflow_1 = inflow_trimmed.loc[prev_day, :] / daily_mean_inflow.loc[prev_day.timetuple().tm_yday]
-    exog_storage_1 = storage_trimmed.loc[prev_day, :] / daily_mean_storage.loc[prev_day.timetuple().tm_yday]
-    exog = pd.DataFrame([exog_inflow, exog_release, exog_storage, exog_inflow_1, exog_storage_1], 
-            index=["Inflow", "Release", "Storage", "PrevInflow", "PrevStorage"]).T
+    
+    exog = pd.DataFrame([exog_inflow, exog_release, exog_storage], 
+            index=["Inflow", "Release", "Storage"]).T
 
     exog = sm.add_constant(exog)
     model = sm.OLS(endog, exog)
     fit = model.fit()
-    results[date] = fit
+
+    pred_end_index = date - delta1
+    pred_start_index = pred_end_index - delta30
+    exog_inflow = inflow_trimmed[
+        (inflow_trimmed.index >= pred_start_index) & (inflow_trimmed.index < pred_end_index)].mean()
+    exog_storage = storage_trimmed.loc[pred_end_index]
+    exog_release = release_trimmed[
+        (release_trimmed.index >= pred_start_index) & (release_trimmed.index < pred_end_index)].mean()
+
+    exog_inflow = exog_inflow / inflow_windowed_mean[date]
+    exog_storage = exog_storage / daily_mean_storage.loc[(date - delta1).timetuple().tm_yday]
+    exog_release = exog_release / release_windowed_mean[date]
+    
+    exog = pd.DataFrame([exog_inflow, exog_release, exog_storage],
+                        index=["Inflow", "Release", "Storage"]).T
+    exog = sm.add_constant(exog)
+    preds = fit.predict(exog)
+    preds_score = r2_score(endog * daily_mean_release.loc[day_of_year], preds * daily_mean_release.loc[day_of_year])
+
+    results[date] = fit    
     export_results[date] = {
         "score": r2_score(endog * daily_mean_release.loc[day_of_year], fit.fittedvalues * daily_mean_release.loc[day_of_year]),
+        "pred_score": preds_score,
+        "preds": preds,
         "params":fit.params,
         "fittedvalues": fit.fittedvalues * daily_mean_release.loc[day_of_year],
         "adj_score":fit.rsquared_adj
@@ -139,8 +160,8 @@ if rank == 0:
     # gather gives you a list of whatever is on eachprocessor
     # i want to merge the dictionaries and this is a simple way to do it
     export_results = dict(ChainMap(*export_results))
-    with open("./normalized_results/simple_regression_results.pickle", "wb") as f:
+    with open("./storage_m1_results/simple_regression_results.pickle", "wb") as f:
         pickle.dump(export_results, f)
     results = dict(ChainMap(*results))
-    with open("./normalized_results/regression_results.pickle", "wb") as f:
+    with open("./storage_m1_results/regression_results.pickle", "wb") as f:
         pickle.dump(results, f)
