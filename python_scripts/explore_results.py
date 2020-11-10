@@ -14,46 +14,54 @@ import calendar
 plt.style.use("seaborn-paper")
 sns.set_context("talk")
 
-metric_title_map = {
-    "score":"R-Squared",
-    "const":"Intercept",
-    "Inflow":"Inflow",
-    "Storage":"Storage",
-    "Release":"Release"
+metric_titles = {
+    "score": "R-Squared",
+    "const": "Intercept",
+    "Inflow": "Inflow",
+    "Release": "Release",
+    "Storage": "Storage",
+    "PrevStorage": "Previous Day's Storage",
+    "PrevInflow": "Previous Day's Inflow"
 }
 
 # read results
-results_dir = pathlib.Path("normalized_results")
+results_dir = pathlib.Path("storage_m1_results")
 with open(results_dir / "simple_regression_results.pickle", "rb") as f:
     results = pickle.load(f)
 
 def split_results(results_dict):
-    values_dict, metrics_dict = {}, {}
+    values_dict, preds_dict, metrics_dict = {}, {}, {}
     for key, value in results_dict.items():
         values_dict[key] = value["fittedvalues"]
+        preds_dict[key] = value["preds"]
         metrics_dict[key] = {
             "score":value["score"],
             "adj_score":value["adj_score"],
+            "pred_score":value["pred_score"],
             "const": value["params"]["const"],
             "Inflow": value["params"]["Inflow"],
             "Release": value["params"]["Release"],
             "Storage": value["params"]["Storage"],
-            "PrevStorage": value["params"]["PrevStorage"],
-            "PrevInflow": value["params"]["PrevInflow"]
+            # "PrevStorage": value["params"]["PrevStorage"],
+            # "PrevInflow": value["params"]["PrevInflow"]
         }
     values_df = pd.DataFrame.from_dict(values_dict).T
+    preds_df = pd.DataFrame.from_dict(preds_dict).T
     metrics_df = pd.DataFrame.from_dict(metrics_dict).T
     values_df = values_df.sort_index()
+    preds_df = preds_df.sort_index()
     metrics_df = metrics_df.sort_index()
-    return values_df, metrics_df
+    return values_df, preds_df, metrics_df
 
 def plot_metrics(metrics):
-    fig, axes = plt.subplots(5, 1, sharex=True)
+    fig, axes = plt.subplots(7, 1, sharex=True)
     axes = axes.flatten()
-    plots = ["score", "const", "Inflow", "Release", "Storage"]
-    titles = ["R-Squared", "Intercept", "Inflow", "Release", "Storage"]
+    plots = ["score", "const", "Inflow", "Release", "Storage", "PrevStorage", "PrevInflow"]
+    titles = ["R-Squared", "Intercept", "Inflow",
+              "Release", "Storage", "PrevStorage", "PrevInflow"]
     ylabels = ["Value", "Fitted Value",
-               "Fitted Value", "Fitted Value", "Fitted Value"]
+               "Fitted Value", "Fitted Value", "Fitted Value",
+               "Fitted Value", "Fitted Value"]
     metrics = metrics[metrics.index.year >= 1991]
     for ax, plot, title, ylabel in zip(axes, plots, titles, ylabels):
         metrics[plot].plot(ax=ax)
@@ -77,7 +85,7 @@ def plot_scaleogram(metrics, key="score"):
     new_labels = [t0 + timedelta(days=i) for i in xticks]
     new_labels = [i.strftime("%Y-%m") for i in new_labels]
     ax.set_xticklabels(new_labels)
-    ax.set_title(metric_title_map[key])
+    ax.set_title(metric_titles[key])
     plt.show()
 
 def plot_reservoir_fit(value_df, resid=True, versus=True):
@@ -104,46 +112,42 @@ def plot_reservoir_fit(value_df, resid=True, versus=True):
     plt.show()
 
 def plot_monthly_metrics(metrics, key="score"):
-    titles = {
-        "score":"R-Squared", 
-        "const":"Intercept",
-        "Inflow":"Inflow", 
-        "Release":"Release",
-        "Storage":"Storage"
-    }
     ylabels = {
         "score": "Value",
         "const": "Fitted Value",
         "Inflow": "Fitted Value",
         "Release": "Fitted Value",
-        "Storage": "Fitted Value"
+        "Storage": "Fitted Value",
+        "PrevInflow": "Fitted Value",
+        "PrevStorage": "Fitted Value"
     }
-    if key == "four":
-        plot_metrics = metrics.groupby(metrics.index.dayofyear).mean()
-        fig, axes = plt.subplots(2, 2, sharex="col")
+    if key == "all":
+        plot_metrics = metrics.groupby(metrics.index.month).mean()
+        fig, axes = plt.subplots(3, 2, sharex="col")
         axes = axes.flatten()
-        keys = ["score", "Storage", "Release", "Inflow"]
+        keys = ["score", "Storage", "Release", "Inflow", "PrevStorage", "PrevInflow"]
         for ax, metric in zip(axes, keys):
             plot_metrics[metric].plot.bar(ax=ax, width=0.9)
-            ax.set_title(titles[metric])
+            ax.set_title(metric_titles[metric])
             ax.set_ylabel(ylabels[metric])
-            ax.set_xticks(list(map(int, list(np.linspace(1,366,num=25)))))
-            # ax.set_xticklabels(calendar.month_abbr[1:], ha="right", rotation=45)
+            # ax.set_xticks(list(map(int, list(np.linspace(1,366,num=25)))))
+            ax.set_xticklabels(calendar.month_abbr[1:], ha="right", rotation=45)
         fig.align_ylabels()
         plt.show()
     else:
         plot_metrics = metrics[key].groupby(metrics.index.month).mean()
         fig, ax = plt.subplots(1,1)
         plot_metrics.plot.bar(ax=ax,width=0.9)
-        ax.set_title(titles[key])
+        ax.set_title(metric_titles[key])
         ax.set_ylabel(ylabels[key])
         ax.set_xticklabels(calendar.month_abbr[1:], ha="right", rotation=45)
         plt.show()
     
 
 if __name__ == "__main__":
-    values_df, metrics_df = split_results(results)
-    # plot_reservoir_fit(values_df, resid=False, versus=False)
+    values_df, preds_df, metrics_df = split_results(results)
+    II()
+    # plot_reservoir_fit(values_df, resid=False, versus=True)
     # plot_metrics(metrics_df)
-    # plot_scaleogram(metrics_df, key="Release")
-    plot_monthly_metrics(metrics_df, key="four")
+    # plot_scaleogram(metrics_df, key="PrevInflow")
+    # plot_monthly_metrics(metrics_df, key="all")
