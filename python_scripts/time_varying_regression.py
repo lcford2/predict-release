@@ -48,6 +48,7 @@ release_trimmed = release_trimmed[release_trimmed.index >= datetime(1990, 10, 16
 initial_date = datetime(1991, 1, 1)
 ndays = (storage_trimmed.index[-1] - initial_date).days
 delta30 = timedelta(days=30)
+# delta15 = timedelta(days=15)
 delta1 = timedelta(days=1)
 regression_index = list(storage_trimmed[storage_trimmed.index >= initial_date].index)
 reservoirs = storage_trimmed.columns
@@ -59,6 +60,7 @@ daily_mean_inflow = pd.read_pickle(pickles/"inflow_daily_means.pickle")
 storage_windowed_mean = pd.read_pickle(pickles/"storage_windowed_means.pickle")
 release_windowed_mean = pd.read_pickle(pickles/"release_windowed_means.pickle")
 inflow_windowed_mean = pd.read_pickle(pickles/"inflow_windowed_means.pickle")
+max_storage = pd.read_pickle(pickles/"max_storage.pickle")
 
 
 def make_day_window(dayofyear, windowsize=30):
@@ -113,7 +115,8 @@ for date in mine:
 
     exog_inflow = exog_inflow.mean(axis=1)/inflow_windowed_mean[date]
     # exog_storage = exog_storage.mean(axis=1)/storage_windowed_mean[date]
-    exog_storage = exog_storage.mean(axis=1)/daily_mean_storage.loc[(date - delta1).timetuple().tm_yday]
+    # exog_storage = exog_storage.mean(axis=1)/daily_mean_storage.loc[(date - delta1).timetuple().tm_yday]
+    exog_storage = exog_storage.mean(axis=1)/max_storage
     exog_release = exog_release.mean(axis=1)/release_windowed_mean[date]
     
     exog = pd.DataFrame([exog_inflow, exog_release, exog_storage], 
@@ -136,9 +139,12 @@ for date in mine:
     exog_storage = exog_storage / daily_mean_storage.loc[(date - delta1).timetuple().tm_yday]
     exog_release = exog_release / release_windowed_mean[date]
     
-    exog = pd.DataFrame([exog_inflow, exog_release, exog_storage],
+    exog2 = pd.DataFrame([exog_inflow, exog_release, exog_storage],
                         index=["Inflow", "Release", "Storage"]).T
-    exog = sm.add_constant(exog)
+    exog2 = sm.add_constant(exog2)
+    # print(exog - exog2)
+    # sys.exit()
+    II()
     preds = fit.predict(exog)
     preds_score = r2_score(endog * daily_mean_release.loc[day_of_year], preds * daily_mean_release.loc[day_of_year])
 
