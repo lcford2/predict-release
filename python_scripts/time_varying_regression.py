@@ -148,7 +148,7 @@ for date in mine:
     # print(exog - exog2)
     # sys.exit()
 
-    preds = fit.predict(exog)
+    preds = fit.predict(exog2)
     preds_score = r2_score(endog * daily_mean_release.loc[day_of_year], preds * daily_mean_release.loc[day_of_year])
     spearmanr = scipy.stats.spearmanr(endog * daily_mean_release.loc[day_of_year], preds * daily_mean_release.loc[day_of_year])
     pearsonr = scipy.stats.pearsonr(
