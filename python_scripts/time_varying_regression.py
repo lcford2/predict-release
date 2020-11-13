@@ -58,9 +58,13 @@ export_results = {}
 # daily_mean_release = pd.read_pickle(pickles/"tva_daily_mean_release.pickle")
 # daily_mean_storage = pd.read_pickle(pickles/"storage_daily_means.pickle")
 # daily_mean_inflow = pd.read_pickle(pickles/"inflow_daily_means.pickle")
+res_mean_storage = storage_trimmed.mean()
+res_mean_inflow = inflow_trimmed.mean()
+res_mean_release = release_trimmed.mean()
 daily_mean_release = release.groupby(release.index.dayofyear).mean()
 daily_mean_storage = storage.groupby(storage.index.dayofyear).mean()
 daily_mean_inflow = inflow.groupby(inflow.index.dayofyear).mean()
+
 storage_windowed_mean = pd.read_pickle(pickles/"storage_windowed_means.pickle") * 86400 * 1000
 release_windowed_mean = pd.read_pickle(pickles/"release_windowed_means.pickle") * 86400
 inflow_windowed_mean = pd.read_pickle(pickles/"inflow_windowed_means.pickle") * 86400
@@ -118,11 +122,11 @@ for date in mine:
             exog_storage[f"Storage{year}"] = year_storage
             exog_release[f"Release{year}"] = year_release
 
-    exog_inflow = exog_inflow.mean(axis=1)/inflow_windowed_mean[date]
+    exog_inflow = exog_inflow.mean(axis=1)/res_mean_inflow
     # exog_storage = exog_storage.mean(axis=1)/storage_windowed_mean[date]
     # exog_storage = exog_storage.mean(axis=1)/daily_mean_storage.loc[(date - delta1).timetuple().tm_yday]
     exog_storage = exog_storage.mean(axis=1)/max_storage
-    exog_release = exog_release.mean(axis=1)/release_windowed_mean[date]
+    exog_release = exog_release.mean(axis=1)/res_mean_release
     
     exog = pd.DataFrame([exog_inflow, exog_release, exog_storage], 
             index=["Inflow", "Release", "Storage"]).T
