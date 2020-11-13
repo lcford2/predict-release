@@ -50,6 +50,7 @@ ndays = (storage_trimmed.index[-1] - initial_date).days
 delta30 = timedelta(days=30)
 # delta15 = timedelta(days=15)
 delta1 = timedelta(days=1)
+delta7 = timedelta(days=7)
 regression_index = list(storage_trimmed[storage_trimmed.index >= initial_date].index)
 reservoirs = storage_trimmed.columns
 results = {}
@@ -91,6 +92,7 @@ N = ndays
 n_proc = ceil(N/size)
 regress_dates = storage_trimmed[storage_trimmed.index >= initial_date].index
 mine = regress_dates[rank*n_proc:(rank+1) * n_proc]
+my_delta = delta7
 
 for date in mine:
     endog = release_trimmed.loc[date, :]
@@ -103,13 +105,13 @@ for date in mine:
     for year in range(1991, 2016):
         if year != my_year:
             end_index = datetime(year, 1, 1) + timedelta(day_of_year - 1)
-            start_index = end_index - delta30
+            start_index = end_index - my_delta
             year_inflow = inflow_trimmed[
                 (inflow_trimmed.index >= start_index) & (inflow_trimmed.index < end_index)].mean()
             # this gets the 30 day average storage
             # year_storage = storage_trimmed[
             #     (storage_trimmed.index >= start_index) & (storage_trimmed.index < end_index)].mean()
-            year_storage = storage_trimmed.loc[end_index - delta1]
+            year_storage = storage_trimmed.loc[end_index - my_delta]
             year_release = release_trimmed[
                 (release_trimmed.index >= start_index) & (release_trimmed.index < end_index)].mean()
             exog_inflow[f"Inflow{year}"] = year_inflow
@@ -131,7 +133,7 @@ for date in mine:
 
     # pred_end_index = date - delta1
     pred_end_index = date
-    pred_start_index = pred_end_index - delta30
+    pred_start_index = pred_end_index - my_delta
     exog_inflow = inflow_trimmed[
         (inflow_trimmed.index >= pred_start_index) & (inflow_trimmed.index < pred_end_index)].mean()
     exog_storage = storage_trimmed.loc[pred_end_index]
@@ -176,8 +178,8 @@ if rank == 0:
     # gather gives you a list of whatever is on eachprocessor
     # i want to merge the dictionaries and this is a simple way to do it
     export_results = dict(ChainMap(*export_results))
-    with open("./storage_m1_results/simple_regression_results.pickle", "wb") as f:
+    with open("./seven_day_results/simple_regression_results.pickle", "wb") as f:
         pickle.dump(export_results, f)
     results = dict(ChainMap(*results))
-    with open("./storage_m1_results/regression_results.pickle", "wb") as f:
+    with open("./seven_day_results/regression_results.pickle", "wb") as f:
         pickle.dump(results, f)
