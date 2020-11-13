@@ -25,9 +25,9 @@ df = pd.read_pickle(pickles / "tva_dam_data.pickle")
 # df["Storage_pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(1)
 # drop the instances where there was no preceding values
 # (i.e. the first day of record for each reservoir because there is no previous storage)
-storage = df["Storage"].unstack()
-inflow = df["Inflow"].unstack()
-release = df["Release"].unstack()
+storage = df["Storage"].unstack() * 86400 * 1000  # 1000 second-ft-day to ft3
+inflow = df["Net Inflow"].unstack() * 86400  # cfs to ft3/day
+release = df["Release"].unstack() * 86400  # cfs to ft3/day
 
 storage_trimmed = storage.dropna()
 inflow_trimmed = inflow.dropna()
@@ -54,13 +54,16 @@ regression_index = list(storage_trimmed[storage_trimmed.index >= initial_date].i
 reservoirs = storage_trimmed.columns
 results = {}
 export_results = {}
-daily_mean_release = pd.read_pickle(pickles/"tva_daily_mean_release.pickle")
-daily_mean_storage = pd.read_pickle(pickles/"storage_daily_means.pickle")
-daily_mean_inflow = pd.read_pickle(pickles/"inflow_daily_means.pickle")
-storage_windowed_mean = pd.read_pickle(pickles/"storage_windowed_means.pickle")
-release_windowed_mean = pd.read_pickle(pickles/"release_windowed_means.pickle")
-inflow_windowed_mean = pd.read_pickle(pickles/"inflow_windowed_means.pickle")
-max_storage = pd.read_pickle(pickles/"max_storage.pickle")
+# daily_mean_release = pd.read_pickle(pickles/"tva_daily_mean_release.pickle")
+# daily_mean_storage = pd.read_pickle(pickles/"storage_daily_means.pickle")
+# daily_mean_inflow = pd.read_pickle(pickles/"inflow_daily_means.pickle")
+daily_mean_release = release.groupby(release.index.dayofyear).mean()
+daily_mean_storage = storage.groupby(storage.index.dayofyear).mean()
+daily_mean_inflow = inflow.groupby(inflow.index.dayofyear).mean()
+storage_windowed_mean = pd.read_pickle(pickles/"storage_windowed_means.pickle") * 86400 * 1000
+release_windowed_mean = pd.read_pickle(pickles/"release_windowed_means.pickle") * 86400
+inflow_windowed_mean = pd.read_pickle(pickles/"inflow_windowed_means.pickle") * 86400
+max_storage = pd.read_pickle(pickles/"max_storage.pickle") * 86400 * 1000
 
 
 def make_day_window(dayofyear, windowsize=30):
@@ -144,18 +147,24 @@ for date in mine:
     exog2 = sm.add_constant(exog2)
     # print(exog - exog2)
     # sys.exit()
-    II()
+
     preds = fit.predict(exog)
     preds_score = r2_score(endog * daily_mean_release.loc[day_of_year], preds * daily_mean_release.loc[day_of_year])
-
+    spearmanr = scipy.stats.spearmanr(endog * daily_mean_release.loc[day_of_year], preds * daily_mean_release.loc[day_of_year])
+    pearsonr = scipy.stats.pearsonr(
+        endog * daily_mean_release.loc[day_of_year], preds * daily_mean_release.loc[day_of_year])
+    bias = (preds * daily_mean_release.loc[day_of_year]).mean() - (endog * daily_mean_release.loc[day_of_year]).mean()
     results[date] = fit    
     export_results[date] = {
         "score": r2_score(endog * daily_mean_release.loc[day_of_year], fit.fittedvalues * daily_mean_release.loc[day_of_year]),
         "pred_score": preds_score,
         "preds": preds * daily_mean_release.loc[day_of_year],
         "params":fit.params,
-        "fittedvalues": fit.fittedvalues * daily_mean_release.loc[day_of_year]
+        "fittedvalues": fit.fittedvalues * daily_mean_release.loc[day_of_year],
         # "adj_score":fit.rsquared_adj
+        "spearmanr":spearmanr,
+        "pearsonr": pearsonr,
+        "bias": bias
     }
 
 
