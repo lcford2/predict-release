@@ -11,11 +11,6 @@ import seaborn as sns
 from math import ceil
 import pickle
 import sys
-from mpi4py import MPI
-
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-size = comm.Get_size()
 
 pickles = pathlib.Path("..", "pickles")
 
@@ -95,5 +90,3 @@ preds = preds.unstack().T * max_release
 
 endog_cal_act = endog_cal.unstack().T * max_release
 endog_val_act = endog_val.unstack().T * max_release
-
-II()
