@@ -1,17 +1,17 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"path": ".."
 		},
-		{
-			"path": "../pickles",
-		},
-		{
-			"path": "../excel_sheets",
-		},
-		{
-			"path": "../julia_scripts",
-		}
+		// {
+		// 	"path": "../pickles",
+		// },
+		// {
+		// 	"path": "../excel_sheets",
+		// },
+		// {
+		// 	"path": "../julia_scripts",
+		// }		
 	],
 	"settings": {}
 }
