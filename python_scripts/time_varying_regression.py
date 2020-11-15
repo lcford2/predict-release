@@ -96,7 +96,7 @@ N = ndays
 n_proc = ceil(N/size)
 regress_dates = storage_trimmed[storage_trimmed.index >= initial_date].index
 mine = regress_dates[rank*n_proc:(rank+1) * n_proc]
-my_delta = delta7
+my_delta = delta1
 
 for date in mine:
     endog = release_trimmed.loc[date, :]
@@ -182,8 +182,8 @@ if rank == 0:
     # gather gives you a list of whatever is on eachprocessor
     # i want to merge the dictionaries and this is a simple way to do it
     export_results = dict(ChainMap(*export_results))
-    with open("./seven_day_results/simple_regression_results.pickle", "wb") as f:
+    with open("./one_day_results/simple_regression_results.pickle", "wb") as f:
         pickle.dump(export_results, f)
     results = dict(ChainMap(*results))
-    with open("./seven_day_results/regression_results.pickle", "wb") as f:
+    with open("./one_day_results/regression_results.pickle", "wb") as f:
         pickle.dump(results, f)
