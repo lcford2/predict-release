@@ -127,7 +127,7 @@ def plot_reservoir_fit(value_df, resid=True, versus=True):
     plt.show()
 
 
-def plot_reservoir_fit_preds(value_df, preds_df):
+def plot_reservoir_fit_preds(value_df, preds_df, versus=False):
     sns.set_context("paper")
     df = pd.read_pickle("../pickles/tva_dam_data.pickle")
     df = df["Release"].unstack().loc[value_df.index, value_df.columns]
@@ -136,8 +136,12 @@ def plot_reservoir_fit_preds(value_df, preds_df):
     axes = axes.flatten()
     for ax, column in zip(axes, value_df.columns):
         # df[column].plot(ax=ax)
-        value_df[column].plot(ax=ax, alpha=1)
-        preds_df[column].plot(ax=ax, alpha=0.6)
+        if versus:
+            ax.scatter(value_df[column], preds_df[column])
+            abline_plot(0,1,ax=ax,c="r",linestyle="--")
+        else:
+            value_df[column].plot(ax=ax, alpha=1)
+            preds_df[column].plot(ax=ax, alpha=0.6)
         ax.set_title(column)
 
     axes[-1].axis("off")
@@ -179,14 +183,22 @@ def plot_monthly_metrics(metrics, key="score"):
         ax.set_xticklabels(calendar.month_abbr[1:], ha="right", rotation=45)
         plt.show()
 
-def plot_pred_diagnostics(metrics_df):
+def plot_pred_diagnostics(metrics_df, hist=False, cumulative=False):
     metrics = ["pred_score", "pearsonr", "bias"]
-    fig, axes = plt.subplots(3, 1, sharex=True)
+    if hist:
+        sharex=False
+    else:
+        sharex=True
+    fig, axes = plt.subplots(3, 1, sharex=sharex)
     axes = axes.flatten()
     for ax, metric in zip(axes, metrics):
-        metrics_df[metric].plot(ax=ax)
-        ax.set_ylabel(metric_titles[metric])
-        ax.set_title(metric_titles[metric])
+        if hist:
+            sns.histplot(metrics_df[metric], ax=ax, stat="probability", cumulative=cumulative)
+            ax.set_xlabel(metric_titles[metric])    
+        else:
+            metrics_df[metric].plot(ax=ax)
+            ax.set_ylabel(metric_titles[metric])    
+            ax.set_title(metric_titles[metric])
     
     fig.align_ylabels()
     plt.show()
@@ -248,27 +260,45 @@ def flow_regime_analysis(values_df, preds_df, quan=0.1):
 
     return results
 
-def non_exceedance_plot(Z, ylabel=None, xlabel=None):
+def non_exceedance_plot(Z, ylabel=None, xlabel=None, ax=None):
     if not ylabel:
-        ylabel = "Non-Exceedance Probability"
-    
+        ylabel = "Non-Exceedance Probability"    
     N = len(Z)
     Z.sort()
     x = np.arange(1, N+1)
     y = x/N
-    plt.plot(Z, y)
-    plt.ylabel(ylabel)
-    plt.xlabel(xlabel)
+    if not ax:
+        ax = plt.gca()
+        show = True
+    else:
+        show = False
+    ax.plot(Z, y)
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    if show:
+        plt.show()
+
+def preds_diag_NE_plot(metrics_df):
+    fig, axes = plt.subplots(3,1)
+    axes = axes.flatten()
+    metrics = ["pred_score", "pearsonr", "bias"]
+    ylabels = [" ", "", " "]
+    for ax, metric, ylabel in zip(axes, metrics, ylabels):
+        non_exceedance_plot(metrics_df[metric].values, ylabel=ylabel, xlabel=metric_titles[metric], ax=ax)
     plt.show()
 
 
 if __name__ == "__main__":
     values_df, preds_df, metrics_df = split_results(results)
+    dam_data = pd.read_pickle("../pickles/tva_dam_data.pickle")
+    inflow = dam_data["Net Inflow"].unstack()
+    metrics_df["TotalInflow"] = inflow.sum(axis=1) * 86400
     flows = flow_regime_analysis(values_df, preds_df, quan=0.33)
-    II()
-    # plot_reservoir_fit_preds(values_df, preds_df)
+    # II()
+    plot_reservoir_fit_preds(values_df, preds_df, versus=True)
     # plot_reservoir_fit(values_df, resid=False, versus=True)
     # plot_monthly_metrics(metrics_df, key="spearmanr")
     # plot_scaleogram(metrics_df, key="PrevInflow")
     # plot_monthly_metrics(metrics_df, key="all")
-    # plot_pred_diagnostics(metrics_df)
+    # plot_pred_diagnostics(metrics_df, hist=True)
+    # preds_diag_NE_plot(metrics_df)
