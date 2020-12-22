@@ -115,24 +115,6 @@ def predict_single_res(data, fit, means, std, start_date=None, horizon=None):
             forecasted.loc[current_index + timedelta(days=1), "release_pre"] = release
     return forecasted
 
-def prep_single_res_data(df, unit_change):
-    keep_keys = []
-    for key, conv in unit_change.items():
-        df[key] = df[key] * conv
-        new_key = "_".join(key.split("_")[:-1])
-        df = df.rename(columns={key:new_key})
-        keep_keys.append(new_key)
-   
-    df = df[keep_keys]
-    means = df.mean()
-    std = df.std()
-    normed = (df - means) / std
-    normed["release_pre"] = normed["release"].shift(1)
-    normed["storage_pre"] = normed["storage"].shift(1)
-    normed = normed.loc[normed.index[1:]]
-    return normed, means, std
-
-
 if __name__ == "__main__":
     # forecasted = predict_all(fit, scaled_df, datetime(2010, 1, 1), means, std)
     # forecast_release = forecasted["Release"].unstack() * rstd + rmeans
