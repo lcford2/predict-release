@@ -1,0 +1,87 @@
+{
+    "qu":{
+        "description":"Estimated Average Unregulated Flow",
+        "units":"cfs",
+        "rename":"nat_inflow"
+    },
+    "fb": {
+        "description": "Reservoir Water Surface Elevation",
+        "units": "feet",
+        "rename": "hw_elev"
+    },
+    "id": {
+        "description": "Computed Average Reservoir Inflow",
+        "units": "cfs",
+        "rename": "avg_inflow"
+    },
+    "qd": {
+        "description": "Average Stream Discharge",
+        "units": "cfs",
+        "rename": "release"
+    },
+    "qs": {
+        "description": "I believe this is spill",
+        "units": "cfs",
+        "rename": "spill"
+    },
+    "qv": {
+        "description": "Hydropower Discharge",
+        "units": "cfs",
+        "rename": "hp_release"
+    },
+    "td": {
+        "description": "Average Tailwater Stage",
+        "units": "feet",
+        "rename": "tw_elev"
+    },
+    "af": {
+        "description": "Reservoir Water Storage",
+        "units": "acre-ft",
+        "rename": "storage"
+    },
+    "gain":{
+        "description": "Average Gain",
+        "units": "cfs",
+        "rename":"gain"
+    },
+    "pu":{
+        "description": "Cummulative Water Year Precipitation",
+        "units": "inches",
+        "rename": "cum_wy_precip"
+    },
+    "mm":{
+        "description": "Average Air Temperature",
+        "units": "degF",
+        "rename": "avg_temp"
+    },
+    "mx":{
+        "description": "Maximum Air Temperature",
+        "units": "degF",
+        "rename": "max_temp"
+    },
+    "mn":{
+        "description": "Minimum Air Temperature",
+        "units": "degF",
+        "rename": "min_temp"
+    },
+    "pc": {
+        "description": "Cummulative Precipitation",
+        "units": "inches",
+        "rename": "cum_precip"
+    },
+    "pp": {
+        "description": "Daily Total Precipitation",
+        "units": "inches",
+        "rename": "daily_precip"
+    },
+    "qt": {
+        "description": "Totalled Average Discharge",
+        "units": "cfs",
+        "rename": "totalled_avg_rel"
+    },
+    "pe": {
+        "description": "Total Pan Evaporation",
+        "units": "inches",
+        "rename": "total_pan_evap"
+    }
+}

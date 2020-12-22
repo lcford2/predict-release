@@ -27,11 +27,12 @@ metric_titles = {
     "PrevInflow": "Previous Day's Inflow",
     "spearmanr": "Spearman r",
     "pearsonr": "Pearson r",
-    "bias": r"Bias [$ft^3/day$]"
+    "bias": r"Bias [$ft^3/day$]",
+    "RelBias": "Relative Bias"
 }
 
 # read results
-results_dir = pathlib.Path("seven_day_results")
+results_dir = pathlib.Path("one_day_results")
 with open(results_dir / "simple_regression_results.pickle", "rb") as f:
     results = pickle.load(f)
 
@@ -106,7 +107,7 @@ def plot_scaleogram(metrics, key="score", ax=None):
 def plot_reservoir_fit(value_df, resid=True, versus=True):
     sns.set_context("paper")
     df = pd.read_pickle("../pickles/tva_dam_data.pickle")
-    df = df["Release"].unstack().loc[value_df.index, value_df.columns]
+    df = df["Release"].unstack().loc[value_df.index, value_df.columns] * 86400
     # II()
     fig, axes = plt.subplots(4,7)
     axes = axes.flatten()
@@ -119,11 +120,13 @@ def plot_reservoir_fit(value_df, resid=True, versus=True):
                 ax.scatter(df[column], value_df[column])
                 abline_plot(0,1,ax=ax,c="r",linestyle="--")
             else:
-                df[column].plot(ax=ax)
-                value_df[column].plot(ax=ax, alpha=0.6)
+                df[column].plot(ax=ax, label="Actual")
+                value_df[column].plot(ax=ax, alpha=0.6, label="Modeled")
         ax.set_title(column)
     
     axes[-1].axis("off")
+    handles, labels = axes[-2].get_legend_handles_labels()
+    axes[-1].legend(handles, labels, loc="center")
     plt.show()
 
 
@@ -183,18 +186,60 @@ def plot_monthly_metrics(metrics, key="score"):
         ax.set_xticklabels(calendar.month_abbr[1:], ha="right", rotation=45)
         plt.show()
 
-def plot_pred_diagnostics(metrics_df, hist=False, cumulative=False):
-    metrics = ["pred_score", "pearsonr", "bias"]
+def plot_pred_diagnostics(metrics_df, diags=True, hist=False, cumulative=False, quan=None):
+    if diags:
+        metrics = ["pred_score", "pearsonr", "bias"]
+    else:
+        metrics = ["Inflow", "Storage", "Release", "const"]
     if hist:
         sharex=False
     else:
         sharex=True
-    fig, axes = plt.subplots(3, 1, sharex=sharex)
-    axes = axes.flatten()
+    if quan:
+        total_rel = metrics_df["TotalInflow"]
+        lower_quan = total_rel.quantile(quan)
+        upper_quan = total_rel.quantile(1 - quan)
+        lower_index = total_rel[total_rel <= lower_quan].index
+        upper_index = total_rel[total_rel >= upper_quan].index
+        rem_index = total_rel[(total_rel > lower_quan) &
+                            (total_rel < upper_quan)].index
+        regime = []
+        for i in metrics_df.index:
+            if i in lower_index:
+                regime.append("Low Flow")
+            elif i in upper_index:
+                regime.append("High Flow")
+            else:
+                regime.append("Normal Flow")
+        metrics_df["Flow Regime"] = regime
+        fig, axes = plt.subplots(len(metrics), 3, sharex=sharex, sharey="row")
+    else:    
+        fig, axes = plt.subplots(len(metrics), 1, sharex=sharex)
+        axes = axes.flatten()
     for ax, metric in zip(axes, metrics):
         if hist:
-            sns.histplot(metrics_df[metric], ax=ax, stat="probability", cumulative=cumulative)
-            ax.set_xlabel(metric_titles[metric])    
+            if quan:
+                metrics_df = relative_bias(metrics_df, quan=quan)
+                if metric == "bias":
+                    metric = "RelBias"
+                for i, (axis, flow) in enumerate(zip(ax, ["Low Flow", "Normal Flow", "High Flow"])):
+                    plot_metric = metrics_df[metrics_df["Flow Regime"] == flow][metric]
+                    
+                    sns.histplot(plot_metric, ax=axis, stat="probability", cumulative=cumulative, element="bars", linewidth=0.0)
+                    axis.set_xlabel(metric_titles[metric])
+                    if metric in ["pred_score", "Inflow"]:
+                        axis.set_title(flow)
+                    if diags:
+                        axis.set_xlim(-1.1, 1.1)
+                    else:
+                        xlims = axis.get_xlim()
+                        xmax = max([abs(xlims[0]), abs(xlims[1])])
+                        axis.set_xlim(-xmax, xmax)
+                    axis.axvline(plot_metric.median(),
+                                 c="r", linestyle="--")
+            else:
+                sns.histplot(metrics_df[metric], ax=ax, stat="probability", cumulative=cumulative)
+                ax.set_xlabel(metric_titles[metric])    
         else:
             metrics_df[metric].plot(ax=ax)
             ax.set_ylabel(metric_titles[metric])    
@@ -226,6 +271,7 @@ def flow_regime_analysis(values_df, preds_df, quan=0.1):
                              preds_df.loc[upper_index].values.flatten())
     rem_score = r2_score(values_df.loc[rem_index].values.flatten(),
                              preds_df.loc[rem_index].values.flatten())
+                             
     # pearson correlations
     lower_corr = pearsonr(values_df.loc[lower_index].values.flatten(),
                              preds_df.loc[lower_index].values.flatten())
@@ -235,8 +281,11 @@ def flow_regime_analysis(values_df, preds_df, quan=0.1):
                          preds_df.loc[rem_index].values.flatten())
     
     # bias
-    def calc_bias(true, pred):
-        return np.mean(pred) - np.mean(true)
+    def calc_bias(true, pred, relative=False):
+        if relative:
+            return (np.mean(pred) - np.mean(true)) / np.mean(true)
+        else:
+            return np.mean(pred) - np.mean(true)
 
     lower_bias = calc_bias(values_df.loc[lower_index].values.flatten(),
                           preds_df.loc[lower_index].values.flatten())
@@ -244,19 +293,30 @@ def flow_regime_analysis(values_df, preds_df, quan=0.1):
                           preds_df.loc[upper_index].values.flatten())
     rem_bias = calc_bias(values_df.loc[rem_index].values.flatten(),
                         preds_df.loc[rem_index].values.flatten())
-    results = pd.DataFrame(0.0, index=["Upper", "Middle", "Lower"], columns=["Score", "Corr", "Bias"])
+
+    lower_bias_rel = calc_bias(values_df.loc[lower_index].values.flatten(),
+                           preds_df.loc[lower_index].values.flatten(), relative=True)
+    upper_bias_rel = calc_bias(values_df.loc[upper_index].values.flatten(),
+                           preds_df.loc[upper_index].values.flatten(), relative=True)
+    rem_bias_rel = calc_bias(values_df.loc[rem_index].values.flatten(),
+                         preds_df.loc[rem_index].values.flatten(), relative=True)
+
+    results = pd.DataFrame(0.0, index=["Upper", "Middle", "Lower"], columns=["Score", "Corr", "Bias", "RelativeBias"])
     
     results.loc["Upper", "Score"] = upper_score
     results.loc["Upper", "Corr"] = upper_corr[0]
     results.loc["Upper", "Bias"] = upper_bias
+    results.loc["Upper", "RelativeBias"] = upper_bias_rel
 
     results.loc["Lower", "Score"] = lower_score
     results.loc["Lower", "Corr"] = lower_corr[0]
     results.loc["Lower", "Bias"] = lower_bias
+    results.loc["Lower", "RelativeBias"] = lower_bias_rel
     
     results.loc["Middle", "Score"] = rem_score
     results.loc["Middle", "Corr"] = rem_corr[0]
     results.loc["Middle", "Bias"] = rem_bias
+    results.loc["Middle", "RelativeBias"] = rem_bias_rel
 
     return results
 
@@ -287,6 +347,40 @@ def preds_diag_NE_plot(metrics_df):
         non_exceedance_plot(metrics_df[metric].values, ylabel=ylabel, xlabel=metric_titles[metric], ax=ax)
     plt.show()
 
+def paired_dens(metrics_df):
+    params = ["const", "Release", "Storage", "Inflow"]
+    g = sns.PairGrid(metrics_df[params], diag_sharey=False)
+    g.map_upper(sns.scatterplot)
+    g.map_lower(sns.kdeplot)
+    g.map_diag(sns.histplot)
+    plt.show()
+
+
+def relative_bias(metrics_df, quan=0.33):
+    dam_data = pd.read_pickle("../pickles/tva_dam_data.pickle")
+    release = dam_data["Release"].unstack() * 86400
+    total_release = release.sum(axis=1)
+    total_inflow = metrics_df["TotalInflow"]
+    lower_quan = total_inflow.quantile(quan)
+    upper_quan = total_inflow.quantile(1 - quan)
+    lower_index = total_inflow[total_inflow <= lower_quan].index
+    upper_index = total_inflow[total_inflow >= upper_quan].index
+    rem_index = total_inflow[(total_inflow > lower_quan) &
+                            (total_inflow < upper_quan)].index
+    lower_release = total_release.loc[lower_index].mean()
+    upper_release = total_release.loc[upper_index].mean()
+    rem_release = total_release.loc[rem_index].mean()
+
+    rel_bias = []
+    for i, row in metrics_df.iterrows():
+        if i in lower_index:
+            rel_bias.append(row["bias"] / lower_release)
+        elif i in upper_index:
+            rel_bias.append(row["bias"] / upper_release)
+        else:
+            rel_bias.append(row["bias"] / rem_release)
+    metrics_df["RelBias"] = rel_bias
+    return metrics_df
 
 if __name__ == "__main__":
     values_df, preds_df, metrics_df = split_results(results)
@@ -295,10 +389,12 @@ if __name__ == "__main__":
     metrics_df["TotalInflow"] = inflow.sum(axis=1) * 86400
     flows = flow_regime_analysis(values_df, preds_df, quan=0.33)
     # II()
-    plot_reservoir_fit_preds(values_df, preds_df, versus=True)
+    # plot_reservoir_fit_preds(values_df, preds_df, versus=True)
     # plot_reservoir_fit(values_df, resid=False, versus=True)
     # plot_monthly_metrics(metrics_df, key="spearmanr")
     # plot_scaleogram(metrics_df, key="PrevInflow")
     # plot_monthly_metrics(metrics_df, key="all")
-    # plot_pred_diagnostics(metrics_df, hist=True)
+    # plot_pred_diagnostics(metrics_df, diags=True, hist=True, cumulative=True, quan=0.3333)
     # preds_diag_NE_plot(metrics_df)
+    paired_dens(metrics_df)
+    # II()
