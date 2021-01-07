@@ -5,12 +5,23 @@ from statsmodels.regression.mixed_linear_model import MixedLMParams
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import StandardScaler
 import pickle
-from helper_functions import (read_tva_data, scale_multi_level_df)
+from helper_functions import (read_tva_data, scale_multi_level_df, 
+                              read_all_res_data, find_max_date_range)
 from timing_function import time_function
 from time import perf_counter as timer
 from datetime import timedelta
 from IPython import embed as II
 import sys
+
+group_names = {
+    "RunOfRiver": {0: "StorageDam", 1: "RunOfRiver"},
+    "NaturalOnly": {0: "ComboFlow", 1: "NaturalFlow"},
+    "PrimaryType": {0: "FloodControl",
+                    1: "Hydropower",
+                    2: "Irrigation",
+                    3: "Navigation",
+                    4: "WaterSupply"}
+}
 
 @time_function
 def scaledOLS(df, scaler="mine"):
@@ -103,16 +114,8 @@ def scaled_MixedEffects(df, groups, scaler="mine"):
         y_scaled = pd.Series(y_scaled.reshape(-1), index=y.index)
     
     X_scaled[groups] = for_groups
-    names = {
-        "RunOfRiver": {0: "StorageDam", 1: "RunOfRiver"},
-        "NaturalOnly": {0: "ComboFlow", 1: "NaturalFlow"},
-        "PrimaryType": {0: "FloodControl",
-                        1: "Hydropower",
-                        2: "Irrigation",
-                        3: "Navigation",
-                        4: "WaterSupply"}
-    }
-    X_scaled = change_group_names(X_scaled, groups, names)
+    
+    X_scaled = change_group_names(X_scaled, groups, group_names)
     X_scaled = combine_columns(X_scaled, groups, "compositegroup")
 
     # X_scaled["NaturalOnly"] = ["Natural" if i == 1 else "Both" for i in X_scaled["NaturalOnly"]]
@@ -161,11 +164,13 @@ def scaled_MixedEffects(df, groups, scaler="mine"):
     forecasted = forecast_mixedLM(fe_coefs, re_coefs, mexog, exog_re, means, std)
     predicted_act = (predicted.unstack() * std["Release"] + means["Release"]).stack()
     test_score = r2_score(y_test_act, predicted_act)
-    print(mdf.summary())
+    forecast_score = r2_score(y_test_act, forecasted["Release_act"])
+    # print(mdf.summary())
     # print(f"N Time Train: {N_time_train}")
     # print(f"N Time Test : {N_time_test}")
     print(f"Train Score : {train_score:.4f}")
     print(f"Test Score  : {test_score:.4f}")
+    print(f"Forecast Score  : {forecast_score:.4f}")
 
     print("\nGroup Sizes:")
     for (label, array) in zip(md.group_labels, md.exog_re_li):
@@ -282,7 +287,6 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std):
             output_df.loc[idx[date+timedelta(days=1),:],"Storage_pre"] = storage.values
 
     return output_df
-    
 
 def change_group_names(df, groups, names):
     for group in groups:
@@ -292,8 +296,59 @@ def change_group_names(df, groups, names):
 def combine_columns(df, columns, new_name, sep="-"):
     df[new_name] = df[columns[0]].str.cat(df[columns[1:]], sep=sep)
     return df
+
+@time_function
+def forecast_mixedLM_other_res(groups, unseen=True):
+    df = read_all_res_data()
+    date_range = find_max_date_range(file="date_res.csv")
+    df = df[df.index.get_level_values(0).isin(date_range)]
+    filename = "-".join(groups)
+    
+    for_groups = df.loc[:, groups]
+    
+    scaled_df, means, std = scale_multi_level_df(df)
+
+    df.loc[:,"Storage_act"] = (df.loc[:,"Storage"].unstack() * std["Storage"] + means["Storage"]).stack()
+    df.loc[:,"Release_act"] = (df.loc[:,"Release"].unstack() * std["Release"] + means["Release"]).stack()
+
+    X_scaled = scaled_df.loc[:, ["Storage_pre", "Net Inflow", "Release_pre"]]
+    y_scaled = scaled_df.loc[:, "Release"]
+    
+    X_scaled[groups] = for_groups
+
+    X_scaled = change_group_names(X_scaled, groups, group_names)
+    X_scaled = combine_columns(X_scaled, groups, "compositegroup")
+
+    if unseen:
+        X_scaled = X_scaled.loc[X_scaled.index.get_level_values(0).year >= 2010]
+
+    exog = sm.add_constant(X_scaled)
+    groups = exog["compositegroup"]
+
+    exog_re = exog[["Storage_pre", "Net Inflow",
+                    "Release_pre", "compositegroup"]]                    
+    mexog = exog[["const"]]
+
+    with open(f"../results/multi-level-results/{filename}.pickle", "rb") as f:
+        model_results = pickle.load(f)
+    
+    re_coefs = model_results["re_coefs"]
+    fe_coefs = model_results["fe_coefs"]
+    
+    output_df = forecast_mixedLM(fe_coefs, re_coefs, mexog, exog_re, means, std)
+    output_df["Release_act_obs"] = df["Release_act"]
+    output_df["Storage_act_obs"] = df["Storage_act"]
+    if unseen:
+        filename += "-unseen"
+    output_df.to_pickle(f"../results/multi-level-results/{filename}-all_res.pickle", protocol=4)
     
 
 if __name__ == "__main__":
-    df = read_tva_data()
-    scaled_MixedEffects(df, groups = ["NaturalOnly", "PrimaryType"])
+    # df = read_tva_data()
+    forecast_mixedLM_other_res(groups=["NaturalOnly", "RunOfRiver"])
+    # scaled_MixedEffects(df, groups = ["NaturalOnly","RunOfRiver"])
+    # Recorded Forecast Scores:
+    # NaturalOnly, PrimaryType :             0.9643
+    # NaturalOnly, RunOfRiver :              0.9646
+    # NaturalOnly, RunOfRiver, PrimaryType : 0.9640
+    # NaturalOnly :                          0.9656

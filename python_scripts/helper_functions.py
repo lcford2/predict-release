@@ -2,6 +2,16 @@ import numpy as np
 import pandas as pd
 import pathlib
 from datetime import datetime
+from timing_function import time_function
+
+tva_res = ['BlueRidge', 'Chikamauga', 'Guntersville', 'Hiwassee', 
+           'Nikajack', 'Norris', 'Ocoee1', 'Pickwick', 'Wheeler', 
+           'Wilson', 'Cherokee', 'WattsBar', 'Nottely', 'Chatuge',
+           'Apalachia', 'Douglas', 'Ocoee3', 'FtLoudoun', 'Kentucky',
+           'Fontana', 'Watauga', 'SHolston', 'Boone', 'FtPatrick', 
+           'MeltonH', 'TimsFord', 'Wilbur']
+
+acf_res = ['Woodruff', 'Buford', 'George', 'West']
 
 def scale_multi_level_df(df):
     grouper = df.index.get_level_values(1)
@@ -30,6 +40,26 @@ def prep_single_res_data(df, unit_change):
     normed = normed.loc[normed.index[1:]]
     return normed, means, std
 
+def find_max_date_range(file="date_res.csv"):
+    # This function finds the longest date range in the data set
+    # that has the same information. 
+    # It could be update in the future to find the longest date range
+    # that has a specific set of information (such as certain reservoirs)
+    # this could be done by filtering the date set then performing all of this
+    date_res = pd.read_csv(file, usecols=[0, 1], header=None, 
+                           index_col=0, names=["Date", "NRes"])
+    date_res.index = pd.to_datetime(date_res.index)
+    nres = date_res["NRes"].max()
+    date_res["streak_start"] = date_res["NRes"].ne(date_res["NRes"].shift())
+    date_res["streak_id"] = date_res["streak_start"].cumsum()
+    date_res["streak_count"] = date_res.groupby("streak_id").cumcount() + 1
+    end = date_res["streak_count"].idxmax()
+    sid = date_res.loc[end, "streak_id"]
+    start = date_res[(date_res["streak_id"] == sid) & (date_res["streak_start"])].index[0]
+    date_range = pd.date_range(start=start, end=end)
+    return date_range
+
+
 def read_tva_data():
     pickles = pathlib.Path("..", "pickles")
     df = pd.read_pickle(pickles / "tva_dam_data.pickle")
@@ -55,4 +85,42 @@ def read_tva_data():
     df["Net Inflow"] = df["Net Inflow"] * 86400  # cfs to ft3/day
     df["Release"] = df["Release"] * 86400  # cfs to ft3/day
     df["Release_pre"] = df["Release_pre"] * 86400  # cfs to ft3/day
+    return df
+
+def read_all_res_data():
+    pickles = pathlib.Path("..", "pickles")
+    df = pd.read_pickle(pickles / "all_res_data.pickle")
+    df = df.drop("Inflow", axis=1)
+
+    # create a time series of previous days storage for all reservoirs
+    df["Storage_pre"] = df.groupby(df.index.get_level_values(1))[
+        "Storage"].shift(1)
+    df["Release_pre"] = df.groupby(df.index.get_level_values(1))[
+        "Release"].shift(1)
+
+    df = df.dropna()
+
+    # TVA Data Units:
+    # Storage is in 1000 second-ft-day
+    # Inflow and release are in CFS
+
+    # ACF Data Units:
+    # Storage is in ac-ft
+    # Inflow and release are in CFS
+
+    # get all variables to similar units for Mass Balance
+    # These variables are all CFS regardless of which basin they are in
+    df["Net Inflow"] = df["Net Inflow"] * 86400  # cfs to ft3/day
+    df["Release"] = df["Release"] * 86400  # cfs to ft3/day
+    df["Release_pre"] = df["Release_pre"] * 86400  # cfs to ft3/day
+
+    # TVA Storage is a specific unit
+    tva_indexer = df.index.get_level_values(1).isin(tva_res)
+    df.loc[tva_indexer,"Storage"] = df[tva_indexer]["Storage"] * 86400 * 1000  # 1000 second-ft-day to ft3
+    df.loc[tva_indexer,"Storage_pre"] = df[tva_indexer]["Storage_pre"] * 86400 * 1000  # 1000 second-ft-day to ft3
+
+    # ACF Storage is a specific unit
+    acf_indexer = df.index.get_level_values(1).isin(acf_res)
+    df.loc[acf_indexer,"Storage"] = df[acf_indexer]["Storage"]* 86400  # acre-ft to ft3
+    df.loc[acf_indexer,"Storage_pre"] = df[acf_indexer]["Storage_pre"]* 86400  # acre-ft to ft3
     return df
