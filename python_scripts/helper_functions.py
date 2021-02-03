@@ -13,6 +13,8 @@ tva_res = ['BlueRidge', 'Chikamauga', 'Guntersville', 'Hiwassee',
 
 acf_res = ['Woodruff', 'Buford', 'George', 'West']
 
+
+
 def scale_multi_level_df(df):
     grouper = df.index.get_level_values(1)
     means = df.groupby(grouper).mean()
@@ -63,6 +65,9 @@ def find_max_date_range(file="date_res.csv"):
 def read_tva_data():
     pickles = pathlib.Path("..", "pickles")
     df = pd.read_pickle(pickles / "tva_dam_data.pickle")
+    fractions = pd.read_pickle(pickles / "tva_fractions.pickle")
+    for column in fractions.columns:
+        df[column] = [fractions.loc[i, column] for i in df.index.get_level_values(1)]
 
     # create a time series of previous days storage for all reservoirs
     df["Storage_pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(1)
