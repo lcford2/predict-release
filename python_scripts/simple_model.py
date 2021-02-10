@@ -169,11 +169,11 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     for key, array in month_arrays.items():
         X_scaled[key] = array
     
-    X_test = X_scaled.loc[X_scaled.index.get_level_values(0).year >= 2010]
-    X_train = X_scaled.loc[X_scaled.index.get_level_values(0).year < 2010]
+    X_train = X_scaled.loc[X_scaled.index.get_level_values(0).year >= 2010]
+    X_test = X_scaled.loc[X_scaled.index.get_level_values(0).year < 2010]
 
-    y_test = y_scaled.loc[y_scaled.index.get_level_values(0).year >= 2010]
-    y_train = y_scaled.loc[y_scaled.index.get_level_values(0).year < 2010]
+    y_train = y_scaled.loc[y_scaled.index.get_level_values(0).year >= 2010]
+    y_test = y_scaled.loc[y_scaled.index.get_level_values(0).year < 2010]
     
     N_time_train = X_train.index.get_level_values(0).unique().shape[0]
     N_time_test = X_test.index.get_level_values(0).unique().shape[0]
@@ -257,7 +257,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         )
     )
 
-    with open(f"../results/multi-level-results/with_grouped_month_vars/{filename}_SIx_pre_std_swapped_res.pickle", "wb") as f:
+    with open(f"../results/multi-level-results/wgmv_swapped_set/{filename}_SIx_pre_std_swapped_res.pickle", "wb") as f:
         pickle.dump(output, f, protocol=4)
     
 
