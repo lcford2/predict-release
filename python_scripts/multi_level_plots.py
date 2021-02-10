@@ -434,6 +434,43 @@ def plot_time_series(data, args):
     
     plt.show()
 
+def join_test_train(data):
+    y_test = data["data"]["y_test_act"]
+    y_train = data["data"]["y_train_act"]
+    y = y_train.append(y_test)
+    return y.sort_index().unstack()
+
+def plot_acf(data, args):
+    from statsmodels.graphics.tsaplots import plot_acf
+    modeled, actual, groupnames = select_correct_data(data, args)
+    if not args.storage:
+        actual = join_test_train(data)
+    
+    groupnames = groupnames.unstack().values[0, :]
+    if args.res_names:
+        res_names = np.array(args.res_names)
+    else:
+        res_names = modeled.columns
+
+    grid_size = determine_grid_size(res_names.size)
+    if res_names.size > 4:
+        sns.set_context("paper")
+    fig, axes = plt.subplots(*grid_size)
+    axes = axes.flatten()
+    lags = 30
+    for ax, col in zip(axes, res_names):
+        output = plot_acf(actual[col], ax=ax, lags=lags, use_vlines=True, 
+                          title=col, zero=False, alpha=None)
+        ax.set_xticks(range(0,lags+2,5))
+    
+    left_over = axes.size - res_names.size
+    if left_over > 0:
+        for ax in axes[-left_over:]:
+            ax.set_axis_off()
+    
+    plt.show()
+    
+
 def plot_monthly_metrics(data, args):
     modeled, actual, groupnames = select_correct_data(data, args)
     groupnames = groupnames.unstack().values[0, :]
