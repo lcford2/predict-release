@@ -70,8 +70,27 @@ def read_tva_data():
         df[column] = [fractions.loc[i, column] for i in df.index.get_level_values(1)]
 
     # create a time series of previous days storage for all reservoirs
+    
     df["Storage_pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(1)
     df["Release_pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(1)
+
+    # df["Storage_2pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(2)
+    # df["Release_2pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(2)
+
+    # df["Storage_3pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(3)
+    # df["Release_3pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(3)
+
+    # df["Storage_4pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(4)
+    # df["Release_4pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(4)
+
+    # df["Storage_5pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(5)
+    # df["Release_5pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(5)
+
+    # df["Storage_6pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(6)
+    # df["Release_6pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(6)
+
+    # df["Storage_7pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(7)
+    # df["Release_7pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(7)
 
     #* Information about data record
     # There is missing data from 1982 to 1990-10-16

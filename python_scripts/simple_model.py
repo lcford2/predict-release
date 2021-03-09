@@ -117,16 +117,22 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     df["Release_Inflow_interaction"] = df["Release_pre"].mul(
         df["Net Inflow"])
 
+    # extra_lag_terms = np.ravel([[f"Storage_{i}pre", f"Release_{i}pre"] for i in range(2,8)]).tolist()
+    extra_lag_terms = [f"Release_{i}pre" for i in range(2,8)]
     if scaler == "mine":
         scaled_df, means, std = scale_multi_level_df(df)
         X_scaled = scaled_df.loc[:, ["Storage_pre", "Net Inflow", "Release_pre",
                                      "Storage_Inflow_interaction",
                                      "Storage_Release_interaction",
-                                     "Release_Inflow_interaction"]]
+                                     "Release_Inflow_interaction"] + 
+                                     extra_lag_terms
+                                ]
         y_scaled = scaled_df.loc[:, "Release"]
     else:
         scaler = StandardScaler()
-        X = df.loc[:,["Storage_pre", "Net Inflow", "Release_pre"]]
+        X = df.loc[:,["Storage_pre", "Net Inflow", "Release_pre"] + 
+                  extra_lag_terms
+                  ]
         y = df.loc[:,"Release"]
 
         x_scaler = scaler.fit(X)
@@ -169,11 +175,11 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     for key, array in month_arrays.items():
         X_scaled[key] = array
     
-    X_train = X_scaled.loc[X_scaled.index.get_level_values(0).year >= 2010]
-    X_test = X_scaled.loc[X_scaled.index.get_level_values(0).year < 2010]
+    X_test = X_scaled.loc[X_scaled.index.get_level_values(0).year >= 2010]
+    X_train = X_scaled.loc[X_scaled.index.get_level_values(0).year < 2010]
 
-    y_train = y_scaled.loc[y_scaled.index.get_level_values(0).year >= 2010]
-    y_test = y_scaled.loc[y_scaled.index.get_level_values(0).year < 2010]
+    y_test = y_scaled.loc[y_scaled.index.get_level_values(0).year >= 2010]
+    y_train = y_scaled.loc[y_scaled.index.get_level_values(0).year < 2010]
     
     N_time_train = X_train.index.get_level_values(0).unique().shape[0]
     N_time_test = X_test.index.get_level_values(0).unique().shape[0]
@@ -188,7 +194,9 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     # Storage Inflow interaction seems to matter for ComboFlow-StorageDam reservoirs.
     interaction_terms = ["Storage_Inflow_interaction"]
     
-    exog_terms = ["Storage_pre", "Net Inflow", "Release_pre"]
+    exog_terms = [
+        "Storage_pre", "Net Inflow", "Release_pre", 
+        ] + extra_lag_terms
 
     exog_re = exog[exog_terms + interaction_terms + calendar.month_abbr[1:]]
 
@@ -257,7 +265,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         )
     )
 
-    with open(f"../results/multi-level-results/wgmv_swapped_set/{filename}_SIx_pre_std_swapped_res.pickle", "wb") as f:
+    with open(f"../results/multi-level-results/wgmv_extended/{filename}_SIx_pre_std_swapped_res_lag1-7.pickle", "wb") as f:
         pickle.dump(output, f, protocol=4)
     
 
@@ -311,6 +319,7 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col
     output_df.loc[idx[start_date, :],
                   "Release_pre"] = exog_re.loc[idx[start_date, :], "Release_pre"]
     output_df.loc[idx[start_date, :], "Storage_pre"] = exog_re.loc[idx[start_date, :], "Storage_pre"]
+    output_df.loc[:, "Storage_pre"] = exog_re.loc[:, "Storage_pre"]
 
     for col in output_df.columns:
         if col not in ["Release_pre", "Storage_pre", "Storage_act", "Release_act"]:
@@ -339,16 +348,28 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col
         
         storage_act = stor_pre_act + inflow_act - rel_act
         storage = (storage_act-means["Storage"])/std["Storage"]
+        # if date != end_date:
+        #     storage = output_df.loc[idx[date+timedelta(days=1),:],"Storage_pre"]
         
         output_df.loc[idx[date,:],"Release"] = rel.values
         output_df.loc[idx[date,:],"Storage"] = storage.values
         output_df.loc[idx[date,:],"Release_act"] = rel_act.values
         output_df.loc[idx[date,:],"Storage_act"] = storage_act.values
+        tmrw = date+timedelta(days=1)
+        month_len = calendar.monthrange(date.year, date.month)[1]
         if date != end_date:
-            output_df.loc[idx[date+timedelta(days=1),:],"Release_pre"] = rel.values
-            output_df.loc[idx[date+timedelta(days=1),:],"Storage_pre"] = storage.values
+            # if date.timetuple().tm_yday in (365, 366):
+            # if date.weekday() == 6:# or date.day == int(month_len//2):
+            output_df.loc[idx[tmrw,:],"Release_pre"] = exog_re.loc[idx[tmrw,:], "Release_pre"]
+                # output_df.loc[idx[tmrw,:],"Storage_pre"] = exog_re.loc[idx[tmrw,:], "Storage_pre"]
+            # else:
+                # output_df.loc[idx[tmrw,:],"Release_pre"] = rel.values
+            output_df.loc[idx[tmrw,:],"Storage_pre"] = storage.values
 
-    output_df = output_df.drop(calendar.month_abbr[1:], axis=1)
+    try:
+        output_df = output_df.drop(calendar.month_abbr[1:], axis=1)
+    except KeyError as e:
+        pass
     return output_df
 
 def change_group_names(df, groups, names):
