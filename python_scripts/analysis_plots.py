@@ -89,8 +89,8 @@ def parse_args(plot_functions):
                         help="Provide the name of the desired plot. If none is provided an IPython interpreter will be opened.")
     parser.add_argument("-g", "--group_labels", action="store_true", dest="group_labels",
                         help="Flag to include group labels on plots. Can act differently on different plots.")
-    parser.add_argument("--res_names", dest="res_names", nargs="+", default=None, 
-                        help="Specify reservoir names to only plot those reservoirs for certian plots.")
+    parser.add_argument("--res_names", dest="res_names", default=None,
+                        help="Specify file containing reservoir names to only plot those reservoirs for certian plots.")
     parser.add_argument("-F", "--forecasted", dest="forecasted", action="store_true", 
                         help="Use forecasted data instead of simple prediction.")
     parser.add_argument("-A", "--all_res", dest="all_res", action="store_true",
@@ -107,6 +107,10 @@ def parse_args(plot_functions):
                         help="Flag to plot storages instead of release. Only works with the --forecasted (-F) flag.")
     parser.add_argument("--error", action="store_true",
                         help="Plot error instead of actual values for time series plot.")
+    parser.add_argument("-X", default="Storage",
+                        help="Column plotted on X axis in versus plots.")
+    parser.add_argument("-Y", default="Net Inflow",
+                        help="Column plotted on Y axis in versus plots.")
     args = parser.parse_args()
     return args
 
@@ -120,11 +124,12 @@ def query_file(args):
     :return: Path to user specified file
     :rtype: pathlib.Path
     """
-    model_path = args.model_path
+    results_dir = pathlib.Path("../results")
+    model_path = results_dir/args.model_path    
     if args.all_res:
-        files = glob.glob((multi_level_dir/model_path/"*all_res.pickle").as_posix())
+        files = glob.glob((model_path/"*all_res.pickle").as_posix())
     else:
-        files = [i for i in glob.glob((multi_level_dir/model_path/"*.pickle").as_posix()) if "all_res" not in i]
+        files = [i for i in glob.glob((model_path/"*.pickle").as_posix()) if "all_res" not in i]
     if len(files) == 1:
         print(f"\nUsing data file: {files[0]}\n")
         file = pathlib.Path(files[0])
@@ -151,6 +156,11 @@ def find_plot_functions(namespace):
     plot_functions = filter(lambda x: x[:4] == "plot", namespace)
     plot_name_dict = {"_".join(i.split("_")[1:]):i for i in plot_functions}
     return plot_name_dict
+
+def get_res_names(file):
+    with open(file, "r") as f:
+        res_names = list(map(lambda x: x.strip("\n\r"), f.readlines()))
+    return np.array(res_names)
 
 def select_correct_data(data, args):
     """Pulls out modeled and actual time series as well as the groupnames from the
@@ -228,7 +238,10 @@ def plot_score_bars(data, args):
              'FtLoudoun', 'Wilson', 'Nikajack', 'Chikamauga', 'Guntersville',
              'Wheeler', 'Pickwick', 'BlueRidge', 'TimsFord', 'Watauga', 'Nottely',
              'Chatuge', 'SHolston', 'Norris', 'Fontana']
+
+    order = [i for i in order if i in scores.index]
     scores = scores.loc[order]
+
     # groupmeans = scores.groupby("GroupName").mean()
     fig, ax = plt.subplots(1,1)
     scores["Score"].plot.bar(ax=ax, width=0.8)
@@ -261,7 +274,6 @@ def plot_score_bars(data, args):
         wspace=0.2
     )
     plt.show()
-
 
 def plot_std(data, args):
     modeled, actual, groupnames = select_correct_data(data, args)
@@ -341,7 +353,49 @@ def plot_std(data, args):
     plt.subplots_adjust(**pos)
     plt.show()
 
+def plot_versus(data, args):
+    from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+    modeled, actual, groupnames = select_correct_data(data, args)
+    groupnames = groupnames.unstack().values[0, :]
+    if args.res_names:
+        res_names = get_res_names(args.res_names)
+    else:
+        res_names = modeled.columns
 
+    grid_size = determine_grid_size(res_names.size)
+    if res_names.size > 4:
+        sns.set_context("paper")
+    fig, axes = plt.subplots(*grid_size)
+    axes = axes.flatten()
+    
+    observed = read_tva_data()
+    # X = observed[args.X].unstack()
+    # Y = observed[args.Y].unstack()
+    X = observed["Net Inflow"].unstack() + observed["Storage"].unstack()
+    Y = observed["Release"].unstack()
+    for ax, col in zip(axes, res_names):
+        # ax.scatter(X[col], Y[col])
+        plot_pacf(Y[col], lags=30, ax=ax)
+        ax.set_title(col)
+
+    # text_size = 22
+    # fig.text(0.5, 0.02, "Net Inflow + Storage", ha="center", size=text_size)
+    # fig.text(0.02, 0.5, "Release", va="center", rotation=90, size=text_size)
+
+    left_over = axes.size - res_names.size
+    if left_over > 0:
+        for ax in axes[-left_over:]:
+            ax.set_axis_off()
+
+    plt.subplots_adjust(
+        top=0.966,
+        bottom=0.102,
+        left=0.058,
+        right=0.99,
+        hspace=0.452,
+        wspace=0.247
+    )
+    plt.show()
 
 def determine_grid_size(N):
     if N <= 3:
@@ -355,16 +409,16 @@ def determine_grid_size(N):
 
 def plot_month_coefs(data, args):
     # modeled, actual, groupnames = select_correct_data(data, args)
+    
     re_coefs = pd.DataFrame(data["re_coefs"])
     try:
         re_coefs = re_coefs[calendar.month_abbr[1:]]
     except KeyError as e:
         re_coefs = re_coefs.T[calendar.month_abbr[1:]]
-    else:
-        print("No month coefficients to plot.")
-        return
+    
 
     format_dict = {
+        "const":{"marker":">", "label":"Intercept"},
         "Storage_pre":{"marker":"o", "label":"Prev. St."},
         "Release_pre":{"marker":"s", "label":"Prev. Rel."},
         "Net Inflow":{"marker":"X", "label":"Inflow"},
@@ -376,7 +430,9 @@ def plot_month_coefs(data, args):
         "ComboFlow-RunOfRiver": {"marker": "o", "label": "Prev. St."},
         "ComboFlow-StorageDam": {"marker": "s", "label": "Prev. Rel."},
         "NaturalFlow-StorageDam": {"marker": "X", "label": "Inflow"},
+        "Storage_Inflow_interaction": {"marker":"d", "label": r"St.$\times$Inf."}
     }
+
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
     
@@ -394,12 +450,11 @@ def plot_month_coefs(data, args):
         ax.set_ylim((-0.4, ylim[1]))
     plt.show()
 
-
 def plot_time_series(data, args):
     modeled, actual, groupnames = select_correct_data(data, args)
     groupnames = groupnames.unstack().values[0, :]
     if args.res_names:
-        res_names = np.array(args.res_names)
+        res_names = get_res_names(args.res_names)
     else:
         res_names = modeled.columns
 
@@ -420,7 +475,6 @@ def plot_time_series(data, args):
         ax.set_title(col)
     handles, labels = axes[0].get_legend_handles_labels()
     if res_names.size <= 6:
-        handles, labels = axes[0].get_legend_handles_labels()
         labels = ["Observed", "Modeled"]
         axes[0].legend(handles, labels, loc="best")
     else:
@@ -432,6 +486,19 @@ def plot_time_series(data, args):
         for ax in axes[-left_over:]:
             ax.set_axis_off()
     
+    if args.storage:
+        label = "Storage [$ft^3$]"
+    else:
+        label = "Release [$ft^3/day$]"
+    fig.text(0.02, 0.5, label, va="center", rotation=90, fontsize=20)
+    plt.subplots_adjust(
+        top=0.966,
+        bottom=0.04,
+        left=0.07,
+        right=0.985,
+        hspace=0.22,
+        wspace=0.125
+    )
     plt.show()
 
 def join_test_train(data):
@@ -441,14 +508,15 @@ def join_test_train(data):
     return y.sort_index().unstack()
 
 def plot_acf(data, args):
-    from statsmodels.graphics.tsaplots import plot_acf
+    from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+    sns.set_context("talk")
     modeled, actual, groupnames = select_correct_data(data, args)
     if not args.storage:
         actual = join_test_train(data)
     
     groupnames = groupnames.unstack().values[0, :]
     if args.res_names:
-        res_names = np.array(args.res_names)
+        res_names = get_res_names(args.res_names)
     else:
         res_names = modeled.columns
 
@@ -460,9 +528,21 @@ def plot_acf(data, args):
     lags = 30
     for ax, col in zip(axes, res_names):
         output = plot_acf(actual[col], ax=ax, lags=lags, use_vlines=True, 
-                          title=col, zero=False, alpha=None)
-        ax.set_xticks(range(0,lags+2,5))
-    
+                          title=col, zero=False, alpha=None, label="ACF")
+        output = plot_pacf(actual[col], ax=ax, lags=lags, use_vlines=True, 
+                          title=col, zero=False, alpha=None, label="PACF")
+        ax.set_xticks(range(0,lags+2,2))
+        
+        # ax.set_ylim(0,1)
+    handles, labels = axes[0].get_legend_handles_labels()
+    handles = [handles[1], handles[3]]
+    labels = [labels[1], labels[3]]
+    if res_names.size <= 6:
+        labels = ["ACF", "PACF"]
+        axes[0].legend(handles, labels, loc="best")
+    else:
+        axes[-1].legend(handles, labels, loc="center", prop={"size":18})
+        axes[-1].set_axis_off()
     left_over = axes.size - res_names.size
     if left_over > 0:
         for ax in axes[-left_over:]:
@@ -477,6 +557,7 @@ def plot_monthly_metrics(data, args):
     columns = [i for i in calendar.month_abbr[1:]] + ["GroupName"]
     metrics = pd.DataFrame(index=modeled.columns, columns=columns, dtype="float64")
     metric_calc = metric_linker(args.metric)
+
     for i, index in enumerate(metrics.index):
         for j, month in enumerate(columns[:-1]):
             mod = modeled.loc[modeled.index.month == j + 1, index]
@@ -491,6 +572,7 @@ def plot_monthly_metrics(data, args):
         label = f"% {args.metric.upper()}"
     else:
         label = args.metric.upper()
+
     # metrics = metrics.sort_values(by=["GroupName"])
     grouped = metrics.groupby("GroupName").mean()
     N = grouped.index.size
@@ -499,10 +581,14 @@ def plot_monthly_metrics(data, args):
     grid_size = determine_grid_size(N)
 
     fig, axes = plt.subplots(*grid_size)
-    axes = axes.flatten()
+    
+    if isinstance(axes, np.ndarray):
+        axes = axes.flatten()
+    else:
+        axes = [axes]
     for ax, group in zip(axes, grouped.index):
         grouped.loc[group].plot.bar(ax=ax, width=0.8)
-        ax.set_title(group)
+        # ax.set_title(group)
         ax.set_ylabel(label)
     fig.align_ylabels()
     hspace = 0.3
