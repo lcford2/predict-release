@@ -125,13 +125,24 @@ def scaled_tv_slope(df, groups, filter_groups=None, scaler="mine"):
 
     mexog = exog[["const"]]
 
-    free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
-                                         cov_re=np.eye(exog_re.shape[1]))
+    result_params = {}
 
-    md = sm.MixedLM(y_train, mexog, groups=groups, exog_re=exog_re)
-    fit_time_1 = timer()
-    mdf = md.fit(free=free)
-    fit_time_2 = timer()
+    for res in X_train.index.get_level_values(1).unique():
+        mexog_res = mexog[mexog.index.get_level_values(1) == res]
+        exog_re_res = exog_re[exog_re.index.get_level_values(1) == res]    
+        free = MixedLMParams.from_components(fe_params=np.ones(mexog_res.shape[1]),
+                                         cov_re=np.eye(exog_re_res.shape[1]))
+        y_train_res = y_train[y_train.index.get_level_values(1) == res]
+        groups_res = groups[groups.index.get_level_values(1) == res]
+        md = sm.MixedLM(y_train_res, mexog_res, groups=groups_res, exog_re=exog_re_res)
+        fit_time_1 = timer()
+        mdf = md.fit(free=free)
+        fit_time_2 = timer()
+        fe_coefs = mdf.params
+        re_coefs = mdf.random_effects
+        result_params[res] = {"fe":fe_coefs,"re":re_coefs}
+    
+    II()
 
     trans_time_1 = timer()
     fitted = (mdf.fittedvalues.unstack() * std["Release"] + means["Release"]).stack()

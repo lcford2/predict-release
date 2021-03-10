@@ -105,7 +105,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     if filter_groups:
         filename += "_filter"
         for key, value in filter_groups.items():
-            df = df.loc[df[key] == inverse_groupnames[key][value]]
+            df = df.loc[df[key] == inverse_groupnames[key][value],:]
             # y_scaled = y_scaled.loc[X_scaled.index]
             filename += f"_{value}"
     
@@ -202,6 +202,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
     mexog = exog[["const"]]
 
+    
     free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
                                          cov_re=np.eye(exog_re.shape[1]))
     md = sm.MixedLM(y_train, mexog, groups=groups, exog_re=exog_re)
@@ -430,7 +431,8 @@ def forecast_mixedLM_other_res(groups, unseen=True):
 if __name__ == "__main__":
     df = read_tva_data()
     # forecast_mixedLM_other_res(groups=["NaturalOnly", "RunOfRiver"])
-    scaled_MixedEffects(df, groups = ["NaturalOnly","RunOfRiver"])
+    scaled_MixedEffects(df, groups = ["NaturalOnly","RunOfRiver"],
+                            filter_groups={"NaturalOnly": "NaturalFlow"})
                         # filter_groups={"NaturalOnly":"ComboFlow"})
     # Recorded Forecast Scores:
     # NaturalOnly, PrimaryType :             0.9643

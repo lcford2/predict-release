@@ -18,6 +18,7 @@ import pathlib
 import glob
 import argparse
 import calendar
+from datetime import timedelta
 # import my helper functions
 from helper_functions import read_tva_data
 
@@ -53,6 +54,7 @@ def load_results(args):
         data = pickle.load(f)
     return data
 
+
 def combine_filtered_data(data_files):
     data_dicts = []
     for file in data_files:
@@ -69,6 +71,7 @@ def combine_filtered_data(data_files):
             data[key] = data[key].append(value).sort_index()
     return {"re_coefs":re_coefs, "fe_coefs":fe_coefs, "data":data}
 
+
 def parse_args(plot_functions):
     """Argument parsing function for the CLI
 
@@ -83,7 +86,7 @@ def parse_args(plot_functions):
     parser.add_argument("-f", "--file", dest="results_pickle", default=None,
                         help="File name for results pickle. Expected to be in ../results/mixed-level-results"
                         )
-    parser.add_argument("--model_path", dest="model_path", default="with_month_vars", 
+    parser.add_argument("--model_path", dest="model_path", default="multi-level-results/with_month_vars", 
                         help="Specify which directory to look for results pickles in.")
     parser.add_argument("-p", "--plot_func", choices=plot_functions.keys(), default=None, dest="plot_func",
                         help="Provide the name of the desired plot. If none is provided an IPython interpreter will be opened.")
@@ -101,7 +104,7 @@ def parse_args(plot_functions):
                         help="Flag for computing relative error metrics instead of absolute.")
     parser.add_argument("--filtered", action="store_true",
                         help="Specify if you want to plot filtered results. e.g. Model runs that only consider natural or combo flows.")
-    parser.add_argument("--subplot_type", default="scatter", choices=["scatter", "ratio_bars", "sep_bars"],
+    parser.add_argument("--subplot_type", default="scatter", choices=["scatter", "ratio_bars", "sep_bars", "box", "line"],
                         help="Specify what sort of plot you want. This works within certain plotting functions for further control.")
     parser.add_argument("--storage", action="store_true", 
                         help="Flag to plot storages instead of release. Only works with the --forecasted (-F) flag.")
@@ -111,8 +114,11 @@ def parse_args(plot_functions):
                         help="Column plotted on X axis in versus plots.")
     parser.add_argument("-Y", default="Net Inflow",
                         help="Column plotted on Y axis in versus plots.")
+    parser.add_argument("-D", "--days", dest="days", action="store", default=None, type=int,
+                        help="Specify the number of days past the initial date to plot results for.")
     args = parser.parse_args()
     return args
+
 
 def query_file(args):
     """Used to ask the user what results file they want to use for plotting
@@ -145,6 +151,7 @@ def query_file(args):
             file = pathlib.Path(files[int(selection)])
     return file
 
+
 def find_plot_functions(namespace):
     """Parses the namespace for functions that start with "plot"
 
@@ -157,10 +164,12 @@ def find_plot_functions(namespace):
     plot_name_dict = {"_".join(i.split("_")[1:]):i for i in plot_functions}
     return plot_name_dict
 
+
 def get_res_names(file):
     with open(file, "r") as f:
         res_names = list(map(lambda x: x.strip("\n\r"), f.readlines()))
     return np.array(res_names)
+
 
 def select_correct_data(data, args):
     """Pulls out modeled and actual time series as well as the groupnames from the
@@ -197,6 +206,7 @@ def select_correct_data(data, args):
 
     return modeled, actual, groupnames
 
+
 def bias(X, Y):
     """Calculate the bias between X and Y.
     This calculation is setup to provide a postive value for an overestimation,
@@ -211,6 +221,7 @@ def bias(X, Y):
     """
     return np.mean(Y) - np.mean(X)
 
+
 def metric_linker(metric_arg):
     linker = {
         "bias" : bias,
@@ -221,10 +232,18 @@ def metric_linker(metric_arg):
     }
     return linker[metric_arg]
 
+
 def plot_score_bars(data, args):
     modeled, actual, groupnames = select_correct_data(data, args)
     groupnames = groupnames.unstack().values[0, :]
     scores = pd.DataFrame(index=modeled.columns, columns=["Score", "GroupName"], dtype="float64")
+
+    if args.days:
+        enddate = actual.index[0] + timedelta(days=args.days)
+        actual = actual[actual.index < enddate]
+        modeled = modeled[modeled.index < enddate]
+
+
     for i, index in enumerate(scores.index):
         score = r2_score(actual[index], modeled[index])
         scores.loc[index, "Score"] = score
@@ -250,18 +269,6 @@ def plot_score_bars(data, args):
     if getattr(args, "group_labels", None):
         for tick, name in zip(ticks, scores["GroupName"].values.tolist()):
             ax.text(tick, 0.1, name, rotation=90, va="bottom", ha="center")
-    # else:
-    #     groupmeans = scores.groupby("GroupName").mean()
-    #     groups = groupmeans.index.tolist()
-    #     groupmeans = groupmeans.values.flatten()
-    #     groupcount = scores.groupby("GroupName").count().cumsum().values.flatten() / modeled.shape[1]
-    #     last = 0
-    #     modif = 0.4 / modeled.shape[1]
-    #     for i, mean in enumerate(groupmeans):
-    #         ax.axhline(mean, last + modif, groupcount[i]+modif, c="b")
-    #         group = groups[i]
-    #         # ax.text((last+modif + groupcount[i])*modeled.shape[1]/2, mean, group, ha="center", va="bottom")
-    #         last = groupcount[i]
     ax.set_ylabel("NSE")
     # ax.set_ylabel(r"$\sigma_{St.}/\sigma_{In.}$")
     # ax.set_ylim((0.0, 1.0433202579442722))
@@ -274,6 +281,7 @@ def plot_score_bars(data, args):
         wspace=0.2
     )
     plt.show()
+
 
 def plot_std(data, args):
     modeled, actual, groupnames = select_correct_data(data, args)
@@ -353,6 +361,7 @@ def plot_std(data, args):
     plt.subplots_adjust(**pos)
     plt.show()
 
+
 def plot_versus(data, args):
     from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
     modeled, actual, groupnames = select_correct_data(data, args)
@@ -361,6 +370,11 @@ def plot_versus(data, args):
         res_names = get_res_names(args.res_names)
     else:
         res_names = modeled.columns
+
+    if args.days:
+        enddate = actual.index[0] + timedelta(days=args.days)
+        actual = actual[actual.index < enddate]
+        modeled = modeled[modeled.index < enddate]
 
     grid_size = determine_grid_size(res_names.size)
     if res_names.size > 4:
@@ -397,6 +411,7 @@ def plot_versus(data, args):
     )
     plt.show()
 
+
 def determine_grid_size(N):
     if N <= 3:
         return (N,1)
@@ -406,6 +421,7 @@ def determine_grid_size(N):
         poss = poss_1 + poss_2
         min_index = np.argmin([sum(i) for i in poss])
         return poss[min_index]
+
 
 def plot_month_coefs(data, args):
     # modeled, actual, groupnames = select_correct_data(data, args)
@@ -450,13 +466,34 @@ def plot_month_coefs(data, args):
         ax.set_ylim((-0.4, ylim[1]))
     plt.show()
 
+
 def plot_time_series(data, args):
-    modeled, actual, groupnames = select_correct_data(data, args)
-    groupnames = groupnames.unstack().values[0, :]
+    if args.model_path == "ts_results":
+        modkey = "forecasted" if args.forecasted else "fitted"
+        actkey = "test_y" if args.forecasted else "train_y"
+        modeled = pd.DataFrame()
+        actual = pd.DataFrame()
+        for res, data_dict in data.items():
+            if modeled.empty:
+                modeled = pd.DataFrame(data_dict[modkey])
+                actual = pd.DataFrame(data_dict[actkey])
+                modeled = modeled.rename(columns={"predicted_mean":res})
+            else:
+                modeled.loc[:, res] = data_dict[modkey]
+                actual.loc[:, res] = data_dict[actkey]
+    else:
+        modeled, actual, groupnames = select_correct_data(data, args)
+        groupnames = groupnames.unstack().values[0, :]
+    II()
     if args.res_names:
         res_names = get_res_names(args.res_names)
     else:
         res_names = modeled.columns
+
+    if args.days:
+        enddate = actual.index[0] + timedelta(days=args.days)
+        actual = actual[actual.index < enddate]
+        modeled = modeled[modeled.index < enddate]
 
     grid_size = determine_grid_size(res_names.size)
     if res_names.size > 4:
@@ -467,11 +504,18 @@ def plot_time_series(data, args):
     means = actual.mean()
     for ax, col in zip(axes, res_names):
         if error:
-            error_series = (modeled[col] - actual[col]) / means[col]
+            error_series = (modeled[col] - actual[col]) #/ means[col]
             error_series.plot(ax=ax, label="Error")
         else:
             actual[col].plot(ax=ax, label="Observed")
             modeled[col].plot(ax=ax, label="Modeled")
+        score = r2_score(actual[col], modeled[col])
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+        x = 0.8*(xlim[1] - xlim[0]) + xlim[0]
+        y = 0.9*(ylim[1] - ylim[0]) + ylim[0]
+        ax.text(x,y,f"NSE={score:.3f}", ha="center",
+                backgroundcolor="white")
         ax.set_title(col)
     handles, labels = axes[0].get_legend_handles_labels()
     if res_names.size <= 6:
@@ -501,19 +545,72 @@ def plot_time_series(data, args):
     )
     plt.show()
 
+
+def plot_resid_qqplot(data, args):
+    from statsmodels.graphics.gofplots import qqplot
+    modeled, actual, groupnames = select_correct_data(data, args)
+    groupnames = groupnames.unstack().values[0, :]
+    if args.res_names:
+        res_names = get_res_names(args.res_names)
+    else:
+        res_names = modeled.columns
+
+    if args.days:
+        enddate = actual.index[0] + timedelta(days=args.days)
+        actual = actual[actual.index < enddate]
+        modeled = modeled[modeled.index < enddate]
+
+    grid_size = determine_grid_size(res_names.size)
+    if res_names.size > 4:
+        sns.set_context("paper")
+    fig, grid_axes = plt.subplots(*grid_size, sharex=True)
+
+    axes = grid_axes.flatten()
+    error = args.error
+    means = actual.mean()
+    for ax, col in zip(axes, res_names):
+        error_series = (modeled[col] - actual[col]) 
+        qqplot(error_series, line="s", ax=ax)
+        ax.set_title(col)
+
+    left_over = axes.size - res_names.size
+    if left_over > 0:
+        for ax in axes[-left_over:]:
+            ax.set_axis_off()
+
+    for row in range(grid_size[0] - 1):
+        for col in range(grid_size[1]):
+            grid_axes[row, col].set_xlabel("")
+
+    plt.subplots_adjust(
+        top=0.966,
+        bottom=0.04,
+        left=0.07,
+        right=0.985,
+        hspace=0.22,
+        wspace=0.125
+    )
+    plt.show()
+
+
 def join_test_train(data):
     y_test = data["data"]["y_test_act"]
     y_train = data["data"]["y_train_act"]
     y = y_train.append(y_test)
     return y.sort_index().unstack()
 
+
 def plot_acf(data, args):
     from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
     sns.set_context("talk")
     modeled, actual, groupnames = select_correct_data(data, args)
-    if not args.storage:
+    if not args.storage and not args.error:
         actual = join_test_train(data)
-    
+
+    if args.error:
+        modeled = data["data"]["fitted"].unstack()
+        actual = data["data"]["y_train_act"].unstack()
+
     groupnames = groupnames.unstack().values[0, :]
     if args.res_names:
         res_names = get_res_names(args.res_names)
@@ -527,9 +624,13 @@ def plot_acf(data, args):
     axes = axes.flatten()
     lags = 30
     for ax, col in zip(axes, res_names):
-        output = plot_acf(actual[col], ax=ax, lags=lags, use_vlines=True, 
+        if args.error:
+            plot_vec = modeled[col] - actual[col]
+        else:
+            plot_vec = actual[col]
+        output = plot_acf(plot_vec, ax=ax, lags=lags, use_vlines=True, 
                           title=col, zero=False, alpha=None, label="ACF")
-        output = plot_pacf(actual[col], ax=ax, lags=lags, use_vlines=True, 
+        output = plot_pacf(plot_vec, ax=ax, lags=lags, use_vlines=True, 
                           title=col, zero=False, alpha=None, label="PACF")
         ax.set_xticks(range(0,lags+2,2))
         
@@ -718,6 +819,82 @@ def plot_score_map(data, args):
     leg_kwargs = dict(ncol=4, frameon=True, handlelength=1, loc='center', borderpad=1,
                           scatterpoints=1, handletextpad=1, labelspacing=1, title="NSE")
     ax_legend = leg_ax.legend(legend_markers, [f"{i:.2f}" for i in legend_scores], **leg_kwargs)
+    plt.show()
+
+
+def plot_sarimax_params(data, args):
+    param_df = pd.DataFrame()
+    score_df = pd.DataFrame()
+    for res, item in data.items():
+        params = item["params"]
+        if param_df.empty:
+            param_df = pd.DataFrame(params, columns=[res])
+            score_df = pd.DataFrame({res:item["train_score"]}, index=["Train Score"])
+        else:
+            param_df.loc[:,res] = params
+            score_df.loc["Train Score",res] = item["train_score"]
+
+    param_df = param_df.drop("sigma2")
+
+    fig = plt.figure()
+    gs = fig.add_gridspec(ncols=1, nrows=2, height_ratios=[4,1])
+    ax1 = fig.add_subplot(gs[0,0])
+    ax2 = fig.add_subplot(gs[1,0])
+
+    sns.boxplot(data=param_df.T, ax=ax1, palette=sns.color_palette("hls", 10))
+    xticks = [
+        r"$S_{t-1}$",
+        r"$I_t$",
+        r"$S_t \times I_t$",
+        r"$R_{t-1}$",
+        r"$R_{t-2}$",
+        r"$ma_{t-2}$",
+        r"$ma_{t-2}$",
+        r"$R_{t-7}$",
+        r"$R_{t-14}$",
+        r"$ma_{t-7}$",
+    ]
+    ax1.set_xticklabels(xticks, fontsize=20)
+    ax1.set_ylabel("Fitted Value")
+
+    score_df.T.plot.bar(ax=ax2, color=sns.color_palette("hls", 10))
+    ax2.set_ylim((0, 1))
+    ax2.set_xticklabels(ax2.get_xticklabels(), rotation=30, ha="right")
+    ax2.set_ylabel("Train NSE")
+    ax2.get_legend().remove()
+    plt.show()
+
+
+def plot_model_params(data, args):
+    abbrs = list(calendar.month_abbr)
+    param_df = pd.read_pickle("./all_re_coefs.pickle")
+    param_df = param_df[param_df["Parameter"] != "const"]
+    param_df["Month Num"] = param_df["Month"].apply(lambda x: abbrs.index(x))
+    
+    rows = param_df["Parameter"].unique()
+
+    # sns.set_context("paper")
+    fig, axes = plt.subplots(nrows=rows.size, ncols=1, sharex=True)
+    axes = axes.flatten()
+    labels = [
+        r"$S_{t-1}$",r"$I_t$",r"$R_{t-1}$",r"$S_{t-1} \times I_t$"
+    ]
+    for row, ax, label in zip(rows, axes, labels):
+        plot_df = param_df[param_df["Parameter"] == row]
+        plot_df = plot_df.sort_values(by="Month Num")
+        if args.subplot_type == "box":
+            sns.boxplot(x="Month Num", y="Fitted Value", orient="v",
+                        data=plot_df, ax=ax, palette=sns.color_palette("hls", 12))
+            ax.set_xticks(range(12))
+        else:
+            sns.lineplot(x="Month Num", y="Fitted Value",
+                        data=plot_df, ax=ax, palette=sns.color_palette("hls", 11))
+            ax.set_xticks(range(1,13))
+        ax.set_xlabel("")
+        ax.set_xticklabels(abbrs[1:])
+        ax.set_ylabel(label)
+    
+    fig.align_ylabels()
     plt.show()
 
 if __name__ == "__main__":
