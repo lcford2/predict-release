@@ -3,6 +3,7 @@ import numpy as np
 import statsmodels.api as sm
 from statsmodels.regression.mixed_linear_model import MixedLMParams
 from sklearn.metrics import r2_score
+from scipy.optimize import minimize
 from sklearn.preprocessing import StandardScaler
 import pickle
 from helper_functions import (read_tva_data, scale_multi_level_df, 
@@ -58,7 +59,9 @@ def scaled_tv_slope(df, groups, filter_groups=None, scaler="mine"):
         X_scaled = scaled_df.loc[:, ["Storage_pre", "Net Inflow", "Release_pre",
                                      "Storage_Inflow_interaction",
                                      "Storage_Release_interaction",
-                                     "Release_Inflow_interaction"]
+                                     "Release_Inflow_interaction",
+                                     "Release_roll7", "Release_roll14", "Storage_roll7",
+                                     "Storage_roll14", "Inflow_roll7", "Inflow_roll14"]
                                 ]
         y_scaled = scaled_df.loc[:, "Release"]
     else:
@@ -103,6 +106,10 @@ def scaled_tv_slope(df, groups, filter_groups=None, scaler="mine"):
 
     y_test = y_scaled.loc[y_scaled.index.get_level_values(0).year >= 2010]
     y_train = y_scaled.loc[y_scaled.index.get_level_values(0).year < 2010]
+
+    y_train_act = (y_train.unstack() *
+                   std["Release"] + means["Release"]).stack()
+    y_test_act = (y_test.unstack() * std["Release"] + means["Release"]).stack()
     
     N_time_train = X_train.index.get_level_values(0).unique().shape[0]
     N_time_test = X_test.index.get_level_values(0).unique().shape[0]
@@ -111,45 +118,88 @@ def scaled_tv_slope(df, groups, filter_groups=None, scaler="mine"):
     # Instead of adding a constant, I want to create dummy variable that accounts for season differences
     exog = sm.add_constant(X_train)
     
-    groups = exog["compositegroup"]
+
     # Storage Release Interactions are near Useless
     # Release Inflow Interaction does not provide a lot either
     # Storage Inflow interaction seems to matter for ComboFlow-StorageDam reservoirs.
     interaction_terms = ["Storage_Inflow_interaction"]
     
     exog_terms = [
-        "const", "Storage_pre", "Net Inflow", "Release_pre", 
+        "const", "Storage_pre", "Net Inflow", "Release_pre",
+        "Release_roll7", "Storage_roll7", #"Inflow_roll7",
+        #"Release_roll14", "Storage_roll14", "Inflow_roll14"
         ]
 
-    exog_re = exog[exog_terms + interaction_terms]# + calendar.month_abbr[1:]]
+    exog_re = exog.loc[:,exog_terms + interaction_terms]# + calendar.month_abbr[1:]]
 
     mexog = exog[["const"]]
 
-    result_params = {}
 
-    for res in X_train.index.get_level_values(1).unique():
-        mexog_res = mexog[mexog.index.get_level_values(1) == res]
-        exog_re_res = exog_re[exog_re.index.get_level_values(1) == res]    
-        free = MixedLMParams.from_components(fe_params=np.ones(mexog_res.shape[1]),
-                                         cov_re=np.eye(exog_re_res.shape[1]))
-        y_train_res = y_train[y_train.index.get_level_values(1) == res]
-        groups_res = groups[groups.index.get_level_values(1) == res]
-        md = sm.MixedLM(y_train_res, mexog_res, groups=groups_res, exog_re=exog_re_res)
-        fit_time_1 = timer()
-        mdf = md.fit(free=free)
-        fit_time_2 = timer()
-        fe_coefs = mdf.params
-        re_coefs = mdf.random_effects
-        result_params[res] = {"fe":fe_coefs,"re":re_coefs}
+    def objective_mg(params, y, X, groups):
+        param_num = len(params) // len(groups)
+        N = y.size
+        total_error = 0
+        for i, group in enumerate(groups):
+            g_x = X[X.index.get_level_values(0).month == group]
+            g_y = y[y.index.get_level_values(0).month == group]
+            g_p = params[i * param_num:(i + 1) * param_num]
+            y_prime = np.dot(g_x, g_p)
+            total_error += ((g_y - y_prime)**2).sum()
+        return total_error / N
+
+
+    def calc_model(params, X, groups):
+        param_num = len(params) // len(groups)
+        N = X.shape[0]
+        results = pd.Series(dtype=np.float64)
+        for i, group in enumerate(groups):
+            g_x = X.loc[X["group"] == group, :]
+            g_p = params[i * param_num:(i + 1) * param_num]
+            y_prime = np.dot(g_x.drop("group", axis=1), g_p)
+            y_prime = pd.Series(y_prime, index=g_x.index)
+            # y_prime_act = (y_prime.unstack() *
+            #                std["Release"] + means["Release"]).stack()
+            if results.empty:
+                results = y_prime
+            else:
+                results = results.append(y_prime)
+        return results
+
+    def objective(params, y, X, groups):
+        param_num = len(params) // len(groups)
+        N = y.size
+        total_error = 0
+        for i, group in enumerate(groups):
+            g_x = X.loc[X["group"] == group,:]
+            # g_x = g_x.drop("group", axis=1)
+            g_y = y.loc[g_x.index]
+            g_p = params[i * param_num:(i + 1) * param_num]
+            y_prime = np.dot(g_x.drop("group", axis=1), g_p)
+            y_prime = pd.Series(y_prime, index=g_y.index)
+            y_prime_act = (y_prime.unstack() * std["Release"] + means["Release"]).stack()
+            total_error += ((g_y - y_prime_act)**2).sum()
+        return total_error / N
     
+    groups = exog["compositegroup"].unique()
+    x0 = [1 for i in range(exog_re.shape[1] * len(groups))]
+    exog_re["group"] = exog["compositegroup"]
+    print("Beginning model fitting.")
+    time1 = timer()
+    results = minimize(objective_tg, x0, args=(y_train_act, exog_re, groups))
+    time2 = timer()
+    print(f"Model fit in {time2-time1:.3f} seconds.")
     II()
 
-    trans_time_1 = timer()
+    # free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
+    #                                      cov_re=np.eye(exog_re.shape[1]))
+    # md = sm.MixedLM(y_train, mexog,
+    #                 groups=groups, exog_re=exog_re)
+    # fe_coefs = mdf.params
+    # re_coefs = mdf.random_effects
+    sys.exit()
+
     fitted = (mdf.fittedvalues.unstack() * std["Release"] + means["Release"]).stack()
-    y_train_act = (y_train.unstack() * std["Release"] + means["Release"]).stack()
-    y_test_act = (y_test.unstack() * std["Release"] + means["Release"]).stack()
-    trans_time_2 = timer()
-    
+       
     train_score = r2_score(y_train_act, fitted)
 
     fe_coefs = mdf.params
@@ -199,7 +249,7 @@ def scaled_tv_slope(df, groups, filter_groups=None, scaler="mine"):
         )
     )
 
-    with open(f"../results/tvs_results/upstream/{filename}_SIx_pre_std_swapped_res_daily_help.pickle", "wb") as f:
+    with open(f"../results/tvs_results/upstream/{filename}_SIx_pre_std_swapped_rolling_avg_res_daily_help.pickle", "wb") as f:
         pickle.dump(output, f, protocol=4)
 
 if __name__ == "__main__":

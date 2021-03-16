@@ -3,6 +3,7 @@ import pandas as pd
 import pathlib
 from datetime import datetime
 from timing_function import time_function
+from IPython import embed as II
 
 tva_res = ['BlueRidge', 'Chikamauga', 'Guntersville', 'Hiwassee', 
            'Nikajack', 'Norris', 'Ocoee1', 'Pickwick', 'Wheeler', 
@@ -69,28 +70,43 @@ def read_tva_data():
     for column in fractions.columns:
         df[column] = [fractions.loc[i, column] for i in df.index.get_level_values(1)]
 
+    # get all variables to similar units for Mass Balance
+    df["Storage"] = df["Storage"] * 86400 * 1000  # 1000 second-ft-day to ft3
+    # df["Storage_pre"] = df["Storage_pre"] * \
+        # 86400 * 1000  # 1000 second-ft-day to ft3
+    df["Net Inflow"] = df["Net Inflow"] * 86400  # cfs to ft3/day
+    df["Release"] = df["Release"] * 86400  # cfs to ft3/day
+    # df["Release_pre"] = df["Release_pre"] * 86400  # cfs to ft3/day
+
     # create a time series of previous days storage for all reservoirs
-    
+       
     df["Storage_pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(1)
     df["Release_pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(1)
+    
+    tmp = df.groupby(df.index.get_level_values(1))["Storage_pre"].rolling(7).mean()
+    tmp.index = df.index
+    df["Storage_roll7"] = tmp
 
-    # df["Storage_2pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(2)
-    # df["Release_2pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(2)
+    tmp = df.groupby(df.index.get_level_values(1))["Storage_pre"].rolling(14).mean()
+    tmp.index = df.index
+    df["Storage_roll14"] = tmp
 
-    # df["Storage_3pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(3)
-    # df["Release_3pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(3)
+    tmp = df.groupby(df.index.get_level_values(1))["Release_pre"].rolling(7).mean()
+    tmp.index = df.index
+    df["Release_roll7"] = tmp
 
-    # df["Storage_4pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(4)
-    # df["Release_4pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(4)
+    tmp = df.groupby(df.index.get_level_values(1))["Release_pre"].rolling(14).mean()
+    tmp.index = df.index
+    df["Release_roll14"] = tmp
 
-    # df["Storage_5pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(5)
-    # df["Release_5pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(5)
+    tmp = df.groupby(df.index.get_level_values(1))["Net Inflow"].rolling(7).mean()
+    tmp.index = df.index
+    df["Inflow_roll7"] = tmp
 
-    # df["Storage_6pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(6)
-    # df["Release_6pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(6)
+    tmp = df.groupby(df.index.get_level_values(1))["Net Inflow"].rolling(14).mean()
+    tmp.index = df.index
+    df["Inflow_roll14"] = tmp
 
-    # df["Storage_7pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(7)
-    # df["Release_7pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(7)
 
     #* Information about data record
     # There is missing data from 1982 to 1990-10-16
@@ -102,13 +118,6 @@ def read_tva_data():
     # trim data frame
     df = df[df.index.get_level_values(0) >= start_date]
 
-    # get all variables to similar units for Mass Balance
-    df["Storage"] = df["Storage"] * 86400 * 1000  # 1000 second-ft-day to ft3
-    df["Storage_pre"] = df["Storage_pre"] * \
-        86400 * 1000  # 1000 second-ft-day to ft3
-    df["Net Inflow"] = df["Net Inflow"] * 86400  # cfs to ft3/day
-    df["Release"] = df["Release"] * 86400  # cfs to ft3/day
-    df["Release_pre"] = df["Release_pre"] * 86400  # cfs to ft3/day
     return df
 
 def read_all_res_data():

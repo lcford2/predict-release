@@ -118,14 +118,15 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         df["Net Inflow"])
 
     # extra_lag_terms = np.ravel([[f"Storage_{i}pre", f"Release_{i}pre"] for i in range(2,8)]).tolist()
-    extra_lag_terms = [f"Release_{i}pre" for i in range(2,8)]
+    # extra_lag_terms = [f"Release_{i}pre" for i in range(2,8)]
     if scaler == "mine":
         scaled_df, means, std = scale_multi_level_df(df)
         X_scaled = scaled_df.loc[:, ["Storage_pre", "Net Inflow", "Release_pre",
                                      "Storage_Inflow_interaction",
                                      "Storage_Release_interaction",
-                                     "Release_Inflow_interaction"] + 
-                                     extra_lag_terms
+                                     "Release_Inflow_interaction",
+                                     "Release_roll7", "Release_roll14", "Storage_roll7",
+                                     "Storage_roll14", "Inflow_roll7", "Inflow_roll14"] 
                                 ]
         y_scaled = scaled_df.loc[:, "Release"]
     else:
@@ -194,9 +195,16 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     # Storage Inflow interaction seems to matter for ComboFlow-StorageDam reservoirs.
     interaction_terms = ["Storage_Inflow_interaction"]
     
+    # exog_terms = [
+    #     "Storage_pre", "Net Inflow", "Release_pre", 
+    #     ] + extra_lag_terms
+
     exog_terms = [
-        "Storage_pre", "Net Inflow", "Release_pre", 
-        ] + extra_lag_terms
+        "const", "Net Inflow",  # "Storage_pre", "Net Inflow", "Release_pre",
+        #"Storage_roll7"
+        "Release_roll7", "Storage_roll7",  # "Inflow_roll7",
+        #"Release_roll14", "Storage_roll14", "Inflow_roll14"
+    ]
 
     exog_re = exog[exog_terms + interaction_terms + calendar.month_abbr[1:]]
 
