@@ -2,6 +2,7 @@
 import os # i need OS here so I can add PROJ_LIB to path for Basemap
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as GS
+import matplotlib.image as mpimg
 os.environ["PROJ_LIB"] = r"C:\\Users\\lcford2\AppData\\Local\\Continuum\\anaconda3\\envs\\sry-env\\Library\\share"
 from mpl_toolkits.basemap import Basemap
 import seaborn as sns
@@ -30,6 +31,25 @@ sns.set_context("talk")
 results_dir = pathlib.Path("../results")
 multi_level_dir = results_dir / "multi-level-results"
 GIS_DIR = pathlib.Path("G:/My Drive/ms_yr_1/GIS")
+
+format_dict = {
+    "const": {"marker": ">", "label": "Intercept"},
+    "Storage_pre": {"marker": "o", "label": r"$S_{t-1}$"},
+    "Release_pre": {"marker": "s", "label": r"$R_{t-1}$"},
+    "Net Inflow": {"marker": "X", "label": r"$I_{t}$"},
+    "NaturalOnly": {"marker": "^", "label": "Inflow Type"},
+    "RunOfRiver": {"marker": "d", "label": "Storage Type"},
+    "Fraction_Storage": {"marker": "o", "label": "St. Contrib."},
+    "Fraction_Release": {"marker": "s", "label": "Rel. Contrib."},
+    "Fraction_Net Inflow": {"marker": "X", "label": "Inf. Contrib."},
+    "ComboFlow-RunOfRiver": {"marker": "o", "label": "Prev. St."},
+    "ComboFlow-StorageDam": {"marker": "s", "label": "Prev. Rel."},
+    "NaturalFlow-StorageDam": {"marker": "X", "label": "Inflow"},
+    "Storage_Inflow_interaction": {"marker": "d", "label": r"$S_{t-1} \times I_t$"},
+    "Storage_roll7": {"marker": "o", "label": r"$\bar{S}_7$"},
+    "Release_roll7": {"marker": "s", "label": r"$\bar{R}_7$"},
+    "Inflow_roll7": {"marker": "X", "label": r"$\bar{I}_7$"},
+}
 
 def load_results(args):
     """Loads pickled results from modeled runs
@@ -198,11 +218,17 @@ def select_correct_data(data, args):
                 actual = df["Storage"].loc[modeled.index].unstack()
             else:
                 actual = data["data"]["y_test_act"].unstack()
-            groupnames = data["data"]["X_test"]["compositegroup"]
+            if args.model_path.split("\\")[0] == "treed_ml_model":
+                groupnames = data["data"]["groups"]
+            else:
+                groupnames = data["data"]["X_test"]["compositegroup"]
     else:
         modeled = data["data"]["predicted_act"].unstack()
         actual = data["data"]["y_test_act"].unstack()
-        groupnames = data["data"]["X_test"]["compositegroup"]
+        if args.model_path.split("\\")[0] == "treed_ml_model":
+            groupnames = data["data"]["groups"]
+        else:
+            groupnames = data["data"]["X_test"]["compositegroup"]
 
     return modeled, actual, groupnames
 
@@ -381,20 +407,10 @@ def plot_versus(data, args):
         sns.set_context("paper")
     fig, axes = plt.subplots(*grid_size)
     axes = axes.flatten()
-    
-    observed = read_tva_data()
-    # X = observed[args.X].unstack()
-    # Y = observed[args.Y].unstack()
-    X = observed["Net Inflow"].unstack() + observed["Storage"].unstack()
-    Y = observed["Release"].unstack()
-    for ax, col in zip(axes, res_names):
-        # ax.scatter(X[col], Y[col])
-        plot_pacf(Y[col], lags=30, ax=ax)
-        ax.set_title(col)
 
-    # text_size = 22
-    # fig.text(0.5, 0.02, "Net Inflow + Storage", ha="center", size=text_size)
-    # fig.text(0.02, 0.5, "Release", va="center", rotation=90, size=text_size)
+    for ax, col in zip(axes, res_names):
+        ax.scatter(actual[col], modeled[col])
+        ax.set_title(col)
 
     left_over = axes.size - res_names.size
     if left_over > 0:
@@ -432,24 +448,6 @@ def plot_month_coefs(data, args):
     except KeyError as e:
         re_coefs = re_coefs.T[calendar.month_abbr[1:]]
     
-
-    format_dict = {
-        "const":{"marker":">", "label":"Intercept"},
-        "Storage_pre":{"marker":"o", "label":"Prev. St."},
-        "Release_pre":{"marker":"s", "label":"Prev. Rel."},
-        "Net Inflow":{"marker":"X", "label":"Inflow"},
-        "NaturalOnly":{"marker":"^", "label":"Inflow Type"},
-        "RunOfRiver":{"marker":"d", "label":"Storage Type"},
-        "Fraction_Storage":{"marker":"o", "label":"St. Contrib."},
-        "Fraction_Release":{"marker":"s", "label":"Rel. Contrib."},
-        "Fraction_Net Inflow":{"marker":"X", "label":"Inf. Contrib."},
-        "ComboFlow-RunOfRiver": {"marker": "o", "label": "Prev. St."},
-        "ComboFlow-StorageDam": {"marker": "s", "label": "Prev. Rel."},
-        "NaturalFlow-StorageDam": {"marker": "X", "label": "Inflow"},
-        "Storage_Inflow_interaction": {"marker":"d", "label": r"St.$\times$Inf."}
-    }
-
-
     fig, ax = plt.subplots(nrows=1, ncols=1)
     
     x = range(1,13)
@@ -466,6 +464,67 @@ def plot_month_coefs(data, args):
         ax.set_ylim((-0.4, ylim[1]))
     plt.show()
 
+
+def plot_tree_ml_coefs(data, args):
+    re_coefs = pd.DataFrame(data["re_coefs"])
+    re_coefs = re_coefs.rename(
+        columns={col:i+1 for i, col in enumerate(re_coefs.columns)}
+    )
+
+    # fig, ax = plt.subplots(nrows=1, ncols=1)
+    fig = plt.figure()
+    spec = GS.GridSpec(ncols=1, nrows=2, height_ratios=[20, 10])
+    tree_ax = fig.add_subplot(spec[0])
+    ax = fig.add_subplot(spec[1])
+    tree_ax.axis("off")
+    img = mpimg.imread(f"../results/{args.model_path}/tree.png")
+    tree_ax.imshow(img)
+
+    re_coefs.T.plot.bar(ax=ax)
+    x = re_coefs.columns
+    # for key in re_coefs.index:
+    #     formats = format_dict[key]
+    #     y = re_coefs.loc[key]
+    #     ax.plot(x, y, **formats)
+    
+    ax.set_xticklabels(x, rotation=0)
+    ax.set_ylabel("Fitted Coefficients")
+    ax.set_xlabel("Final Node")
+    handles, labels = ax.get_legend_handles_labels()
+    labels = [format_dict[key]["label"] for key in labels]
+    ax.legend(handles, labels, loc="lower right", ncol=len(x))
+    ylim = ax.get_ylim()
+    if ylim[0] > -0.4:
+        ax.set_ylim((-0.4, ylim[1]))
+    plt.show()
+
+def plot_tree_ml_groups(data, args):
+    modeled, actual, groupnames = select_correct_data(data, args)
+    g_labels = groupnames.unique()
+    g_labels.sort()
+    g_lab_mask = {j: i + 1 for i, j in enumerate(g_labels)}
+    groups_masked = groupnames.apply(g_lab_mask.get)
+    groups_masked = groups_masked.unstack()
+    groups_masked = groups_masked.melt(
+        ignore_index=False, var_name="Reservoir", value_name="Final Tree Node")
+    groups_masked["Month"] = groups_masked.index.month
+
+    fig = plt.figure()
+    spec = GS.GridSpec(ncols=1, nrows=2, height_ratios=[20, 12])
+    tree_ax = fig.add_subplot(spec[0])
+    ax = fig.add_subplot(spec[1])
+    tree_ax.axis("off")
+    img = mpimg.imread(f"../results/{args.model_path}/tree.png")
+    tree_ax.imshow(img)
+
+    if args.X not in ("Month", "Reservoir"):
+        x = "Month"
+    else:
+        x = args.X
+
+    sns.boxplot(x=x, y="Final Tree Node", data=groups_masked, ax=ax)
+    plt.ylabel("Final Tree Node")
+    plt.show()
 
 def plot_time_series(data, args):
     if args.model_path == "ts_results":
@@ -484,7 +543,7 @@ def plot_time_series(data, args):
     else:
         modeled, actual, groupnames = select_correct_data(data, args)
         groupnames = groupnames.unstack().values[0, :]
-    II()
+
     if args.res_names:
         res_names = get_res_names(args.res_names)
     else:
@@ -582,6 +641,7 @@ def plot_resid_qqplot(data, args):
         for col in range(grid_size[1]):
             grid_axes[row, col].set_xlabel("")
 
+    fig.align_ylabels()
     plt.subplots_adjust(
         top=0.966,
         bottom=0.04,
@@ -618,11 +678,12 @@ def plot_acf(data, args):
         res_names = modeled.columns
 
     grid_size = determine_grid_size(res_names.size)
-    if res_names.size > 4:
-        sns.set_context("paper")
+    # if res_names.size > 4:
+    #     sns.set_context("paper")
     fig, axes = plt.subplots(*grid_size)
     axes = axes.flatten()
     lags = 30
+
     for ax, col in zip(axes, res_names):
         if args.error:
             plot_vec = modeled[col] - actual[col]
@@ -632,7 +693,7 @@ def plot_acf(data, args):
                           title=col, zero=False, alpha=None, label="ACF")
         output = plot_pacf(plot_vec, ax=ax, lags=lags, use_vlines=True, 
                           title=col, zero=False, alpha=None, label="PACF")
-        ax.set_xticks(range(0,lags+2,2))
+        ax.set_xticks(range(0,lags+5,5))
         
         # ax.set_ylim(0,1)
     handles, labels = axes[0].get_legend_handles_labels()
