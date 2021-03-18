@@ -16,7 +16,9 @@ acf_res = ['Woodruff', 'Buford', 'George', 'West']
 
 
 
-def scale_multi_level_df(df):
+def scale_multi_level_df(df, monthly=False):
+    II()
+    sys.exit()
     grouper = df.index.get_level_values(1)
     means = df.groupby(grouper).mean()
     std = df.groupby(grouper).std()
@@ -69,6 +71,10 @@ def read_tva_data():
     fractions = pd.read_pickle(pickles / "tva_fractions.pickle")
     for column in fractions.columns:
         df[column] = [fractions.loc[i, column] for i in df.index.get_level_values(1)]
+    
+    start_date = datetime(1990, 10, 16)
+    # trim data frame
+    df = df[df.index.get_level_values(0) >= start_date]
 
     # get all variables to similar units for Mass Balance
     df["Storage"] = df["Storage"] * 86400 * 1000  # 1000 second-ft-day to ft3
@@ -80,33 +86,20 @@ def read_tva_data():
 
     # create a time series of previous days storage for all reservoirs
        
-    df["Storage_pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(1)
-    df["Release_pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(1)
+    df[["Storage_pre", "Release_pre"]] = df.groupby(df.index.get_level_values(1))[
+        ["Storage", "Release"]].shift(1)
     
-    tmp = df.groupby(df.index.get_level_values(1))["Storage_pre"].rolling(7).mean()
-    tmp.index = df.index
-    df["Storage_roll7"] = tmp
+    tmp = df.groupby(df.index.get_level_values(1))[
+        ["Storage_pre", "Release_pre", "Net Inflow"]].rolling(7, min_periods=1).mean()
+    tmp.index = tmp.index.droplevel(0)
+    tmp = tmp.sort_index()
+    df[["Storage_roll7", "Release_roll7", "Inflow_roll7"]] = tmp
 
-    tmp = df.groupby(df.index.get_level_values(1))["Storage_pre"].rolling(14).mean()
-    tmp.index = df.index
-    df["Storage_roll14"] = tmp
-
-    tmp = df.groupby(df.index.get_level_values(1))["Release_pre"].rolling(7).mean()
-    tmp.index = df.index
-    df["Release_roll7"] = tmp
-
-    tmp = df.groupby(df.index.get_level_values(1))["Release_pre"].rolling(14).mean()
-    tmp.index = df.index
-    df["Release_roll14"] = tmp
-
-    tmp = df.groupby(df.index.get_level_values(1))["Net Inflow"].rolling(7).mean()
-    tmp.index = df.index
-    df["Inflow_roll7"] = tmp
-
-    tmp = df.groupby(df.index.get_level_values(1))["Net Inflow"].rolling(14).mean()
-    tmp.index = df.index
-    df["Inflow_roll14"] = tmp
-
+    tmp = df.groupby(df.index.get_level_values(1))[
+        ["Storage_pre", "Release_pre", "Net Inflow"]].rolling(14, min_periods=1).mean()
+    tmp.index = tmp.index.droplevel(0)
+    tmp = tmp.sort_index()
+    df[["Storage_roll14", "Release_roll14", "Inflow_roll14"]] = tmp
 
     #* Information about data record
     # There is missing data from 1982 to 1990-10-16
@@ -114,10 +107,7 @@ def read_tva_data():
     # if we just include data from 1991 till the end we still have
     # like 250000 data points (27 for each day for 25 years)
 
-    start_date = datetime(1990, 10, 16)
-    # trim data frame
-    df = df[df.index.get_level_values(0) >= start_date]
-
+    df = df.dropna()
     return df
 
 def read_all_res_data():

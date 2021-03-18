@@ -157,45 +157,47 @@ def scaled_tv_slope(df, groups, filter_groups=None, scaler="mine"):
             g_p = params[i * param_num:(i + 1) * param_num]
             y_prime = np.dot(g_x.drop("group", axis=1), g_p)
             y_prime = pd.Series(y_prime, index=g_x.index)
-            # y_prime_act = (y_prime.unstack() *
-            #                std["Release"] + means["Release"]).stack()
             if results.empty:
                 results = y_prime
             else:
                 results = results.append(y_prime)
         return results
 
-    def objective(params, y, X, groups):
+    def objective_sse(params, y, X, groups):
         param_num = len(params) // len(groups)
-        N = y.size
-        total_error = 0
-        for i, group in enumerate(groups):
-            g_x = X.loc[X["group"] == group,:]
-            # g_x = g_x.drop("group", axis=1)
-            g_y = y.loc[g_x.index]
-            g_p = params[i * param_num:(i + 1) * param_num]
-            y_prime = np.dot(g_x.drop("group", axis=1), g_p)
-            y_prime = pd.Series(y_prime, index=g_y.index)
-            y_prime_act = (y_prime.unstack() * std["Release"] + means["Release"]).stack()
-            total_error += ((g_y - y_prime_act)**2).sum()
-        return total_error / N
+        y_hat = calc_model(params, X, groups)
+        y_hat_act = (y_hat.unstack() * std["Release"] + means["Release"]).stack()
+        sse = ((y_hat_act - y)**2).sum()
+        return sse.mean()
     
+    def group_params(params, param_names, groups):
+        param_num = len(params) // len(groups)
+        output = {}
+        for i, group in enumerate(groups):
+            group_dict = {}
+            for j, pname in enumerate(param_names):
+                group_dict[pname] = params[i * param_num + j]
+            output[group] = group_dict
+        return pd.DataFrame(output)
+
     groups = exog["compositegroup"].unique()
-    x0 = [1 for i in range(exog_re.shape[1] * len(groups))]
+    with open("./initial_my_fit_results.pickle", "rb") as f:
+        init_results = pickle.load(f)
+        x0 = init_results["params"]
+    param_names = list(exog_re.columns)
+    
+    # x0 = [1 for i in range(exog_re.shape[1] * len(groups))]
     exog_re["group"] = exog["compositegroup"]
+
     print("Beginning model fitting.")
     time1 = timer()
-    results = minimize(objective_tg, x0, args=(y_train_act, exog_re, groups))
+    results = minimize(objective_sse, x0, args=(y_train_act, exog_re, groups))
     time2 = timer()
     print(f"Model fit in {time2-time1:.3f} seconds.")
+    grouped_params = group_params(results.x, param_names, groups)
+    
     II()
 
-    # free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
-    #                                      cov_re=np.eye(exog_re.shape[1]))
-    # md = sm.MixedLM(y_train, mexog,
-    #                 groups=groups, exog_re=exog_re)
-    # fe_coefs = mdf.params
-    # re_coefs = mdf.random_effects
     sys.exit()
 
     fitted = (mdf.fittedvalues.unstack() * std["Release"] + means["Release"]).stack()
