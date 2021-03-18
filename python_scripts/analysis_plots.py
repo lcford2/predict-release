@@ -218,7 +218,8 @@ def select_correct_data(data, args):
                 actual = df["Storage"].loc[modeled.index].unstack()
             else:
                 actual = data["data"]["y_test_act"].unstack()
-            if args.model_path.split("\\")[0] == "treed_ml_model":
+            parent_dir = pathlib.Path(args.model_path).parent.as_posix()
+            if parent_dir == "treed_ml_model":
                 groupnames = data["data"]["groups"]
             else:
                 groupnames = data["data"]["X_test"]["compositegroup"]

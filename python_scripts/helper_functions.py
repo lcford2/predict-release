@@ -15,17 +15,36 @@ tva_res = ['BlueRidge', 'Chikamauga', 'Guntersville', 'Hiwassee',
 acf_res = ['Woodruff', 'Buford', 'George', 'West']
 
 
+@time_function
+def scale_multi_level_df(df, timelevel="all"):
+    if timelevel == "all":
+        grouper = df.index.get_level_values(1)
+        means = df.groupby(grouper).mean()
+        std = df.groupby(grouper).std()
+        scaled_df = pd.DataFrame(df.values, index=df.index, columns=df.columns)
+        idx = pd.IndexSlice
+        for index in means.index:
+            scaled_df.loc[idx[:, index], :] = (
+                scaled_df.loc[idx[:, index], :] - means.loc[index]) / std.loc[index]
+    else:
+        scaled_df = pd.DataFrame(df.values, index=df.index, columns=df.columns)
+        df = df.reset_index().rename(
+            columns={"level_0": "Date", "level_1": "Reservoir"})
+        
+        df["TimeGroup"] = getattr(df["Date"].dt, timelevel)
+        means = df.groupby(["TimeGroup", "Reservoir"]).mean()
+        std = df.groupby(["TimeGroup", "Reservoir"]).std()
 
-def scale_multi_level_df(df, monthly=False):
-    II()
-    sys.exit()
-    grouper = df.index.get_level_values(1)
-    means = df.groupby(grouper).mean()
-    std = df.groupby(grouper).std()
-    scaled_df = pd.DataFrame(df.values, index=df.index, columns=df.columns)
-    idx = pd.IndexSlice
-    for index in means.index:
-        scaled_df.loc[idx[:,index],:] = (scaled_df.loc[idx[:,index],:] - means.loc[index]) / std.loc[index]
+        # check memoized scaled file
+        idx = pd.IndexSlice
+        for index in means.index:
+            scaled_index = idx[
+                getattr(scaled_df.index.get_level_values(0), timelevel) == index[0],
+                index[1]
+            ]
+            scaled_df.loc[scaled_index, :] = (scaled_df.loc[scaled_index, :] -
+                                              means.loc[index]) / std.loc[index]
+
     return scaled_df, means, std
 
 def prep_single_res_data(df, unit_change):

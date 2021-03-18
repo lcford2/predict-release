@@ -37,7 +37,7 @@ inverse_groupnames = {key: {label: idx for idx, label in value.items()}
                       for key, value in group_names.items()}
 
 @time_function
-def prep_data(df, groups, filter_groups=None, scaler=None):
+def prep_data(df, groups, filter_groups=None, scaler=None, timelevel="all"):
     # store the groups so we can add them back after scaling
     for_groups = df.loc[:, groups]
     # create an interactoin term between 
@@ -54,7 +54,7 @@ def prep_data(df, groups, filter_groups=None, scaler=None):
             df = df.loc[df[key] == inverse_groupnames[key][value], :]
 
     if scaler == "mine":
-        scaled_df, means, std = scale_multi_level_df(df)
+        scaled_df, means, std = scale_multi_level_df(df, timelevel)
         X = scaled_df.loc[:, ["Storage_pre", "Net Inflow", "Release_pre",
                                 "Storage_Inflow_interaction",
                                 "Release_roll7", "Inflow_roll7", "Storage_roll7",
@@ -124,7 +124,7 @@ def sub_tree_multi_level_model(X, y, tree):
     return mdf
 
 
-def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None, std=None):
+def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None, std=None, timelevel="all"):
     # means and std required if forecast is True
     leaves, groups = get_leaves_and_groups(X, tree)
 
@@ -143,7 +143,8 @@ def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None
                 exog_re,
                 means, 
                 std,
-                "group"
+                "group",
+                timelevel
             )
     else:
         preds = predict_mixedLM(
@@ -163,7 +164,8 @@ def pipeline():
     filter_groups={"NaturalOnly":"NaturalFlow"}
     # get the X matrix, and y vector along with means and std.
     # note: if no scaler is provided, means and std will be 0 and 1 respectively.
-    X,y,means,std = prep_data(df, groups, filter_groups, scaler="mine")
+    timelevel="all"
+    X,y,means,std = prep_data(df, groups, filter_groups, scaler="mine", timelevel=timelevel)
     train_index, test_index = split_train_test_dt(y.index, date=datetime(2010, 1, 1), level=0)
 
     # set exogenous variables
@@ -172,9 +174,7 @@ def pipeline():
               "Release_roll7", "Inflow_roll7", "Storage_roll7"
               ]
     X = X.loc[:, X_vars]
-    II()
-    sys.exit()
-
+  
     # split into training and testing sets
     X_train = X.loc[train_index,:]
     X_test = X.loc[test_index,:]
@@ -193,13 +193,38 @@ def pipeline():
     # predict and forecast from the sub_tree model
     preds, pgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model)
     forecasted, fgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model, 
-                                             forecast=True, means=means, std=std)
+                                             forecast=True, means=means, std=std,
+                                            timelevel=timelevel)
     
     # get all variables back to original space
-    preds_act = (preds.unstack() * std["Release"] + means["Release"]).stack()
-    fitted_act = (fitted.unstack() * std["Release"] + means["Release"]).stack()
-    y_train_act = (y_train.unstack() * std["Release"] + means["Release"]).stack()
-    y_test_act = (y_test.unstack() * std["Release"] + means["Release"]).stack()
+    preds = preds.unstack()
+    fitted = fitted.unstack()
+    y_train = y_train.unstack()
+    y_test = y_test.unstack()
+    if timelevel == "all":
+        preds_act = (preds * std["Release"] + means["Release"]).stack()
+        fitted_act = (fitted * std["Release"] + means["Release"]).stack()
+        y_train_act = (y_train * std["Release"] + means["Release"]).stack()
+        y_test_act = (y_test * std["Release"] + means["Release"]).stack()
+    else:
+        rel_means = means["Release"].unstack()
+        rel_std = std["Release"].unstack()
+        preds_act = deepcopy(preds)
+        fitted_act = deepcopy(fitted)
+        y_train_act = deepcopy(y_train)
+        y_test_act = deepcopy(y_test)
+        extent = 13 if timelevel == "month" else 4
+        for tl in range(1,extent):
+            ploc = getattr(preds.index, timelevel) == tl
+            floc = getattr(fitted.index, timelevel) == tl
+            preds_act.loc[ploc] = preds_act.loc[ploc] * rel_std.loc[tl] + rel_means.loc[tl]
+            fitted_act.loc[floc] = fitted_act.loc[floc] * rel_std.loc[tl] + rel_means.loc[tl]
+            y_train_act.loc[floc] = y_train_act.loc[floc] * rel_std.loc[tl] + rel_means.loc[tl]
+            y_test_act.loc[ploc] = y_test_act.loc[ploc] * rel_std.loc[tl] + rel_means.loc[tl]
+        preds_act = preds_act.stack()
+        fitted_act = fitted_act.stack()
+        y_train_act = y_train_act.stack()
+        y_test_act = y_test_act.stack()
     forecasted_act = forecasted["Release_act"]
 
     # report scores for the current model run
@@ -212,7 +237,11 @@ def pipeline():
     print("\n".join(score_strings))
 
     # setup output parameters
-    foldername = f"extra_upstream_basic_td{max_depth:d}_RI_roll7"
+    if timelevel == "all":
+        prepend = ""
+    else:
+        prepend = f"{timelevel}_"
+    foldername = f"{prepend}upstream_basic_td{max_depth:d}_roll7"
     folderpath = pathlib.Path("..", "results", "treed_ml_model", foldername)
 
     # check if the directory exists and handle it

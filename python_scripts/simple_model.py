@@ -312,7 +312,7 @@ def predict_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, group_col):
     return output_df
 
 @time_function
-def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col):
+def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col, timelevel="all"):
     # create output data frame
     output_df = pd.DataFrame(index=exog_re.index, 
                              columns=list(exog_re.columns) + ["Storage_act", "Release_act"],
@@ -345,21 +345,50 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col
     for res in resers:
         coeffs.loc[res, re_keys] = re_coefs[exog_re.loc[(date,res),group_col]]
 
+    sto_means = means["Storage"]
+    sto_p_means = means["Storage_pre"]
+    inf_means = means["Net Inflow"]
+    rel_means = means["Release"]
+    sto_std = std["Storage"]
+    sto_p_std = std["Storage_pre"]
+    inf_std = std["Net Inflow"]
+    rel_std = std["Release"]
+    
+    if timelevel != "all":
+        sto_means = sto_means.unstack()
+        inf_means = inf_means.unstack()
+        rel_means = rel_means.unstack()
+        sto_std = sto_std.unstack()
+        inf_std = inf_std.unstack()
+        rel_std = rel_std.unstack()
+
     for date in dates:
         exog = output_df.loc[idx[date,:]][re_keys]
         fe_exog = exog_fe.loc[idx[date,:]][fe_keys]
-        
+
         rel = exog.mul(coeffs).sum(axis=1) + fe_exog.dot(fe_coefs[fe_keys])
 
-        rel_act = rel*std["Release"]+means["Release"]
-        stor_pre_act = output_df.loc[idx[date,:]]["Storage_pre"]*std["Storage"]+means["Storage"]
-        inflow_act = output_df.loc[idx[date,:]]["Net Inflow"]*std["Net Inflow"]+means["Net Inflow"]
+        if timelevel != "all":
+            tl = getattr(date, timelevel)
+            rel_act = rel*rel_std.loc[tl] + rel_means.loc[tl]
+            stor_pre_act = output_df.loc[idx[date,:]]["Storage_pre"]*sto_p_std.loc[tl] + sto_p_means.loc[tl]
+            inflow_act = output_df.loc[idx[date,:]]["Net Inflow"]*inf_std.loc[tl] + inf_means.loc[tl]
+        else:
+            rel_act = rel*rel_std+rel_means
+            stor_pre_act = output_df.loc[idx[date, :]
+                                         ]["Storage_pre"] * sto_p_std + sto_p_means
+            inflow_act = output_df.loc[idx[date, :]
+                                       ]["Net Inflow"] * inf_std + inf_means
         
         storage_act = stor_pre_act + inflow_act - rel_act
-        storage = (storage_act-means["Storage"])/std["Storage"]
+        if timelevel != "all":
+            tl = getattr(date, timelevel)
+            storage = (storage_act - sto_means.loc[tl])/sto_std.loc[tl]
+        else:
+            storage = (storage_act-sto_means)/sto_std
         # if date != end_date:
         #     storage = output_df.loc[idx[date+timedelta(days=1),:],"Storage_pre"]
-        
+
         output_df.loc[idx[date,:],"Release"] = rel.values
         output_df.loc[idx[date,:],"Storage"] = storage.values
         output_df.loc[idx[date,:],"Release_act"] = rel_act.values
