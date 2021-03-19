@@ -22,6 +22,8 @@ import sys
 import pickle
 import pathlib
 import subprocess
+import warnings
+warnings.simplefilter("ignore")
 
 # group name map to numeric variables
 group_names = {
@@ -38,7 +40,7 @@ group_names = {
 inverse_groupnames = {key: {label: idx for idx, label in value.items()}
                       for key, value in group_names.items()}
 
-@time_function
+# @time_function
 def prep_data(df, groups, filter_groups=None, scaler=None, timelevel="all"):
     # store the groups so we can add them back after scaling
     for_groups = df.loc[:, groups]
@@ -82,7 +84,7 @@ def prep_data(df, groups, filter_groups=None, scaler=None, timelevel="all"):
 
     return X, y, means, std
 
-@time_function
+# @time_function
 def split_train_test_dt(index, date, level=None):
     # cannot check truthy here because level can be integer 0, which is equivalent to False
     if level is not None:
@@ -93,7 +95,7 @@ def split_train_test_dt(index, date, level=None):
         train = index[index < date]
     return train, test
 
-@time_function
+# @time_function
 def tree_model(X, y, tree_type="decision", **tree_args):
     if tree_type == "decision":
         tree = DecisionTreeRegressor(**tree_args)
@@ -130,16 +132,15 @@ def get_leaves_and_groups(X, tree):
 def sub_tree_multi_level_model(X, y, tree=None, groups=None, my_id=None):
     if tree:
         leaves, groups = get_leaves_and_groups(X, tree)
-    elif not groups:
-        raise ValueError("Must provide either a tree or groups.")
     else:
         groups = groups[my_id]
+
         
     mexog = pd.DataFrame(np.ones((y.size, 1)), index=y.index,  columns=["const"])
     free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
                                          cov_re=np.eye(X.shape[1]))
     md = sm.MixedLM(y, mexog, groups=groups, exog_re=X)
-    mdf = md.fit()
+    mdf = md.fit(free=free, disp=False)
     return mdf
 
 
@@ -207,19 +208,24 @@ def pipeline():
     # fit the decision tree model
     max_depth=3
     #, splitter="best" - for decision_tree
-    
-    tree = tree_model(X_train, y_train, tree_type="ensemble", max_depth=3, random_state=37)
+    size = 100
+    tree = tree_model(X_train, y_train, tree_type="ensemble", max_depth=3, random_state=37, n_estimators=size)
     leaves, groups = get_leaves_and_groups(X_train, tree)
 
     my_results = {}
     for i in range(rank, size, nprocs):
         my_results[i] = sub_tree_multi_level_model(
-            X_train, y_train, groups=groups, my_id=i
+            X_train, y_train, groups=groups, my_id=i+1
             )
 
     all_results = comm.gather(my_results, root=0) 
     if rank == 0:
-        print(all_results)
+        results = {}
+        for item in all_results:
+            for key, value in item.items():
+                results[key] = value.random_effects
+        with open("rf_results.pickle", "wb") as f:
+            pickle.dump(results, f, protocol=4)
         sys.exit()
     else:
         sys.exit()
