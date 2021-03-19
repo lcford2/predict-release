@@ -107,6 +107,9 @@ def read_tva_data():
        
     df[["Storage_pre", "Release_pre"]] = df.groupby(df.index.get_level_values(1))[
         ["Storage", "Release"]].shift(1)
+
+    df[["Storage_7", "Release_7"]] = df.groupby(df.index.get_level_values(1))[
+        ["Storage", "Release"]].shift(7)
     
     tmp = df.groupby(df.index.get_level_values(1))[
         ["Storage_pre", "Release_pre", "Net Inflow"]].rolling(7, min_periods=1).mean()

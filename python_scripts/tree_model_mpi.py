@@ -62,7 +62,8 @@ def prep_data(df, groups, filter_groups=None, scaler=None, timelevel="all"):
         X = scaled_df.loc[:, ["Storage_pre", "Net Inflow", "Release_pre",
                                 "Storage_Inflow_interaction",
                                 "Release_roll7", "Inflow_roll7", "Storage_roll7",
-                                #"Storage_roll14", "Release_roll7", "Inflow_roll14"
+                                "Release_7", "Storage_7"
+                                #"Storage_roll14", "Release_roll14", "Inflow_roll14"
                                 ]]
         y = scaled_df.loc[:, "Release"]
 
@@ -191,7 +192,8 @@ def pipeline():
     # set exogenous variables
     X_vars = ["Storage_pre", "Release_pre", "Net Inflow",
               "Storage_Inflow_interaction",
-              "Release_roll7", "Inflow_roll7", "Storage_roll7"
+              "Inflow_roll7", #"Storage_roll7", "Release_roll7",
+              "Storage_7", "Release_7"
               ]
     X = X.loc[:, X_vars]
   
@@ -224,7 +226,7 @@ def pipeline():
         for item in all_results:
             for key, value in item.items():
                 results[key] = value.random_effects
-        with open("rf_results.pickle", "wb") as f:
+        with open("rf_results_lag.pickle", "wb") as f:
             pickle.dump(results, f, protocol=4)
         sys.exit()
     else:
