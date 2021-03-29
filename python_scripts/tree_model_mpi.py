@@ -211,7 +211,8 @@ def pipeline():
     max_depth=3
     #, splitter="best" - for decision_tree
     size = 100
-    tree = tree_model(X_train, y_train, tree_type="ensemble", max_depth=3, random_state=37, n_estimators=size)
+    tree = tree_model(X_train, y_train, tree_type="ensemble", max_depth=max_depth,
+                      random_state=37, n_estimators=size, oob_score=True)
     leaves, groups = get_leaves_and_groups(X_train, tree)
 
     my_results = {}
@@ -226,7 +227,8 @@ def pipeline():
         for item in all_results:
             for key, value in item.items():
                 results[key] = value.random_effects
-        with open("rf_results_lag.pickle", "wb") as f:
+        outfile = "../results/treed_ml_model/sensitivity/rf_results_lag_oob.pickle"
+        with open(outfile, "wb") as f:
             pickle.dump(results, f, protocol=4)
         sys.exit()
     else:
