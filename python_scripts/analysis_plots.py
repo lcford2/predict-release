@@ -780,10 +780,18 @@ def plot_tree_sens(data, args):
     axes = axes.flatten()
     data["Leaf"] = data["Leaf"].astype(int)
 
-    for i, param enumerate(params):
+    for i, param in enumerate(params):
         ax = axes[i]
         sns.boxplot(x="Leaf", y=param, data=data, ax=ax)
-        ax.set_title(param)
+        # ax.set_title(param)
+        ax.set_ylabel(format_dict[param]["label"])
+        if i < 4:
+            ax.set_xlabel("")
+
+    left_over = axes.size - len(params)
+    if left_over > 0:
+        for ax in axes[-left_over:]:
+            ax.set_axis_off()  
 
     plt.show()
 
