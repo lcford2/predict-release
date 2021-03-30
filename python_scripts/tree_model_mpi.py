@@ -192,8 +192,8 @@ def pipeline():
     # set exogenous variables
     X_vars = ["Storage_pre", "Release_pre", "Net Inflow",
               "Storage_Inflow_interaction",
-              "Inflow_roll7", #"Storage_roll7", "Release_roll7",
-              "Storage_7", "Release_7"
+              "Inflow_roll7", "Storage_roll7", "Release_roll7",
+              #"Storage_7", "Release_7"
               ]
     X = X.loc[:, X_vars]
   
@@ -227,7 +227,7 @@ def pipeline():
         for item in all_results:
             for key, value in item.items():
                 results[key] = value.random_effects
-        outfile = "../results/treed_ml_model/sensitivity/rf_results_lag_oob.pickle"
+        outfile = "../results/treed_ml_model/sensitivity/rf_results_roll_oob.pickle"
         with open(outfile, "wb") as f:
             pickle.dump(results, f, protocol=4)
         sys.exit()
