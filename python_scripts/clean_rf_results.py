@@ -1,10 +1,14 @@
 import pandas as pd
 import sys
+import glob
+import pathlib
 
 def parse_args():
     args = sys.argv
     if len(args) == 1:
         raise ValueError("Must provide the name of the file as the first argument to this script.")
+    elif args[1] == "-G":
+        files = glob.glob(args[2])
     else:
         files = args[1:]
     return files
@@ -19,7 +23,7 @@ def clean_results(filename):
 
     trees = list(results.keys())
     leafs = set(results[0].keys())
-
+    # make sure all leafs are considered. 
     for tree in trees:
         leafs = leafs | set(results[tree].keys())
 
@@ -35,18 +39,14 @@ def clean_results(filename):
             series["Tree"] = tree
             series["Leaf"] = leaf
             df = df.append(series, ignore_index=True)
-    
-    split_name = filename.split(".")
+    filepath = pathlib.Path(filename)
+    clean_dir = filepath.parent.parent/"clean"
+    split_name = filepath.name.split(".")
     clean_name = f"{split_name[0]}_cleaned.{split_name[1]}"
-    df.to_pickle(clean_name)
+    df.to_pickle(clean_dir/clean_name)
     return True
 
 if __name__ == "__main__":
     files = parse_args()
     for file in files:
         clean_results(file)
-        
-    
-            
-
-

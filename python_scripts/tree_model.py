@@ -21,6 +21,7 @@ import sys
 import pickle
 import pathlib
 import subprocess
+import psutil
 
 # group name map to numeric variables
 group_names = {
@@ -59,6 +60,7 @@ def prep_data(df, groups, filter_groups=None, scaler=None, timelevel="all"):
         X = scaled_df.loc[:, ["Storage_pre", "Net Inflow", "Release_pre",
                                 "Storage_Inflow_interaction",
                                 "Release_roll7", "Inflow_roll7", "Storage_roll7",
+                                "Release_7", "Storage_7"
                                 #"Storage_roll14", "Release_roll7", "Inflow_roll14"
                                 ]]
         y = scaled_df.loc[:, "Release"]
@@ -189,7 +191,8 @@ def pipeline():
     # set exogenous variables
     X_vars = ["Storage_pre", "Release_pre", "Net Inflow",
               "Storage_Inflow_interaction",
-              "Release_roll7", "Inflow_roll7", "Storage_roll7"
+              "Inflow_roll7", "Storage_roll7", "Release_roll7",
+              #"Storage_7", "Release_7"
               ]
     X = X.loc[:, X_vars]
   
@@ -202,23 +205,13 @@ def pipeline():
     # fit the decision tree model
     max_depth=3
     #, splitter="best" - for decision_tree
-    tree = tree_model(X_train, y_train, tree_type="ensemble", max_depth=3)
+    tree = tree_model(X_train, y_train, tree_type="decision", max_depth=max_depth,
+                      random_state=37)
     leaves, groups = get_leaves_and_groups(X_train, tree)
 
-    from multiprocessing import Pool
-
-    with Pool(6) as p:
-        results =  p.apply_async(
-            sub_tree_multi_level_model,
-            (X_train, y_train),
-            {"groups":groups, "my_id":range(1,101)}
-        )
-    
-    II()
-    sys.exit()
-            
     # fit the sub_tree ml model
-    # ml_model = sub_tree_multi_level_model(X_train, y_train, tree)
+    ml_model = sub_tree_multi_level_model(X_train, y_train, tree)
+    II()
     fitted = ml_model.fittedvalues
 
     # predict and forecast from the sub_tree model
@@ -272,7 +265,7 @@ def pipeline():
         prepend = ""
     else:
         prepend = f"{timelevel}_"
-    foldername = f"{prepend}upstream_basic_td{max_depth:d}_roll7"
+    foldername = f"{prepend}upstream_basic_td{max_depth:d}_lag7"
     folderpath = pathlib.Path("..", "results", "treed_ml_model", foldername)
 
     # check if the directory exists and handle it
@@ -296,6 +289,7 @@ def pipeline():
     output = dict(
         re_coefs=ml_model.random_effects,
         fe_coefs=ml_model.params,
+        cov_re=ml_model.cov_re,
         data=dict(
             X_test=X_test,
             y_test=y_test,
@@ -320,3 +314,5 @@ def pipeline():
 
 if __name__ == "__main__":
     pipeline()
+    mem_usage = psutil.Process().memory_info().peak_wset
+    print(f"Max Memory Used: {mem_usage/1000/1000:.4f} MB")

@@ -16,7 +16,7 @@ from time import perf_counter as timer
 from copy import deepcopy
 from datetime import timedelta, datetime
 from IPython import embed as II
-from mpi4py import MPI
+# from mpi4py import MPI
 import calendar
 import sys
 import pickle
@@ -128,6 +128,29 @@ def get_leaves_and_groups(X, tree):
         groups = pd.Series(leaves, index=X.index)
     return leaves, groups
 
+def get_tree_breaks(X, tree):
+    trees = tree.estimators_
+    breaks = []
+    for clf in trees:
+        iterator = zip(
+            clf.tree_.feature,
+            clf.tree_.threshold,
+            clf.tree_.children_left,
+            clf.tree_.children_right
+        )
+        for i, (feat, thresh, left, right) in enumerate(iterator):
+            if left != -1 and right != -1:
+                breaks.append([
+                    i,
+                    X.columns[feat],
+                    thresh,
+                    left,
+                    right
+                ])
+    breaks = pd.DataFrame(breaks, 
+        columns=["Node", "Param", "Threshold", "Left", "Right"])
+    return breaks
+
 
 # @time_function
 def sub_tree_multi_level_model(X, y, tree=None, groups=None, my_id=None):
@@ -203,9 +226,9 @@ def pipeline():
     y_train = y.loc[train_index]
     y_test = y.loc[test_index]
 
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    nprocs = comm.Get_size()
+    # comm = MPI.COMM_WORLD
+    # rank = comm.Get_rank()
+    # nprocs = comm.Get_size()
 
     # fit the decision tree model
     max_depth=3
@@ -214,6 +237,7 @@ def pipeline():
     tree = tree_model(X_train, y_train, tree_type="ensemble", max_depth=max_depth,
                       random_state=37, n_estimators=size, oob_score=False)
     leaves, groups = get_leaves_and_groups(X_train, tree)
+    tree_breaks = get_tree_breaks(X, tree)
 
     my_results = {}
     for i in range(rank, size, nprocs):
@@ -237,6 +261,8 @@ def pipeline():
         outfile = "../results/treed_ml_model/sensitivity/rf_results_roll_no_free.pickle"
         with open(outfile, "wb") as f:
             pickle.dump(results, f, protocol=4)
+        with open("../results/treed_ml_model/sensitivity/rf_results_roll_no_fre_breaks.pickle"):
+            pickle.dump(tree_breaks, f, protocol=4)
         sys.exit()
     else:
         sys.exit()

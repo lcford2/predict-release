@@ -471,8 +471,10 @@ def plot_month_coefs(data, args):
 
 
 def plot_tree_sensitivity(data, args):
-    df = pd.read_pickle("rf_results_lag_cleaned.pickle")
-    xvars = df["Parameter"].unique()
+    # df = pd.read_pickle("rf_results_lag_cleaned.pickle")
+    # df = pd.read_pickle(args.file)
+    II()
+    xvars = data.drop(["Tree", "Leaf"],axis=1).columns
 
     grid_size = determine_grid_size(xvars.size)
     fig, axes = plt.subplots(*grid_size, sharex=True)
@@ -480,8 +482,8 @@ def plot_tree_sensitivity(data, args):
     
     for i, xvar in enumerate(xvars):                               
         ax = axes[i]                                               
-        var_df = df[df["Parameter"] == xvar]                       
-        sns.boxplot(x="Leaf", y="Fitted Value", data=var_df, ax=ax)
+        var_data = data[data["Parameter"] == xvar]                       
+        sns.boxplot(x="Leaf", y="Fitted Value", data=var_data, ax=ax)
         ax.set_title(format_dict[xvar]["label"])
         if i not in (0, 4):                                        
             ax.set_ylabel("")     
@@ -821,6 +823,13 @@ def plot_tree_sens(data, args):
         for ax in axes[-left_over:]:
             ax.set_axis_off()  
 
+    plt.show()
+
+def plot_recov_heatmap(data, args):
+    cov_re = data["cov_re"]
+    name_map = {key:format_dict[key]["label"] for key in cov_re.columns}
+    cov_re = cov_re.rename(columns=name_map, index=name_map)
+    sns.heatmap(cov_re, annot=True)
     plt.show()
 
     
