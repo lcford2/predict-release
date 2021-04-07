@@ -49,6 +49,8 @@ format_dict = {
     "Storage_roll7": {"marker": "o", "label": r"$\bar{S}_7$"},
     "Release_roll7": {"marker": "s", "label": r"$\bar{R}_7$"},
     "Inflow_roll7": {"marker": "X", "label": r"$\bar{I}_7$"},
+    "Storage_7": {"marker": "o", "label": r"$S_{t-7}$"},
+    "Release_7": {"marker": "s", "label": r"$R_{t-7}$"}
 }
 
 def load_results(args):
@@ -272,7 +274,9 @@ def plot_score_bars(data, args):
 
 
     for i, index in enumerate(scores.index):
-        score = r2_score(actual[index], modeled[index])
+        score = metric_linker(args.metric)(actual[index], modeled[index])
+        if args.metric not in ("nse", "corr"):
+            score = score/actual[index].mean() * 100
         scores.loc[index, "Score"] = score
         scores.loc[index, "GroupName"] = groupnames[i]
     
@@ -464,6 +468,30 @@ def plot_month_coefs(data, args):
     if ylim[0] > -0.4:
         ax.set_ylim((-0.4, ylim[1]))
     plt.show()
+
+
+def plot_tree_sensitivity(data, args):
+    df = pd.read_pickle("rf_results_lag_cleaned.pickle")
+    xvars = df["Parameter"].unique()
+
+    grid_size = determine_grid_size(xvars.size)
+    fig, axes = plt.subplots(*grid_size, sharex=True)
+    axes=axes.flatten()
+    
+    for i, xvar in enumerate(xvars):                               
+        ax = axes[i]                                               
+        var_df = df[df["Parameter"] == xvar]                       
+        sns.boxplot(x="Leaf", y="Fitted Value", data=var_df, ax=ax)
+        ax.set_title(format_dict[xvar]["label"])
+        if i not in (0, 4):                                        
+            ax.set_ylabel("")     
+        if i < 4:
+            ax.set_xlabel("")                                 
+                                                                
+                                                                
+    axes[-1].set_axis_off()                                        
+                                                                
+    plt.show()                                                     
 
 
 def plot_tree_ml_coefs(data, args):
