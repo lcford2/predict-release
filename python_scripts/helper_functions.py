@@ -15,7 +15,7 @@ tva_res = ['BlueRidge', 'Chikamauga', 'Guntersville', 'Hiwassee',
 acf_res = ['Woodruff', 'Buford', 'George', 'West']
 
 
-@time_function
+# @time_function
 def scale_multi_level_df(df, timelevel="all"):
     if timelevel == "all":
         grouper = df.index.get_level_values(1)

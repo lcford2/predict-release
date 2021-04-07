@@ -141,7 +141,7 @@ def sub_tree_multi_level_model(X, y, tree=None, groups=None, my_id=None):
     free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
                                          cov_re=np.eye(X.shape[1]))
     md = sm.MixedLM(y, mexog, groups=groups, exog_re=X)
-    mdf = md.fit(free=free, disp=False)
+    mdf = md.fit(disp=False)# free=free)
     return mdf
 
 
@@ -212,7 +212,7 @@ def pipeline():
     #, splitter="best" - for decision_tree
     size = 100
     tree = tree_model(X_train, y_train, tree_type="ensemble", max_depth=max_depth,
-                      random_state=37, n_estimators=size, oob_score=True)
+                      random_state=37, n_estimators=size, oob_score=False)
     leaves, groups = get_leaves_and_groups(X_train, tree)
 
     my_results = {}
@@ -220,14 +220,21 @@ def pipeline():
         my_results[i] = sub_tree_multi_level_model(
             X_train, y_train, groups=groups, my_id=i+1
             )
-
+    # lag
+    # lag no_free
+    # lag oob
+    # lag oob no_free
+    # roll
+    # roll no_free
+    # roll oob
+    # roll oob no_free
     all_results = comm.gather(my_results, root=0) 
     if rank == 0:
         results = {}
         for item in all_results:
             for key, value in item.items():
                 results[key] = value.random_effects
-        outfile = "../results/treed_ml_model/sensitivity/rf_results_roll_oob.pickle"
+        outfile = "../results/treed_ml_model/sensitivity/rf_results_roll_no_free.pickle"
         with open(outfile, "wb") as f:
             pickle.dump(results, f, protocol=4)
         sys.exit()
