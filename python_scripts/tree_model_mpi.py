@@ -261,7 +261,7 @@ def pipeline():
         outfile = "../results/treed_ml_model/sensitivity/rf_results_roll_no_free.pickle"
         with open(outfile, "wb") as f:
             pickle.dump(results, f, protocol=4)
-        with open("../results/treed_ml_model/sensitivity/rf_results_roll_no_fre_breaks.pickle", "wb"):
+        with open("../results/treed_ml_model/sensitivity/rf_results_roll_no_fre_breaks.pickle", "wb") as f:
             pickle.dump(tree_breaks, f, protocol=4)
         sys.exit()
     else:
