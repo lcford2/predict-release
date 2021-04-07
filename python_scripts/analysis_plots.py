@@ -795,7 +795,34 @@ def plot_monthly_metrics(data, args):
         wspace=0.2
     )
     plt.show()
-    
+
+
+def plot_tree_sens(data, args):
+    params = list(data.columns)
+    params.remove("Tree")
+    params.remove("Leaf")
+
+    grid_size = determine_grid_size(len(params))
+
+    fig, axes = plt.subplots(*grid_size, sharex=True)
+    axes = axes.flatten()
+    data["Leaf"] = data["Leaf"].astype(int)
+
+    for i, param in enumerate(params):
+        ax = axes[i]
+        sns.boxplot(x="Leaf", y=param, data=data, ax=ax)
+        # ax.set_title(param)
+        ax.set_ylabel(format_dict[param]["label"])
+        if i < 4:
+            ax.set_xlabel("")
+
+    left_over = axes.size - len(params)
+    if left_over > 0:
+        for ax in axes[-left_over:]:
+            ax.set_axis_off()  
+
+    plt.show()
+
     
 def setup_map(ax, control_area=True, coords=None):
     if not coords:
@@ -986,6 +1013,7 @@ def plot_model_params(data, args):
     
     fig.align_ylabels()
     plt.show()
+
 
 if __name__ == "__main__":
     namespace = dir()
