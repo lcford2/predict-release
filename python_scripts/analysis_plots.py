@@ -832,7 +832,24 @@ def plot_recov_heatmap(data, args):
     sns.heatmap(cov_re, annot=True)
     plt.show()
 
-    
+def plot_rf_breaks(data, args):
+    counts = data.groupby("Node")["Param"].value_counts(normalize=True) * 100
+    grid_size = determine_grid_size(counts.shape[0])
+
+    fig, axes = plt.subplots(*grid_size)
+    axes = axes.flatten()
+    index = counts.index
+
+    for i, (ax, idx) in enumerate(zip(axes, index)):
+        node, feature = idx
+        pdf = data[(data["Node"] == node) & (data["Param"] == feature)]
+        sns.histplot(pdf["Threshold"], ax=ax,
+                    cumulative=False, kde=False)
+        ax.set_title(f"Node {node} : {format_dict[feature]['label']} ({counts.loc[idx]:.0f} %)")
+        if i < 5:
+            ax.set_xlabel("")
+    plt.show()
+
 def setup_map(ax, control_area=True, coords=None):
     if not coords:
         west, south, east, north = -90.62, 32.08, -80.94, 37.99
