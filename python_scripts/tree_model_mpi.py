@@ -16,7 +16,7 @@ from time import perf_counter as timer
 from copy import deepcopy
 from datetime import timedelta, datetime
 from IPython import embed as II
-# from mpi4py import MPI
+from mpi4py import MPI
 import calendar
 import sys
 import pickle
@@ -226,9 +226,9 @@ def pipeline():
     y_train = y.loc[train_index]
     y_test = y.loc[test_index]
 
-    # comm = MPI.COMM_WORLD
-    # rank = comm.Get_rank()
-    # nprocs = comm.Get_size()
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    nprocs = comm.Get_size()
 
     # fit the decision tree model
     max_depth=3
