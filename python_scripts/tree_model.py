@@ -139,6 +139,10 @@ def sub_tree_multi_level_model(X, y, tree=None, groups=None, my_id=None):
     mexog = pd.DataFrame(np.ones((y.size, 1)), index=y.index,  columns=["const"])
     free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
                                          cov_re=np.eye(X.shape[1]))
+    try:
+        X = X.drop(["NaturalOnly", "RunOfRiver"], axis=1)
+    except KeyError as e:
+        pass
     md = sm.MixedLM(y, mexog, groups=groups, exog_re=X)
     mdf = md.fit()
     return mdf
@@ -151,6 +155,10 @@ def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None
     mexog = pd.DataFrame(np.ones((y.size, 1)), index=y.index, columns=["const"])
     exog_re = deepcopy(X)
     exog_re["group"] = groups
+    try:
+        exog_re = exog_re.drop(["NaturalOnly", "RunOfRiver"], axis=1)
+    except KeyError as e:
+        pass
 
     if forecast:
         if not isinstance(means, pd.DataFrame) or not isinstance(std, pd.DataFrame):
@@ -181,7 +189,8 @@ def pipeline():
     df = read_tva_data()
     groups = ["NaturalOnly", "RunOfRiver"]
     # filter groups {group to filter by: attribute of entries that should be included}
-    filter_groups={"NaturalOnly":"NaturalFlow"}
+    # filter_groups={"NaturalOnly":"NaturalFlow"}
+    filter_groups={"RunOfRiver":"StorageDam"}
     # get the X matrix, and y vector along with means and std.
     # note: if no scaler is provided, means and std will be 0 and 1 respectively.
     timelevel="all"
@@ -192,29 +201,36 @@ def pipeline():
     X_vars = ["Storage_pre", "Release_pre", "Net Inflow",
               "Storage_Inflow_interaction",
               "Inflow_roll7", "Storage_roll7", "Release_roll7",
-              #"Storage_7", "Release_7"
+              #"Storage_7", "Release_7",
+            #   "NaturalOnly", "RunOfRiver"
               ]
+
     X = X.loc[:, X_vars]
+
   
     # split into training and testing sets
     X_train = X.loc[train_index,:]
     X_test = X.loc[test_index,:]
     y_train = y.loc[train_index]
     y_test = y.loc[test_index]
-
+    II()
+    sys.exit()
     # fit the decision tree model
-    max_depth=3
+    max_depth=4
     #, splitter="best" - for decision_tree
     tree = tree_model(X_train, y_train, tree_type="decision", max_depth=max_depth,
                       random_state=37)
     leaves, groups = get_leaves_and_groups(X_train, tree)
 
     # fit the sub_tree ml model
+    # X_train = X_train.drop(["NaturalOnly", "RunOfRiver"], axis=1)
     ml_model = sub_tree_multi_level_model(X_train, y_train, tree)
-    II()
-    fitted = ml_model.fittedvalues
 
+    fitted = ml_model.fittedvalues
+    # II()
+    # sys.exit()
     # predict and forecast from the sub_tree model
+    
     preds, pgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model)
     forecasted, fgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model, 
                                              forecast=True, means=means, std=std,
@@ -251,9 +267,14 @@ def pipeline():
         y_test_act = y_test_act.stack()
     forecasted_act = forecasted["Release_act"]
 
+
     # report scores for the current model run
     fit_score = r2_score(y_train_act, fitted_act)
-    forecasted_score = r2_score(y_test_act, forecasted_act)
+    try:
+        forecasted_score = r2_score(y_test_act, forecasted_act)
+    except ValueError as e:
+        forecasted_score = np.nan
+    # II()
     preds_score = r2_score(y_test_act, preds_act)
     score_strings = [f"{ftype:<12} = {score:.3f}" for ftype, score in zip(
                     ["Fit", "Forecast", "Preds"], [fit_score, forecasted_score, preds_score])]
@@ -265,7 +286,7 @@ def pipeline():
         prepend = ""
     else:
         prepend = f"{timelevel}_"
-    foldername = f"{prepend}upstream_basic_td{max_depth:d}_lag7"
+    foldername = f"{prepend}all_res_no_ror_basic_td{max_depth:d}_roll7"
     folderpath = pathlib.Path("..", "results", "treed_ml_model", foldername)
 
     # check if the directory exists and handle it
@@ -281,6 +302,8 @@ def pipeline():
         folderpath.mkdir()
     
     # export tree to graphviz file so it can be converted nicely
+    # rotate_tree = True if max_depth > 3 else False
+
     export_graphviz(tree, out_file=(folderpath / "tree.dot").as_posix(),
                     feature_names=X_vars, filled=True, proportion=True, rounded=True,
                     special_characters=True)
