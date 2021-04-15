@@ -153,11 +153,11 @@ def query_file(args):
     :rtype: pathlib.Path
     """
     results_dir = pathlib.Path("../results")
-    model_path = results_dir/args.model_path    
+    model_path = results_dir/args.model_path
     if args.all_res:
         files = glob.glob((model_path/"*all_res.pickle").as_posix())
     else:
-        files = [i for i in glob.glob((model_path/"*.pickle").as_posix()) if "all_res" not in i]
+        files = glob.glob((model_path/"*.pickle").as_posix())
     if len(files) == 1:
         print(f"\nUsing data file: {files[0]}\n")
         file = pathlib.Path(files[0])
@@ -266,21 +266,29 @@ def plot_score_bars(data, args):
     modeled, actual, groupnames = select_correct_data(data, args)
     groupnames = groupnames.unstack().values[0, :]
     scores = pd.DataFrame(index=modeled.columns, columns=["Score", "GroupName"], dtype="float64")
+    pct_scores = pd.DataFrame(index=modeled.columns, columns=["Score", "GroupName"], dtype="float64")
+    
 
     if args.days:
         enddate = actual.index[0] + timedelta(days=args.days)
         actual = actual[actual.index < enddate]
         modeled = modeled[modeled.index < enddate]
-
+    
+    # if args.metric not in ("nse", "corr"):
+        # plt.style.use("seaborn-deep")
 
     for i, index in enumerate(scores.index):
         score = metric_linker(args.metric)(actual[index], modeled[index])
         if args.metric not in ("nse", "corr"):
-            score = score/actual[index].mean() * 100
+            pct_score = score/actual[index].mean() * 100
+            pct_scores.loc[index, "Score"] = pct_score
+            pct_scores.loc[index, "GroupName"] = groupnames[i]
         scores.loc[index, "Score"] = score
         scores.loc[index, "GroupName"] = groupnames[i]
+        
     
     scores = scores.sort_values(by=["GroupName", "Score"])
+    pct_score = pct_scores.sort_values(by=["GroupName", "Score"])
     # scores = pd.read_pickle("../pickles/std_ratio_st_inflow.pickle")
 
     order = ['Ocoee3', 'Wilbur', 'Douglas', 'Cherokee', 'Hiwassee', 'Boone',
@@ -291,16 +299,31 @@ def plot_score_bars(data, args):
 
     order = [i for i in order if i in scores.index]
     scores = scores.loc[order]
+    pct_scores = pct_scores.loc[order]
 
     # groupmeans = scores.groupby("GroupName").mean()
     fig, ax = plt.subplots(1,1)
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
     scores["Score"].plot.bar(ax=ax, width=0.8)
+    ax.set_ylabel(f"{args.metric.upper()} [ft$^3$/day]")
+
+    if args.metric not in ("nse", "corr"):
+        ax.tick_params(axis="y", colors=colors[0])
+        ax.yaxis.label.set_color(colors[0])
+        ax2 = ax.twinx()
+        pct_scores["Score"].plot(ax=ax2, color=colors[1], marker="o", ms=7)
+        ax2.set_ylabel(f"{args.metric.upper()} / Mean [%]", color=colors[1])
+        ax2.grid(False)
+        ax2.tick_params(axis="y", colors=colors[1])
+    
     # scores.plot.bar(ax=ax, width=0.8)
     ticks = ax.get_xticks()
     if getattr(args, "group_labels", None):
         for tick, name in zip(ticks, scores["GroupName"].values.tolist()):
             ax.text(tick, 0.1, name, rotation=90, va="bottom", ha="center")
-    ax.set_ylabel("NSE")
+    
+
     # ax.set_ylabel(r"$\sigma_{St.}/\sigma_{In.}$")
     # ax.set_ylim((0.0, 1.0433202579442722))
     plt.subplots_adjust(
@@ -523,7 +546,7 @@ def plot_tree_ml_coefs(data, args):
     ax.set_xlabel("Final Node")
     handles, labels = ax.get_legend_handles_labels()
     labels = [format_dict[key]["label"] for key in labels]
-    ax.legend(handles, labels, loc="lower right", ncol=len(x))
+    ax.legend(handles, labels, loc="lower left", ncol=len(x))
     ylim = ax.get_ylim()
     if ylim[0] > -0.4:
         ax.set_ylim((-0.4, ylim[1]))
@@ -554,6 +577,11 @@ def plot_tree_ml_groups(data, args):
         x = args.X
 
     sns.boxplot(x=x, y="Final Tree Node", data=groups_masked, ax=ax)
+    ylim = ax.get_ylim()
+    ax.set_yticks(range(0, int(ylim[1])+1, 4))
+    if x == "Reservoir":
+        xlabels = ax.get_xticklabels()
+        ax.set_xticklabels(xlabels, rotation=45, ha="right")
     plt.ylabel("Final Tree Node")
     plt.show()
 
@@ -611,9 +639,9 @@ def plot_time_series(data, args):
     if res_names.size <= 6:
         labels = ["Observed", "Modeled"]
         axes[0].legend(handles, labels, loc="best")
-    else:
-        axes[-1].legend(handles, labels, loc="center", prop={"size":18})
-        axes[-1].set_axis_off()
+    # else:
+    #     axes[-1].legend(handles, labels, loc="center", prop={"size":18})
+    #     axes[-1].set_axis_off()
 
     left_over = axes.size - res_names.size
     if left_over > 0:
@@ -709,8 +737,8 @@ def plot_acf(data, args):
         res_names = modeled.columns
 
     grid_size = determine_grid_size(res_names.size)
-    # if res_names.size > 4:
-    #     sns.set_context("paper")
+    if res_names.size > 4:
+        sns.set_context("paper")
     fig, axes = plt.subplots(*grid_size)
     axes = axes.flatten()
     lags = 30
@@ -733,9 +761,9 @@ def plot_acf(data, args):
     if res_names.size <= 6:
         labels = ["ACF", "PACF"]
         axes[0].legend(handles, labels, loc="best")
-    else:
-        axes[-1].legend(handles, labels, loc="center", prop={"size":18})
-        axes[-1].set_axis_off()
+    # else:
+        # axes[-1].legend(handles, labels, loc="center", prop={"size":18})
+        # axes[-1].set_axis_off()
     left_over = axes.size - res_names.size
     if left_over > 0:
         for ax in axes[-left_over:]:
