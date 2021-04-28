@@ -84,7 +84,7 @@ def find_max_date_range(file="date_res.csv"):
     return date_range
 
 
-def read_tva_data():
+def read_tva_data(just_load=False):
     pickles = pathlib.Path("..", "pickles")
     df = pd.read_pickle(pickles / "tva_dam_data.pickle")
     fractions = pd.read_pickle(pickles / "tva_fractions.pickle")
@@ -104,24 +104,24 @@ def read_tva_data():
     # df["Release_pre"] = df["Release_pre"] * 86400  # cfs to ft3/day
 
     # create a time series of previous days storage for all reservoirs
-       
-    df[["Storage_pre", "Release_pre"]] = df.groupby(df.index.get_level_values(1))[
-        ["Storage", "Release"]].shift(1)
+    if not just_load:
+        df[["Storage_pre", "Release_pre"]] = df.groupby(df.index.get_level_values(1))[
+            ["Storage", "Release"]].shift(1)
 
-    df[["Storage_7", "Release_7"]] = df.groupby(df.index.get_level_values(1))[
-        ["Storage", "Release"]].shift(7)
-    
-    tmp = df.groupby(df.index.get_level_values(1))[
-        ["Storage_pre", "Release_pre", "Net Inflow"]].rolling(7, min_periods=1).mean()
-    tmp.index = tmp.index.droplevel(0)
-    tmp = tmp.sort_index()
-    df[["Storage_roll7", "Release_roll7", "Inflow_roll7"]] = tmp
+        df[["Storage_7", "Release_7"]] = df.groupby(df.index.get_level_values(1))[
+            ["Storage", "Release"]].shift(7)
+        
+        tmp = df.groupby(df.index.get_level_values(1))[
+            ["Storage_pre", "Release_pre", "Net Inflow"]].rolling(7, min_periods=1).mean()
+        tmp.index = tmp.index.droplevel(0)
+        tmp = tmp.sort_index()
+        df[["Storage_roll7", "Release_roll7", "Inflow_roll7"]] = tmp
 
-    tmp = df.groupby(df.index.get_level_values(1))[
-        ["Storage_pre", "Release_pre", "Net Inflow"]].rolling(14, min_periods=1).mean()
-    tmp.index = tmp.index.droplevel(0)
-    tmp = tmp.sort_index()
-    df[["Storage_roll14", "Release_roll14", "Inflow_roll14"]] = tmp
+        tmp = df.groupby(df.index.get_level_values(1))[
+            ["Storage_pre", "Release_pre", "Net Inflow"]].rolling(14, min_periods=1).mean()
+        tmp.index = tmp.index.droplevel(0)
+        tmp = tmp.sort_index()
+        df[["Storage_roll14", "Release_roll14", "Inflow_roll14"]] = tmp
 
     #* Information about data record
     # There is missing data from 1982 to 1990-10-16

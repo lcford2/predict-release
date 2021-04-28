@@ -1,28 +1,28 @@
-Watauga_HY_TN             Watauga_Reservoir           
-Wilbur_HY_TN              Wilbur_Reservoir       
-SouthHolston_HY_TN        SHolston_Reservoir      
-Boone_HY_TN               Boone_Reservoir               
-FortPatrick_HY_TN         FtPatrick_Reservoir     
-Cherokee_HY_TN            Cherokee_Reservoir         
-Douglas_HY_TN             Douglas_Reservoir           
-FortLoudoun_HY_TN         FtLoudoun_Reservoir     
-Fontana_HY_NC             Fontana_Reservoir           
-Norris_HY_TN              Norris_Reservoir             
-MeltonHill_HY_TN          MeltonH_Reservoir        
-WattsBar_HY_TN            WattsBar_Reservoir         
-Chatuge_HY_NC             Chatuge_Reservoir           
-Nottely_HY_GA             Nottely_Reservoir           
-Hiwassee_HY_NC            Hiwassee_Reservoir         
-Apalachia_HY_TN           Apalachia_Reservoir       
-BlueRidge_HY_GA           BlueRidge_Reservoir       
-Ocoee3_HY_TN              Ocoee3_Reservoir             
-Ocoee1_HY_TN              Ocoee1_Reservoir             
-Chickamauga_HY_TN         Chikamauga_Reservoir    
-RaccoonMt_Storage_TN      RacoonMt_Reservoir      
-Nickajack_HY_TN           Nikajack_Reservoir        
-Guntersville_HY_AL        Guntersville_Reservoir  
-TimsFord_HY_TN            TimsFord_Reservoir         
-Wheeler_HY_AL             Wheeler_Reservoir           
-Wilson_HY_AL              Wilson_Reservoir             
-PickwickLanding_HY_TN     Pickwick_Reservoir     
-Kentucky_HY_KY            Kentucky_Reservoir  
+Watauga_HY_TN             Watauga_Reservoir       NE    
+Wilbur_HY_TN              Wilbur_Reservoir        NE
+SouthHolston_HY_TN        SHolston_Reservoir      NE
+Boone_HY_TN               Boone_Reservoir         NE    
+FortPatrick_HY_TN         FtPatrick_Reservoir     NE
+Cherokee_HY_TN            Cherokee_Reservoir      NE 
+Douglas_HY_TN             Douglas_Reservoir       NE  
+FortLoudoun_HY_TN         FtLoudoun_Reservoir     NE
+Fontana_HY_NC             Fontana_Reservoir       NE  
+Norris_HY_TN              Norris_Reservoir        NE   
+MeltonHill_HY_TN          MeltonH_Reservoir       NE
+WattsBar_HY_TN            WattsBar_Reservoir      NE 
+Chatuge_HY_NC             Chatuge_Reservoir       SE  
+Nottely_HY_GA             Nottely_Reservoir       SE  
+Hiwassee_HY_NC            Hiwassee_Reservoir      SE 
+Apalachia_HY_TN           Apalachia_Reservoir     SE
+BlueRidge_HY_GA           BlueRidge_Reservoir     SE
+Ocoee3_HY_TN              Ocoee3_Reservoir        SE   
+Ocoee1_HY_TN              Ocoee1_Reservoir        SE   
+Chickamauga_HY_TN         Chikamauga_Reservoir    Main
+RaccoonMt_Storage_TN      RacoonMt_Reservoir      Main
+Nickajack_HY_TN           Nikajack_Reservoir      Main
+Guntersville_HY_AL        Guntersville_Reservoir  Main
+TimsFord_HY_TN            TimsFord_Reservoir      Main
+Wheeler_HY_AL             Wheeler_Reservoir       Main
+Wilson_HY_AL              Wilson_Reservoir        Main 
+PickwickLanding_HY_TN     Pickwick_Reservoir      Main
+Kentucky_HY_KY            Kentucky_Reservoir      Main

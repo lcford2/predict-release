@@ -228,7 +228,8 @@ def select_correct_data(data, args):
     else:
         modeled = data["data"]["predicted_act"].unstack()
         actual = data["data"]["y_test_act"].unstack()
-        if args.model_path.split("\\")[0] == "treed_ml_model":
+        parent_dir = pathlib.Path(args.model_path).parent.as_posix()
+        if parent_dir == "treed_ml_model":
             groupnames = data["data"]["groups"]
         else:
             groupnames = data["data"]["X_test"]["compositegroup"]
@@ -771,6 +772,222 @@ def plot_acf(data, args):
     
     plt.show()
     
+def plot_monthly_node_prob(data,args):
+    groups = data["data"]["groups"]
+    grouplabels = groups.unique()
+    grouplabels.sort()
+    group_map = {j:i+1 for i,j in enumerate(grouplabels)}
+    groups = groups.apply(group_map.get)
+    counts = groups.groupby(groups.index.get_level_values(0).month).value_counts()
+    counts = counts.unstack()
+
+    mtotal = counts.sum(axis=1)
+    ltotal = counts.sum(axis=0)
+    
+    # props = counts.divide(ltotal, axis=1).T * 100
+    props = counts.divide(mtotal, axis=0) * 100
+
+    fig = plt.figure()
+    gs = fig.add_gridspec(ncols=2, nrows=1, width_ratios=[20, 1])
+    ax = fig.add_subplot(gs[0, 0])
+    leg_ax = fig.add_subplot(gs[0, 1])
+
+    props.plot(
+        ax=ax,
+        kind="bar",
+        stacked=True, 
+        # ylabel="Node Probability [%]", 
+        ylabel="P(Leaf|Month) [%]",
+        rot=0,
+        colormap="turbo")
+
+    ax.set_xticklabels(calendar.month_abbr[1:])
+    # ax.set_xlabel("Leaf")
+    handles, labels = ax.get_legend_handles_labels()
+    ax.get_legend().remove()
+    leg_ax.legend(handles, labels, loc="center", title="Leaf")
+    leg_ax.set_axis_off()
+    plt.show()
+
+def plot_spatial_corrs(data, args):
+    modeled, actual, groupnames = select_correct_data(data, args)
+    tva_data = read_tva_data(just_load=True)
+    inflow = tva_data["Net Inflow"].unstack()
+    with open("../pickles/res_children_data.pickle", "rb") as f:
+        depend = pickle.load(f)
+
+    rest_data_path = pathlib.Path("..", "results", 
+                                "multi-level-results",
+                                "with_grouped_month_vars",
+                                "NaturalOnly-RunOfRiver_RIx_pre_std_swapped_res.pickle")
+    with open(rest_data_path.as_posix(), "rb") as f:
+        rest_data = pickle.load(f)
+    rest_modeled = rest_data["data"]["forecasted"]["Release_act"].unstack()
+    rest_actual = rest_data["data"]["y_test_act"].unstack()
+    
+    corrs = pd.DataFrame(0, columns=["Actual", "Modeled"],
+                        index=rest_modeled.columns)
+
+    for res, children in depend.items():
+        for child in children:
+            try:
+                rel_act = actual[res]
+                rel_mod = modeled[res]
+            except KeyError as e:
+                try:
+                    rel_act = rest_actual[res]
+                    rel_mod = rest_modeled[res]
+                except KeyError as e:
+                    continue
+            mindex = rel_mod.index
+            res_inflow = inflow.loc[mindex, child]
+            act_cor = pearsonr(rel_act, res_inflow)[0]
+            mod_cor = pearsonr(rel_mod, res_inflow)[0]
+            corrs.loc[res, "Actual"] = act_cor
+            corrs.loc[res, "Modeled"] = mod_cor
+    
+    order = ['Ocoee3', 'Wilbur', 'Boone', 'Kentucky', 'Ocoee1', 
+             'FtPatrick', 'Apalachia', 'MeltonH', 'WattsBar',
+             'FtLoudoun', 'Wilson', 'Nikajack', 'Chikamauga', 'Guntersville',
+             'Wheeler', 'Pickwick', 'Douglas', 'Cherokee', 'Hiwassee',
+             'BlueRidge', 'TimsFord', 'Watauga', 'Nottely',
+             'Chatuge', 'SHolston', 'Norris', 'Fontana']
+    corrs = corrs.loc[order,]
+    corrs = corrs[corrs["Actual"] != 0]
+    corrs.plot(
+            kind="bar",
+            stacked=False, 
+            ylabel="Spatial Release & Inflow Correlation",
+            rot=45,
+            width=0.8)
+    plt.xticks(ha="right")
+    plt.show()
+
+    fig = plt.figure()
+    spec = GS.GridSpec(ncols=2, nrows=1, width_ratios=[20, 1])
+    ax = fig.add_subplot(spec[0])
+    leg_ax = fig.add_subplot(spec[1])
+    leg_ax.axis("off")
+
+    west, south, east, north = -89.62, 33.08, -80.94, 37.99
+    coords = (west, south, east, north)
+
+    m = setup_map(ax, control_area=False, coords=coords)
+    reservoirs = GIS_DIR.joinpath("kml_converted", "Hydroelectric-point.shp")
+    res_loc = gpd.read_file(reservoirs)
+    res_drop = ["Great Falls Dam", "Ocoee #2 Dam",
+                "Tellico Dam", "Nolichucky Dam",
+                "Raccoon Mountain Pumped-Storage Plant"]
+    res_loc = res_loc[~res_loc["Name"].isin(res_drop)]
+
+    res_name_map = {}
+    with open("loc_name_map.csv", "r") as f:
+        for line in f:
+            line = line.strip("\r\n")
+            old, new = line.split(",")
+            res_name_map[old] = new
+
+    res_loc["Name"] = [res_name_map[i] for i in res_loc["Name"]]
+    res_loc = res_loc[res_loc["Name"] != "Kentucky"]
+
+    name_conv = {}
+    with open("name_conversion.txt", "r") as f:
+        for line in f:
+            name_t, name_act, region = line.split()
+            name_conv[name_t.split("_")[0]] = name_act.split("_")[0]
+
+    corrs["Ratio"] = corrs["Modeled"] / corrs["Actual"]
+    sizes = np.array([corrs.loc[name_conv[i], "Ratio"]
+                      for i in res_loc["Name"]])
+    max_size = 350
+    max_score = sizes.max()
+    scale = max_size / max_score
+    # plot_sizes = sizes * scale
+    plot_sizes = np.power(max_size, sizes)
+    over = corrs[corrs["Ratio"] > 1]["Ratio"]
+    under = corrs[corrs["Ratio"] < 1]["Ratio"]    
+    over_geom = res_loc[res_loc["Name"].isin(over.index)]
+    under_geom = res_loc[res_loc["Name"].isin(under.index)]
+    over_sizes = np.power(max_size, over)
+    under_sizes = np.power(max_size, under)
+    over_sizes = [over_sizes.loc[i] for i in over_geom["Name"]]
+    under_sizes = [under_sizes.loc[i] for i in under_geom["Name"]]
+
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    # II()
+    ax.scatter(*zip(*[(i.x, i.y) for i in over_geom["geometry"]]),
+               facecolor=colors[0], marker="o", s=over_sizes, alpha=1, zorder=4, edgecolor="k")
+    ax.scatter(*zip(*[(i.x, i.y) for i in under_geom["geometry"]]),
+               facecolor=colors[1], marker="o", s=under_sizes, alpha=1, zorder=4, edgecolor="k")
+    # ax.scatter(*zip(*[(i.x, i.y) for i in res_loc["geometry"]]),
+    #            facecolor="#00bce5", marker="o", s=plot_sizes, alpha=1, zorder=4, edgecolor="k")
+
+    legend_scores = np.linspace(sizes.min(), sizes.max(), 4)
+    legend_sizes = np.power(max_size, legend_scores)
+    legend_markers = [plt.scatter(
+                            [], [], s=i, edgecolors="k", c="#00bce5", alpha=1
+                        ) for i in legend_sizes]
+    leg_kwargs = dict(ncol=1, frameon=True, handlelength=1, loc='center', borderpad=1,
+                      scatterpoints=1, handletextpad=1, labelspacing=1, markerfirst=False,
+                      title=r"$\frac{r_{Modeled}}{r_{Actual}}$")
+    ax_legend = leg_ax.legend(
+        legend_markers, [f"{i:.2f}" for i in legend_scores], **leg_kwargs)
+    plt.show()
+
+
+def plot_seasonal_error(data, args):
+    modeled, actual, groupnames = select_correct_data(data, args)
+    # tva_data = read_tva_data(just_load=True)
+    # inflow = tva_data["Net Inflow"].unstack()
+    # with open("../pickles/res_children_data.pickle", "rb") as f:
+    #     depend = pickle.load(f)
+
+    with open("./name_conversion.txt", "r") as f:
+        names = f.readlines()
+    names = [i.split()[1:] for i in names]
+    names = [[i.split("_")[0],j] for i,j in names]
+
+    rest_data_path = pathlib.Path("..", "results",
+                                  "multi-level-results",
+                                  "with_grouped_month_vars",
+                                  "NaturalOnly-RunOfRiver_RIx_pre_std_swapped_res.pickle")
+    with open(rest_data_path.as_posix(), "rb") as f:
+        rest_data = pickle.load(f)
+    rest_modeled = rest_data["data"]["forecasted"]["Release_act"].unstack()
+    rest_actual = rest_data["data"]["y_test_act"].unstack()
+
+    errors = pd.DataFrame(0, columns=[*range(1,13), "Region"],
+                         index=rest_modeled.columns)
+
+    for res, region in names:
+        try:
+            rel_act = actual[res]
+            rel_mod = modeled[res]
+        except KeyError as e:
+            try:
+                rel_act = rest_actual[res]
+                rel_mod = rest_modeled[res]
+            except KeyError as e:
+                continue
+        error = (rel_mod - rel_act).abs()
+        mae = error.groupby(error.index.month).mean()
+        errors.loc[res,range(1,13)] = mae
+        errors.loc[res,"Region"] = region
+    
+    mean_monthly_release = rest_actual.groupby(rest_modeled.index.month).mean()
+    rel_errors = errors[range(1,13)] / mean_monthly_release.T * 100
+    rel_errors["Region"] = errors["Region"]
+    errors = errors.groupby("Region").mean().T / 43560 / 1000
+    rel_errors = rel_errors.groupby("Region").mean().T 
+    # errors = errors.groupby("Region").mean().T / 24 / 3600
+    rel_errors.plot(
+        kind="bar",
+        stacked=False,
+        ylabel="Monthly Mean Absolute Release Error [%]",
+        rot=0,
+        width=0.8)
+    plt.xticks(ticks=range(12), labels=calendar.month_abbr[1:], ha="center")
+    plt.show()
 
 def plot_monthly_metrics(data, args):
     modeled, actual, groupnames = select_correct_data(data, args)
@@ -826,7 +1043,6 @@ def plot_monthly_metrics(data, args):
     )
     plt.show()
 
-
 def plot_tree_sens(data, args):
     params = list(data.columns)
     params.remove("Tree")
@@ -859,7 +1075,6 @@ def plot_recov_heatmap(data, args):
     cov_re = cov_re.rename(columns=name_map, index=name_map)
     sns.heatmap(cov_re, annot=True)
     plt.show()
-
 
 def plot_rf_breaks(data, args):
     counts = data.groupby("Node")["Param"].value_counts(normalize=True) * 100
@@ -930,7 +1145,6 @@ def setup_map(ax, control_area=True, coords=None):
     ax.text(mid_lon + 4.1, mid_lat - 1.4, 'SC', fontsize=18,
             ha="center")  # SC
 
-
 def plot_score_map(data, args):
     modeled, actual, groupnames = select_correct_data(data, args)
     groupnames = groupnames.unstack().values[0, :]
@@ -963,7 +1177,7 @@ def plot_score_map(data, args):
     name_conv = {}
     with open("name_conversion.txt", "r") as f:
         for line in f:
-            name_t, name_act = line.split()
+            name_t, name_act, region = line.split()
             name_conv[name_t.split("_")[0]] = name_act.split("_")[0]
 
     
