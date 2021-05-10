@@ -784,8 +784,8 @@ def plot_monthly_node_prob(data,args):
     mtotal = counts.sum(axis=1)
     ltotal = counts.sum(axis=0)
     
-    # props = counts.divide(ltotal, axis=1).T * 100
-    props = counts.divide(mtotal, axis=0) * 100
+    props = counts.divide(ltotal, axis=1).T * 100
+    # props = counts.divide(mtotal, axis=0) * 100
 
     fig = plt.figure()
     gs = fig.add_gridspec(ncols=2, nrows=1, width_ratios=[20, 1])
@@ -797,15 +797,31 @@ def plot_monthly_node_prob(data,args):
         kind="bar",
         stacked=True, 
         # ylabel="Node Probability [%]", 
-        ylabel="P(Leaf|Month) [%]",
+        ylabel="P(Month|Leaf) [%]",
         rot=0,
         colormap="turbo")
 
-    ax.set_xticklabels(calendar.month_abbr[1:])
-    # ax.set_xlabel("Leaf")
+    for p in ax.patches:
+        width, height = p.get_width(), p.get_height()
+        x, y = p.get_xy()
+        pcol = p.get_facecolor()
+        if pcol == (0.18995, 0.07176, 0.23217, 1.0):
+            tcol = "white"
+        else:
+            tcol = "black"
+        if height > 5:
+            ax.text(x+width/2, y+height/2,
+                    f"{height:.0f}",
+                    ha="center", 
+                    va="center",
+                    c=tcol)
+
+
+    # ax.set_xticklabels(calendar.month_abbr[1:])
+    ax.set_xlabel("Leaf")
     handles, labels = ax.get_legend_handles_labels()
     ax.get_legend().remove()
-    leg_ax.legend(handles, labels, loc="center", title="Leaf")
+    leg_ax.legend(handles, labels, loc="center", title="Month")
     leg_ax.set_axis_off()
     plt.show()
 
@@ -841,6 +857,8 @@ def plot_spatial_corrs(data, args):
                     continue
             mindex = rel_mod.index
             res_inflow = inflow.loc[mindex, child]
+            # act_nse = metric_linker("nse")(rel_act, res_inflow)
+            # mod_nse = metric_linker("nse")(rel_mod, res_inflow)
             act_cor = pearsonr(rel_act, res_inflow)[0]
             mod_cor = pearsonr(rel_mod, res_inflow)[0]
             corrs.loc[res, "Actual"] = act_cor
