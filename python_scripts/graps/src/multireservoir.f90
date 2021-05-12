@@ -11,7 +11,7 @@ Program multireservoir
     character(LEN=3) :: func_flag
     integer , allocatable :: id_output(:), cons_id(:), user_id(:), res_ids_for_spdef(:)
     
-    open(unit=9 , file = 'path.dat',                ACTION = 'READ', STATUS = 'OLD')
+    open(unit=9 , file = '../path.dat',                ACTION = 'READ', STATUS = 'OLD')
 
     0001 format(A)
     read(9, 0001)input_path

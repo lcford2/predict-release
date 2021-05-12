@@ -9,19 +9,12 @@ subroutine initialize(init_nparam, init_index_cons, init_dec_vars, num_res, num_
     implicit doubleprecision(a-h, o-z)
     common /final_print/ifinal
 
-    double precision, allocatable :: decision_var_lb(:),decision_var_ub(:), decision_var(:)!,w(:),g(:),f(:)
-    ! Integer, allocatable :: iw(:)
+    double precision, allocatable :: decision_var_lb(:),decision_var_ub(:), decision_var(:)
     integer :: init_nparam, init_index_cons, num_res, num_user, num_restr
-    ! if (present(init_nparam)) then
     double precision, dimension(init_nparam), INTENT(OUT) :: init_dec_vars
-    ! else
-    ! double precision, allocatable :: init_dec_vars(:)
-    ! end if
 
-    ! subroutine declarations
-
-    open(unit=9 , file = 'path.dat',                ACTION = 'READ', STATUS = 'OLD')
-
+    ! Read input files.
+    open(unit=9 ,  file = '../path.dat',                                ACTION = 'READ', STATUS = 'OLD')
     0001 format(A)
     read(9, 0001)input_path
     read(9, 0001)output_path
@@ -31,18 +24,20 @@ subroutine initialize(init_nparam, init_index_cons, init_dec_vars, num_res, num_
     open(unit=11,  file = trim(input_path)//'watershed_details.dat',	ACTION = 'READ', STATUS = 'OLD')
     open(unit=12,  file = trim(input_path)//'nflow_details.dat',		ACTION = 'READ', STATUS = 'OLD')
     open(unit=13,  file = trim(input_path)//'reservoir_details.dat',	ACTION = 'READ', STATUS = 'OLD')
-    open(unit=14,  file = trim(input_path)//'user_details.dat',		ACTION = 'READ', STATUS = 'OLD')
-    open(unit=15,  file = trim(input_path)//'node_details.dat',		ACTION = 'READ', STATUS = 'OLD')
-    open(unit=16,  file = trim(input_path)//'dir_flow_details.dat',	ACTION = 'READ', STATUS = 'OLD')
-    open(unit=17,  file = trim(input_path)//'ret_flow_details.dat',	ACTION = 'READ', STATUS = 'OLD')
+    open(unit=14,  file = trim(input_path)//'user_details.dat',		    ACTION = 'READ', STATUS = 'OLD')
+    open(unit=15,  file = trim(input_path)//'node_details.dat',		    ACTION = 'READ', STATUS = 'OLD')
+    open(unit=16,  file = trim(input_path)//'dir_flow_details.dat',	    ACTION = 'READ', STATUS = 'OLD')
+    open(unit=17,  file = trim(input_path)//'ret_flow_details.dat',	    ACTION = 'READ', STATUS = 'OLD')
     open(unit=18,  file = trim(input_path)//'diversions_details.dat',	ACTION = 'READ', STATUS = 'OLD')
     open(unit=19,  file = trim(input_path)//'spill_flow_details.dat',	ACTION = 'READ', STATUS = 'OLD')
     open(unit=20,  file = trim(input_path)//'ibasin_flow_details.dat',	ACTION = 'READ', STATUS = 'OLD')
     open(unit=21,  file = trim(input_path)//'demand_flow_details.dat',	ACTION = 'READ', STATUS = 'OLD')
-    open(unit=22,  file = trim(input_path)//'sink_details.dat',		ACTION = 'READ', STATUS = 'OLD')
+    open(unit=22,  file = trim(input_path)//'sink_details.dat',		    ACTION = 'READ', STATUS = 'OLD')
     open(unit=23,  file = trim(input_path)//'interbasin_details.dat',	ACTION = 'READ', STATUS = 'OLD')
-    open(unit=25,  file = trim(input_path)//'storage_flood_rule.dat',  ACTION = 'READ', STATUS = 'OLD')
-    open(unit=26,  file = trim(input_path)//'storage_supply_rule.dat', ACTION = 'READ', STATUS = 'OLD')
+    open(unit=25,  file = trim(input_path)//'storage_flood_rule.dat',   ACTION = 'READ', STATUS = 'OLD')    
+    open(unit=26,  file = trim(input_path)//'storage_supply_rule.dat',  ACTION = 'READ', STATUS = 'OLD')
+    open(unit=27,  file = trim(input_path)//'release_params.dat',       ACTION = 'READ', STATUS = 'OLD')
+    ! open output files for writing.
     open(unit=31,  file = trim(output_path)//'storage.out')
     open(unit=54,  file = trim(output_path)//'hydro.out')
     open(unit=24,  file = trim(output_path)//'release.out')
@@ -63,7 +58,6 @@ subroutine initialize(init_nparam, init_index_cons, init_dec_vars, num_res, num_
     open(unit=110, file = trim(output_path)//'opt.out')
     open(unit=112, file = trim(output_path)//'informs.out')
     open(unit=113, file = trim(output_path)//'ignored_constraints.out')
-    ! open(unit=111, file = "res_bounds.out")
 
 
     ! reading input.dat 
@@ -108,6 +102,9 @@ subroutine initialize(init_nparam, init_index_cons, init_dec_vars, num_res, num_
     IF(ALLOCATED(my_demand_release))    DEALLOCATE(my_demand_release)
     ALLOCATE(my_spill_flow(nspill_flow),my_natural_flow(nnatural_flow),my_interbasin_flow(ninterbasin_flow),&
         &my_demand_release(ndemand_release))
+
+    ! IF(ALLOCATED(my_release_params))    DEALLOCATE(my_release_params)
+    ! ALLOCATE(my_release_params)
 
     ! Reads the system details from individual files until the connectivity given in input.dat comes to an end.
     icount = 0
@@ -308,6 +305,35 @@ end subroutine
 
 
 ! Following functions are for reading input files.
+
+subroutine read_release_params(my_release_params)
+    USE Definitions
+    implicit doubleprecision(a-h, o-z)
+    character*15 param_type
+    integer nrows, i, IOSTATUS
+    TYPE(release_params) my_release_params
+
+    DO
+        read(27,*,IOSTAT=IOSTATUS) param_type, nrows
+        if (IOSTATUS > 0) then
+            return
+        else
+            if (trim(param_type).eq."Tree") then
+                do i = 1, nrows
+                    read(27,*)(my_release_params%tree_params(i,j), j=1,8)
+                end do
+            else if (trim(param_type).eq."Month") then 
+                do i = 1, nrows
+                    read(27,*)(my_release_params%month_params(i,j), j=1,12)
+                end do
+            else if (trim(param_type).eq."RunOfRiver") THEN
+                read(27,*)(my_release_params%ror_params(i), i=1,8)
+            else if (trim(param_type).eq."StorageDam") then
+                read(27,*)(my_release_params%stdam_params(i), i=1,8)
+            end if
+        end if
+    END DO
+end subroutine
 
 ! subroutine to read watershed details.dat 
 Subroutine read_watershed_details(my_watershed,nwatershed,ntime, nensem)

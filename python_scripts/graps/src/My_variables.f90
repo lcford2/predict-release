@@ -17,6 +17,8 @@ TYPE (demand_release), allocatable	::	my_demand_release(:)
 TYPE (Interbasin), allocatable		::	my_interbasin(:)
 TYPE (ordered_network), allocatable ::  my_network_order(:),searched_vertices(:),parallel_track(:)
 TYPE (flow_definitions), allocatable ::  my_flow_set(:)
+TYPE (release_params) :: my_release_params ! new object for release parameters from regression
+
 character*40 type_details
 ! character*500 input_path, output_path
 

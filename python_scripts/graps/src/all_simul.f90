@@ -716,7 +716,7 @@ integer constraint_index
 ! double precision, dimension(nparam), intent(out) :: value_output
 
 
-       ELSE IF(my_user(icurrent_id)%name=="Wilbur H") THEN
+       IF(my_user(icurrent_id)%name=="Wilbur H") THEN
        	my_user(icurrent_id)%name = "Wilbur_HY_TN"
        ELSE IF(my_user(icurrent_id)%name=="SHolston H") THEN
        	my_user(icurrent_id)%name = "SouthHolston_HY_TN"
@@ -1102,8 +1102,11 @@ double precision decision_var(nparam),release(ntime)
 		! Need to change some requirments so that reservoirs can only be connected to users and from that back to reservoirs.
 		! - Lucas
 		if(iblock_type.eq.3)temp = 0.0 ! decision_var(icurrent_id+nuser*ntime)/12
+
 		if(iblock_type.eq.4)temp = decision_var((iblock_id-1)*ntime + j)
-	  if(iblock_type.eq.5)temp = 0.0 ! decision_var(icurrent_id+nuser*ntime)/12
+		! if (iblock_type.eq.4) call predict_release(iblock_id, temp, nparam)
+
+	  	if(iblock_type.eq.5)temp = 0.0 ! decision_var(icurrent_id+nuser*ntime)/12
 		! if(iblock_type.eq.12)temp = decision_var(icurrent_id+nuser)/12
 		if(iblock_type.eq.12)temp = 0.0
     temp1 = release(j)
@@ -1114,6 +1117,115 @@ double precision decision_var(nparam),release(ntime)
 return
 
 end
+
+subroutine predict_release(iblock_id, t, release, nparam)
+use My_variables
+implicit doubleprecision(a-h, o-z)
+common /final_print/ifinal
+doubleprecision decision_var(nparam), release(ntime)
+integer t, iblock_id, j, i
+! normalizing parameters
+doubleprecision rel_mean, rel_sd, st_mean, st_sd, inf_mean, inf_sd
+! variables to be used in regression equation
+doubleprecision norm_inflow, norm_release_pre, norm_storage_pre, norm_st_inf_interact
+doubleprecision nat_inflow_t, release_pre_t, storage_pre_t, st_inf_interact
+doubleprecision inflow_roll7, release_roll7, storage_roll7
+doubleprecision norm_inflow_roll7, norm_release_roll7, norm_storage_roll7
+
+
+rel_mean = my_reservoir(iblock_id)%mean_release
+rel_sd = my_reservoir(iblock_id)%sd_release
+st_mean = my_reservoir(iblock_id)%mean_storage
+st_sd = my_reservoir(iblock_id)%sd_storage
+inf_mean = my_reservoir(iblock_id)%mean_inflow
+inf_sd = my_reservoir(iblock_id)%sd_inflow
+
+nat_inflow_t = my_reservoir(iblock_id)%nat_inflow(t)
+release_pre_t = my_reservoir(iblock_id)%release(t)
+storage_pre_t = my_reservoir(iblock_id)%storage(t)
+st_inf_interact = nat_inflow_t * storage_pre_t
+
+norm_inflow = (nat_inflow_t - inf_mean)/inf_sd
+norm_release_pre = (release_pre_t - rel_mean)/rel_sd
+norm_storage_pre = (storage_pre_t - sto_mean)/sto_sd
+norm_st_inf_interact = (st_inf_interact - st_inf_mean) / st_inf_sd
+
+! until we get enough for the seven day rolling
+! mean, we will just use what we have. 
+inflow_roll7 = 0.0
+storage_roll7 = 0.0
+release_roll7 = 0.0
+do i = max(t - 7, 1), t
+	inflow_roll7 = inflow_roll7 + my_reservoir(iblock_id)%nat_inflow(i)
+	storage_roll7 = storage_roll7 + my_reservoir(iblock_id)%release(i)
+	release_roll7 = release_roll7 + my_reservoir(iblock_id)%storage(i)
+end do
+
+inflow_roll7 = inflow_roll7 / max(t, 7)
+storage_roll7 = storage_roll7 / max(t, 7)
+release_roll7 = release_roll7 / max(t, 7)
+
+norm_inflow_roll7 = (inflow_roll7 - inf_mean) / inf_sd
+norm_storage_roll7 = (storage_roll7 - sto_mean) / sto_sd
+norm_release_roll7 = (release_roll7 - rel_mean) / rel_sd
+
+! check for natural reservoirs, which are parameterized with a tree structure
+if (my_reservoir(iblock_id)%is_natural.eq.1) then
+	! level 1 split
+	if (norm_release_pre.le.0.272) then
+		! level 2 split
+		if (norm_release_roll7.le.-0.657) then
+			! level 3 split
+			if (norm_release_pre.le.-0.768) then
+				! leaf 1
+				release = 0
+			else
+				! leaf 2
+				release = 0
+			end if
+		else
+			! level 3 split
+			if (norm_release_pre.le.-0.282) then
+				! leaf 3
+				release = 0
+			else
+				! leaf 4
+				release = 0
+			end if
+		end if
+	else
+		! level 2 split
+		if (norm_release_pre.le.1.792) then
+			! level 3 split
+			if (norm_release_pre.le.0.914) then
+				! leaf 5
+				release = 0
+			else
+				! leaf 6
+				release = 0
+			end if
+		else
+			! level 3 split
+			if (norm_release_pre.le.2.782) then
+				! leaf 7
+				release = 0
+			else
+				! leaf 8
+				release = 0
+			end if
+		end if
+	end if
+else if(my_reservoir(iblock_id)%is_run_of_river.eq.1) then
+	! do the run of river equation here
+	release = 0
+else
+	! do the stuff for the downstream storage dams here
+	release = 0
+end if
+
+
+end
+
 
 ! Add controlled and uncontrolled flows from another flowset
 subroutine add_all_flows(iadd_set,iparent_type,iparent_id,decision_var,nparam)
@@ -1504,7 +1616,7 @@ USE My_variables
 
 
 implicit doubleprecision(a-h,o-z)
-external et_function,lsjac
+external et_function
 integer time_step, spill_con_index, deficit_con_index, lower_target_con_index, upper_target_con_index, nparam
 double precision bottom_bound, upper_bound, target_storage, target_lower, target_upper, min_release, max_release
 Character*2 st_flag, lbound_type, ubound_type

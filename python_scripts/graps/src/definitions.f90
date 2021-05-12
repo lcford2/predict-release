@@ -46,7 +46,13 @@
 		double precision current_storage, target_storage, storage_prob, final_storage
 		double precision, allocatable ::  rule_curve_upper(:), rule_curve_lower(:), evaporation_rate(:)
 		double precision, allocatable :: tar_restr_prob(:),restr_fraction(:),crest_level(:),discharge_max(:)
-		
+
+		! Need these variables for release prediction
+		! These variables will not change during simulation
+		integer is_natural, is_run_of_river
+		double precision mean_release, sd_release, mean_storage, sd_storage, mean_inflow, sd_inflow, st_inf_mean, st_inf_sd
+		! These variables are provided, and they are modified during simulation
+		double precision, allocatable :: nat_inflow(:), release(:), storage(:)
 
 	END TYPE Reservoir
 
@@ -201,5 +207,24 @@ TYPE flow_definitions
 	doubleprecision, allocatable :: uncontrolled_flows(:,:)
 
 END TYPE flow_definitions
+
+TYPE release_params
+
+	doubleprecision, allocatable :: tree_params(:,:)
+	doubleprecision, allocatable :: month_params(:,:)
+	doubleprecision, allocatable :: ror_params(:)
+	doubleprecision, allocatable :: stdam_params(:)
+
+	! tree order
+	! const Storage_pre  Release_pre  Net Inflow  Storage_Inflow_interaction  Inflow_roll7  Storage_roll7  Release_roll7
+
+	! months in order Jan - Feb
+	! ROR is first, then storage dam
+	
+	! ror and stdam order
+	! const	 Net Inflow	 Storage_pre	Release_pre 	Release_roll7	Storage_roll7	Inflow_roll7	Storage_Inflow_interaction
+
+	
+END TYPE release_params
 
 END MODULE Definitions
