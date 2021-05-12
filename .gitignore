@@ -2,3 +2,5 @@
 data_from_dol/hess_formatted_data
 **/__pycache__/**
 python_scripts/graps/bin/*
+python_scripts/graps/json-fortran
+python_scripts/graps/json-fortran/*
