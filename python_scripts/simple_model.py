@@ -9,7 +9,7 @@ from helper_functions import (read_tva_data, scale_multi_level_df,
                               read_all_res_data, find_max_date_range)
 from timing_function import time_function
 from time import perf_counter as timer
-from datetime import timedelta
+from datetime import timedelta, datetime
 from IPython import embed as II
 import calendar
 import sys
@@ -132,7 +132,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     else:
         scaler = StandardScaler()
         X = df.loc[:,["Storage_pre", "Net Inflow", "Release_pre"] + 
-                  extra_lag_terms
+                  extra_lag_terms + ["Storage_roll7", "Release_roll7", "Inflow_roll7"]
                   ]
         y = df.loc[:,"Release"]
 
@@ -176,11 +176,12 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     for key, array in month_arrays.items():
         X_scaled[key] = array
     
-    X_test = X_scaled.loc[X_scaled.index.get_level_values(0).year >= 2010]
-    X_train = X_scaled.loc[X_scaled.index.get_level_values(0).year < 2010]
+    split_date = datetime(2010,1,1)
+    X_test = X_scaled.loc[X_scaled.index.get_level_values(0) >= split_date - timedelta(days=8)]
+    X_train = X_scaled.loc[X_scaled.index.get_level_values(0) < split_date]
 
-    y_test = y_scaled.loc[y_scaled.index.get_level_values(0).year >= 2010]
-    y_train = y_scaled.loc[y_scaled.index.get_level_values(0).year < 2010]
+    y_test = y_scaled.loc[y_scaled.index.get_level_values(0) >= split_date - timedelta(days=8)]
+    y_train = y_scaled.loc[y_scaled.index.get_level_values(0) < split_date]
     
     N_time_train = X_train.index.get_level_values(0).unique().shape[0]
     N_time_test = X_test.index.get_level_values(0).unique().shape[0]
@@ -200,10 +201,8 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     #     ] + extra_lag_terms
 
     exog_terms = [
-        "const", "Net Inflow",  # "Storage_pre", "Net Inflow", "Release_pre",
-        #"Storage_roll7"
-        "Release_roll7", "Storage_roll7",  # "Inflow_roll7",
-        #"Release_roll14", "Storage_roll14", "Inflow_roll14"
+        "const", "Net Inflow", "Storage_pre", "Release_pre",
+        "Release_roll7", "Storage_roll7",  "Inflow_roll7"
     ]
 
     exog_re = exog[exog_terms + interaction_terms + calendar.month_abbr[1:]]
@@ -229,6 +228,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     fe_coefs = mdf.params
     re_coefs = mdf.random_effects
 
+    print(pd.DataFrame(re_coefs))
     
     # test on unseen data
     exog = sm.add_constant(X_test)
@@ -241,7 +241,8 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     forecasted = forecast_mixedLM(fe_coefs, re_coefs, mexog, exog_re, means, std, "compositegroup")
     predicted_act = (predicted.unstack() * std["Release"] + means["Release"]).stack()
     test_score = r2_score(y_test_act, predicted_act)
-    forecast_score = r2_score(y_test_act, forecasted["Release_act"])
+    forecast_score = r2_score(y_test_act.loc[forecasted["Release_act"].index], 
+                              forecasted["Release_act"])
     # print(mdf.summary())
     # print(f"N Time Train: {N_time_train}")
     # print(f"N Time Test : {N_time_test}")
@@ -274,7 +275,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         )
     )
 
-    with open(f"../results/multi-level-results/wgmv_extended/{filename}_SIx_pre_std_swapped_res_lag1-7.pickle", "wb") as f:
+    with open(f"../results/multi-level-results/for_graps/{filename}_SIx_pre_std_swapped_res_roll7.pickle", "wb") as f:
         pickle.dump(output, f, protocol=4)
     
 
@@ -312,7 +313,7 @@ def predict_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, group_col):
     return output_df
 
 @time_function
-def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col, timelevel="all"):
+def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col, timelevel="all", tree=False):
     # create output data frame
     output_df = pd.DataFrame(index=exog_re.index, 
                              columns=list(exog_re.columns) + ["Storage_act", "Release_act"],
@@ -321,29 +322,38 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col
     groups = exog_re[group_col].unique()
     re_keys = re_coefs[groups[0]].keys()
     fe_keys = exog_fe.columns
-    start_date = exog_re.index.get_level_values(0)[0]
+    start_date = exog_re.index.get_level_values(0)[0] + timedelta(days=7)
     end_date = exog_re.index.get_level_values(0)[-1]
-
+    pre_dates = pd.date_range(start=exog_re.index.get_level_values(0)[0], end=start_date)
+    calc_columns = ["Release_pre", "Storage_pre",
+                    "Release_roll7", "Storage_roll7",
+                    "Storage_act", "Release_act"]
+                    
     idx = pd.IndexSlice
-    output_df.loc[idx[start_date, :],
-                  "Release_pre"] = exog_re.loc[idx[start_date, :], "Release_pre"]
-    output_df.loc[idx[start_date, :], "Storage_pre"] = exog_re.loc[idx[start_date, :], "Storage_pre"]
-    output_df.loc[:, "Storage_pre"] = exog_re.loc[:, "Storage_pre"]
+    for col in calc_columns[:3]:
+        output_df.loc[idx[pre_dates,:], col] = exog_re.loc[idx[pre_dates,:], col]
+    # output_df.loc[idx[start_date, :],
+    #               "Release_pre"] = exog_re.loc[idx[start_date, :], "Release_pre"]
+    # output_df.loc[idx[start_date, :], "Storage_pre"] = exog_re.loc[idx[start_date, :], "Storage_pre"]
+    # output_df.loc[:, "Storage_pre"] = exog_re.loc[:, "Storage_pre"]
 
     for col in output_df.columns:
-        if col not in ["Release_pre", "Storage_pre", "Storage_act", "Release_act"]:
+        if col not in calc_columns:
             output_df[col] = exog_re.loc[:,col]
-
-    output_df[group_col] = exog_re[group_col]
-    resers = exog_re.index.get_level_values(1).unique()
-    coeffs = pd.DataFrame(index=resers, columns=re_keys, dtype="float64")
-    nres = resers.size
 
     dates = pd.date_range(start=start_date, end=end_date)
     date = dates[0]
+    output_df[group_col] = exog_re[group_col]
+    resers = exog_re.index.get_level_values(1).unique()
+    nres = resers.size
 
-    for res in resers:
-        coeffs.loc[res, re_keys] = re_coefs[exog_re.loc[(date,res),group_col]]
+    if tree:
+        coeffs = pd.DataFrame(re_coefs).T
+    else:
+        coeffs = pd.DataFrame(index=resers, columns=re_keys, dtype="float64")
+        for res in resers:
+            coeffs.loc[res, re_keys] = re_coefs[exog_re.loc[(
+                date, res), group_col]]
 
     sto_means = means["Storage"]
     sto_p_means = means["Storage_pre"]
@@ -362,11 +372,19 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col
         inf_std = inf_std.unstack()
         rel_std = rel_std.unstack()
 
+    my_coefs = pd.DataFrame(index=resers, columns=re_keys, dtype="float64")
+
     for date in dates:
         exog = output_df.loc[idx[date,:]][re_keys]
         fe_exog = exog_fe.loc[idx[date,:]][fe_keys]
+        if tree:
+            for res in resers:
+                param_group = exog_re.loc[idx[date,res],group_col]
+                my_coefs.loc[res,re_keys] = coeffs.loc[param_group,re_keys]
+        else:
+            my_coefs = coeffs
 
-        rel = exog.mul(coeffs).sum(axis=1) + fe_exog.dot(fe_coefs[fe_keys])
+        rel = exog.mul(my_coefs).sum(axis=1) + fe_exog.dot(fe_coefs[fe_keys])
 
         if timelevel != "all":
             tl = getattr(date, timelevel)
@@ -393,7 +411,18 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col
         output_df.loc[idx[date,:],"Storage"] = storage.values
         output_df.loc[idx[date,:],"Release_act"] = rel_act.values
         output_df.loc[idx[date,:],"Storage_act"] = storage_act.values
+
         tmrw = date+timedelta(days=1)
+        tmp = output_df.groupby(
+            output_df.index.get_level_values(1))[
+                ["Storage_act", "Release_act"]].rolling(
+                    7, min_periods=1).mean()
+        tmp.index = tmp.index.droplevel(0)
+        tmp = tmp.sort_index()
+        tmp = tmp.loc[idx[date,:]]
+        tmp.loc[:,"Storage_act"] = (tmp.loc[:,"Storage_act"] - sto_means)/sto_std
+        tmp.loc[:,"Release_act"] = (tmp.loc[:,"Release_act"] - rel_means)/rel_std
+    
         month_len = calendar.monthrange(date.year, date.month)[1]
         if date != end_date:
             # if date.timetuple().tm_yday in (365, 366):
@@ -403,12 +432,15 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col
             # else:
                 # output_df.loc[idx[tmrw,:],"Release_pre"] = rel.values
             output_df.loc[idx[tmrw,:],"Storage_pre"] = storage.values
+            output_df.loc[idx[tmrw, :], [
+                "Storage_roll7", "Release_roll7"]] = tmp.values
 
     try:
         output_df = output_df.drop(calendar.month_abbr[1:], axis=1)
     except KeyError as e:
         pass
-    return output_df
+
+    return output_df.dropna()
 
 def change_group_names(df, groups, names):
     for group in groups:
@@ -469,8 +501,8 @@ if __name__ == "__main__":
     df = read_tva_data()
     # forecast_mixedLM_other_res(groups=["NaturalOnly", "RunOfRiver"])
     scaled_MixedEffects(df, groups = ["NaturalOnly","RunOfRiver"],
-                            filter_groups={"NaturalOnly": "NaturalFlow"})
-                        # filter_groups={"NaturalOnly":"ComboFlow"})
+                            # filter_groups={"NaturalOnly": "NaturalFlow"})
+                        filter_groups={"NaturalOnly":"ComboFlow"})
     # Recorded Forecast Scores:
     # NaturalOnly, PrimaryType :             0.9643
     # NaturalOnly, RunOfRiver :              0.9646

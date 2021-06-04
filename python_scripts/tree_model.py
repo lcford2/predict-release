@@ -84,10 +84,10 @@ def prep_data(df, groups, filter_groups=None, scaler=None, timelevel="all"):
     return X, y, means, std
 
 @time_function
-def split_train_test_dt(index, date, level=None):
+def split_train_test_dt(index, date, level=None, keep=0):
     # cannot check truthy here because level can be integer 0, which is equivalent to False
     if level is not None:
-        test = index[index.get_level_values(level) >= date]
+        test = index[index.get_level_values(level) >= date - timedelta(days=keep)]
         train = index[index.get_level_values(level) < date]
     else:
         test = index[index >= date]
@@ -163,7 +163,7 @@ def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None
     if forecast:
         if not isinstance(means, pd.DataFrame) or not isinstance(std, pd.DataFrame):
             raise ValueError("If forecast=True, means and std must be provided.")
-        
+ 
         preds = forecast_mixedLM(
                 ml_model.params,
                 ml_model.random_effects,
@@ -189,18 +189,20 @@ def pipeline():
     df = read_tva_data()
     groups = ["NaturalOnly", "RunOfRiver"]
     # filter groups {group to filter by: attribute of entries that should be included}
-    # filter_groups={"NaturalOnly":"NaturalFlow"}
-    filter_groups={"RunOfRiver":"StorageDam"}
+    filter_groups={"NaturalOnly":"NaturalFlow"}
+    # filter_groups={"RunOfRiver":"StorageDam"}
+    # filter_groups = {}
     # get the X matrix, and y vector along with means and std.
     # note: if no scaler is provided, means and std will be 0 and 1 respectively.
     timelevel="all"
     X,y,means,std = prep_data(df, groups, filter_groups, scaler="mine", timelevel=timelevel)
-    train_index, test_index = split_train_test_dt(y.index, date=datetime(2010, 1, 1), level=0)
-
+    train_index, test_index = split_train_test_dt(y.index, date=datetime(2010, 1, 1), level=0, keep=8)
+    # II()
+    # sys.exit()
     # set exogenous variables
     X_vars = ["Storage_pre", "Release_pre", "Net Inflow",
               "Storage_Inflow_interaction",
-              "Inflow_roll7", "Storage_roll7", "Release_roll7",
+              "Inflow_roll7", "Release_roll7", #"Storage_roll7",
               #"Storage_7", "Release_7",
             #   "NaturalOnly", "RunOfRiver"
               ]
@@ -213,10 +215,9 @@ def pipeline():
     X_test = X.loc[test_index,:]
     y_train = y.loc[train_index]
     y_test = y.loc[test_index]
-    II()
-    sys.exit()
+
     # fit the decision tree model
-    max_depth=4
+    max_depth=3
     #, splitter="best" - for decision_tree
     tree = tree_model(X_train, y_train, tree_type="decision", max_depth=max_depth,
                       random_state=37)
@@ -227,10 +228,8 @@ def pipeline():
     ml_model = sub_tree_multi_level_model(X_train, y_train, tree)
 
     fitted = ml_model.fittedvalues
-    # II()
-    # sys.exit()
-    # predict and forecast from the sub_tree model
-    
+
+    # predict and forecast from the sub_tree model    
     preds, pgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model)
     forecasted, fgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model, 
                                              forecast=True, means=means, std=std,
@@ -269,13 +268,17 @@ def pipeline():
 
 
     # report scores for the current model run
+    try:
+        preds_score = r2_score(y_test_act, preds_act)
+    except ValueError as e:
+        II()
+    y_test_act = y_test_act.loc[forecasted_act.index]
     fit_score = r2_score(y_train_act, fitted_act)
     try:
         forecasted_score = r2_score(y_test_act, forecasted_act)
     except ValueError as e:
         forecasted_score = np.nan
-    # II()
-    preds_score = r2_score(y_test_act, preds_act)
+
     score_strings = [f"{ftype:<12} = {score:.3f}" for ftype, score in zip(
                     ["Fit", "Forecast", "Preds"], [fit_score, forecasted_score, preds_score])]
     print("Scores:")
@@ -286,16 +289,17 @@ def pipeline():
         prepend = ""
     else:
         prepend = f"{timelevel}_"
-    foldername = f"{prepend}all_res_no_ror_basic_td{max_depth:d}_roll7"
+    foldername = f"{prepend}upstream_basic_td{max_depth:d}_roll7_new"
     folderpath = pathlib.Path("..", "results", "treed_ml_model", foldername)
-
+    
     # check if the directory exists and handle it
     if folderpath.is_dir():
-        response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
+        # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
+        response = "y"
         if response[0].lower() != "y":
             folderpath = pathlib.Path(
                 "..", "results", "treed_ml_model", 
-                foldername + datetime.today().strftime("%Y%m%d_%H%M"))
+                "_".join([foldername, datetime.today().strftime("%Y%m%d_%H%M")]))
             print(f"Saving at {folderpath} instead.")
             folderpath.mkdir()
     else:

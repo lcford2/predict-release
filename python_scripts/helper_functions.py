@@ -97,11 +97,15 @@ def read_tva_data(just_load=False):
 
     # get all variables to similar units for Mass Balance
     df["Storage"] = df["Storage"] * 86400 * 1000  # 1000 second-ft-day to ft3
+    # df["Storage"] = df["Storage"] / 43560 / 1000 # ft3 to 1000 acre ft
     # df["Storage_pre"] = df["Storage_pre"] * \
         # 86400 * 1000  # 1000 second-ft-day to ft3
     df["Net Inflow"] = df["Net Inflow"] * 86400  # cfs to ft3/day
+    # df["Net Inflow"] = df["Net Inflow"] / 43560 / 1000 # ft3/day to 1000 acre-ft/day
     df["Release"] = df["Release"] * 86400  # cfs to ft3/day
+    # df["Release"] = df["Release"] / 43560 / 1000  # ft3/day to 1000 acre-ft/day
     # df["Release_pre"] = df["Release_pre"] * 86400  # cfs to ft3/day
+
 
     # create a time series of previous days storage for all reservoirs
     if not just_load:
