@@ -35,5 +35,9 @@ double precision, allocatable :: value_output(:), spill_values(:), deficit_value
 double precision, allocatable :: cons_mag(:), min_rel(:), max_rel(:), constraints(:)
 double precision, allocatable :: lukes_cons(:), hydro_benefit(:), all_release(:)
 
+! calendar for release params
+integer :: year, month, day
+real ( kind = 8 ) :: jed_init, jed_current, f
+
 
 END MODULE my_variables

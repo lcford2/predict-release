@@ -113,7 +113,9 @@ do i = 1, nsimul_block
 		constraints(icount) = cons_global(icount)
 		! cons_mag(icount) = my_reservoir(icurrent_id)%final_storage - my_reservoir(icurrent_id)%target_storage
 		! If the final storage is less than the lower rule curve at the end of the modeled period
-		cons_mag(icount) = my_reservoir(icurrent_id)%final_storage - max(my_reservoir(icurrent_id)%rule_curve_lower(ntime)*0.95, my_reservoir(icurrent_id)%storage_min)
+		! cons_mag(icount) = my_reservoir(icurrent_id)%final_storage - max(my_reservoir(icurrent_id)%rule_curve_lower(ntime)*0.95, my_reservoir(icurrent_id)%storage_min)
+		!* needed to comment out the line above for the forecasting piece
+		cons_mag(icount) = my_reservoir(icurrent_id)%final_storage - my_reservoir(icurrent_id)%storage_min
 		! cons_global(icount) = cons_mag(icount)
 		! if (cons_global(icount).gt.0) then
 		! 	write(*,*) my_reservoir(icurrent_id)%name, cons_mag(icount), cons_global(icount)
@@ -542,9 +544,7 @@ end if
 		if((iparent_type.eq.4).or.(iparent_type.eq.13))call add_controlled_flows  &
 		  (iparent_type,iparent_id, decision_var,nparam)
 
-	end do
-
-
+	end do		
 
 ! Prepare the outflow sets
 
@@ -598,14 +598,19 @@ do i = 1,nensem
 	do j = 1,ntime
 		q(j) = my_flow_set(iflow_set)%uncontrolled_flows(j,i) + &
 			   my_flow_set(iflow_set)%controlled_flows(j)
-		if (ifinal.eq.1) write(108, "(A,F,F)") my_reservoir(icurrent_id)%name, my_flow_set(iflow_set)%uncontrolled_flows(j,i), my_flow_set(iflow_set)%controlled_flows(j)
+		my_reservoir(icurrent_id)%inflow(j+6) = q(j)
+		if (ifinal.eq.1) write(108, '(A,F,F)') my_reservoir(icurrent_id)%name, my_flow_set(iflow_set)%uncontrolled_flows(j,i), my_flow_set(iflow_set)%controlled_flows(j)
+	!'(A,F,F)'
 	end do
-	
 
 
-	call reser_simul(icurrent_id, q, ntime,release,storage_max, storage_ini,rate_area, &
-					 simul_stor,simul_spill, simul_evapo, simul_deficit,iflag, nparam)
+	call reser_simul(icurrent_id, q, release,storage_max, storage_ini,rate_area, &
+					 simul_stor,simul_spill, simul_evapo, simul_deficit,iflag, nparam,nchild,i)
 	
+
+	! do j = 1, ntime
+	! 	decision_var(((icurrent_id-1)*ntime)+j) = release(j)
+	! end do
 
 	my_reservoir(icurrent_id)%final_storage = simul_stor(ntime)
  
@@ -646,11 +651,24 @@ do i = 1,nensem
 
 	if (ifinal.eq.1) then 
    		write(31,15) my_reservoir(icurrent_id)%name, (simul_stor(j), j=1,ntime)        
-		15 format(a,2x, <ntime>(2x,F12.2))
+		15 format(a,2x, <ntime>(2x,F16.2))
 		write(28,15) my_reservoir(icurrent_id)%name, (act_release(j), j=1,ntime)
 		write(44,15) my_reservoir(icurrent_id)%name, (simul_deficit(j), j=1,ntime)
 		write(30,15) my_reservoir(icurrent_id)%name, (simul_spill(j), j=1, ntime)
 		write(24,15) my_reservoir(icurrent_id)%name, (release(j), j=1, ntime)
+		
+		open(unit=45,  file = '../forecast_period/forecast_period_output/forecast_vars/'//trim(my_reservoir(icurrent_id)%name)//'.out')
+		do j = 1, ntime+7
+			if (j.lt.ntime+7) then
+				write(45,'(F,F,F)') my_reservoir(icurrent_id)%release(j), my_reservoir(icurrent_id)%storage(j), my_reservoir(icurrent_id)%inflow(j)
+			else
+				write(45,'(F,F)') my_reservoir(icurrent_id)%release(j), my_reservoir(icurrent_id)%storage(j)
+			end if
+		end do
+		close(45)
+		! do j = 1, ntime
+		! 	print *, my_reservoir(icurrent_id)%name, j, release(j)
+		! end do
 		! if (nensem.eq.1)  then
 		! 	! CHARACTER(LEN=*), PARAMETER :: FMT1 = "(A,A,F.2)"
 		! 	125 format(A,A,F10.2)
@@ -774,6 +792,7 @@ integer constraint_index
         ! Unit_Conv = 62.4*43560*0.746/3600/550 ! Amir's Unit Conv =  62.4*43560*1000/0.74/3600/1000/1000  ! Yi's Unit_Conv = 62.5*1.356*1000/2/31/1000000
 				! Unit_Conv = 9.81*1000/3600 ! [9.81 KN/m^3]*[10^6m^3/hm^3]/[3600 KJ/KWh]*[1000 KWh/MWh] Input in thousand cubic meters per month -Lucas
 		Unit_Conv = 62.4*43560*1000/2.655E9 ! [62.4 lb/ft^3]*[43560 ft^2/acre]*[1000 acre/thousand acre]/[2.665E9 ft-lb/MWh] Input in thousand acre ft per month - Lucas
+		! Unit_Conv = 
 		! power is output in MWhrs/month, to compare to installed 
 		! capacity we need to convert capacity to activity
 		! to do that we assume that the max generation possible is 
@@ -1040,44 +1059,60 @@ do j = 1,ntime
 
   if(iblock_type.eq.4)then
 
-  nlags = my_user(iblock_id)%nlags
-
-    if(j.gt.nlags)then
-		   
-			temp1 = 0.0d0
-			if (nlags == 0) then
-				temp1 = decision_var((iblock_id-1)*ntime+j)
-			else 
-				do k = 1,my_user(iblock_id)%nlags
+  	nlags = my_user(iblock_id)%nlags
+	temp1 = 0.0d0
+	if (nlags == 0) then
+		temp1 = decision_var((iblock_id-1)*ntime+j)
+	else if (j.gt.nlags) then
+		do k = 1,my_user(iblock_id)%nlags
 					
-					fract = (1-my_user(iblock_id)%ffraction(k))
-					rflow = my_user(iblock_id)%demand_fract(j-k) &
-									*decision_var(iblock_id)*fract
+			fract = (1-my_user(iblock_id)%ffraction(k))
+			! rflow = my_user(iblock_id)%demand_fract(j-k) &
+			! 				*decision_var(iblock_id)*fract
+			rflow  = decision_var(iblock_id) * fract
+			temp1 = temp1 + rflow
 
-					temp1 = temp1 + rflow
+		end do
+	else		  
+	  	temp1 = 0.0
+	end if
+	temp = temp1
+    ! if(j.gt.nlags)then
+		   
+			
+	! 		if (nlags == 0) then
+	! 			temp1 = decision_var((iblock_id-1)*ntime+j)
+	! 		else 
+	! 			do k = 1,my_user(iblock_id)%nlags
+					
+	! 				fract = (1-my_user(iblock_id)%ffraction(k))
+	! 				! rflow = my_user(iblock_id)%demand_fract(j-k) &
+	! 				! 				*decision_var(iblock_id)*fract
+	! 				rflow  = decision_var(iblock_id) * fract
+	! 				temp1 = temp1 + rflow
 
-				end do
+	! 			end do
 
-			end if 
-			temp = temp1
+	! 		end if 
+		! 	temp = temp1
 
-		else
+		! else
 		  
-	  	temp = 0.0
+	  	! temp = 0.0
 		  
-    end if 
+    ! end if 
 
-  end if 
+	end if 
 
-   if(iblock_type.eq.13)temp = my_interbasin(iblock_id)%average_flow(j)
-   if(iblock_type.eq.3)temp = 0.0 !decision_var(iblock_id+nuser*ntime)/12
+    if(iblock_type.eq.13)temp = my_interbasin(iblock_id)%average_flow(j)
+    if(iblock_type.eq.3)temp = 0.0 !decision_var(iblock_id+nuser*ntime)/12
 
 !	if((iblock_type.eq.5).and.(iblock_id.eq.3))then
 !	      temp = 0.0
 !		  GO to 15
 !	endif
 
-   if(iblock_type.eq.5)temp = my_flow_set(iflow_set)%controlled_flows(j)
+    if(iblock_type.eq.5)temp = my_flow_set(iflow_set)%controlled_flows(j)
 
 15	my_flow_set(iflow_set)%controlled_flows(j) = temp +my_flow_set(iflow_set)%controlled_flows(j)
 
@@ -1104,12 +1139,12 @@ double precision decision_var(nparam),release(ntime)
 		if(iblock_type.eq.3)temp = 0.0 ! decision_var(icurrent_id+nuser*ntime)/12
 
 		if(iblock_type.eq.4)temp = decision_var((iblock_id-1)*ntime + j)
-		! if (iblock_type.eq.4) call predict_release(iblock_id, temp, nparam)
+		! if (iblock_type.eq.4) call predict_release(iblock_id, j, temp, nparam)
 
 	  	if(iblock_type.eq.5)temp = 0.0 ! decision_var(icurrent_id+nuser*ntime)/12
 		! if(iblock_type.eq.12)temp = decision_var(icurrent_id+nuser)/12
 		if(iblock_type.eq.12)temp = 0.0
-    temp1 = release(j)
+    	temp1 = release(j)
 		temp = temp + temp1
 		release(j) = temp
 	end do
@@ -1118,20 +1153,53 @@ return
 
 end
 
-subroutine predict_release(iblock_id, t, release, nparam)
+subroutine calculate_outflows_pred_release(iblock_type,iblock_id,icurrent_id, icurrent_type,release,nparam,ensem_num,t)
+Use My_variables
+implicit doubleprecision(a-h,o-z)
+common /final_print/ifinal
+double precision release(ntime)
+integer ensem_num, t
+! Loop for release calculation
+	! do j = 1,ntime
+!       if(iblock_type.eq.4)temp = my_user(iblock_id)%demand_fract(j) &
+!					*decision_var(iblock_id)
+		! I made 3,5, and 12 equal to 0.0 because the current method of indexing decision_var results in NaN sometimes. 
+		! There are only decision variables for users currently, i think this is how it should be. 
+		! Need to change some requirments so that reservoirs can only be connected to users and from that back to reservoirs.
+		! - Lucas
+		if(iblock_type.eq.3)temp = 0.0 ! decision_var(icurrent_id+nuser*ntime)/12
+
+		! if(iblock_type.eq.4)temp = decision_var((iblock_id-1)*ntime + j)
+		if (iblock_type.eq.4) call predict_release(iblock_id, ensem_num, t, temp, nparam)
+
+	  	if(iblock_type.eq.5)temp = 0.0 ! decision_var(icurrent_id+nuser*ntime)/12
+		! if(iblock_type.eq.12)temp = decision_var(icurrent_id+nuser)/12
+		if(iblock_type.eq.12)temp = 0.0
+    	temp1 = release(t)
+		temp = temp + temp1
+		release(t) = temp
+	! end do
+
+return
+
+end
+
+subroutine predict_release(iblock_id, ensem_num, t, rel, nparam)
 use My_variables
 implicit doubleprecision(a-h, o-z)
 common /final_print/ifinal
-doubleprecision decision_var(nparam), release(ntime)
-integer t, iblock_id, j, i
+doubleprecision decision_var(nparam)
+integer t, iblock_id, j, i, leaf, nparam, ensem_num
+doubleprecision norm_release, rel
 ! normalizing parameters
-doubleprecision rel_mean, rel_sd, st_mean, st_sd, inf_mean, inf_sd
+doubleprecision rel_mean, rel_sd, st_mean, st_sd, inf_mean, inf_sd, st_inf_mean, st_inf_sd
 ! variables to be used in regression equation
 doubleprecision norm_inflow, norm_release_pre, norm_storage_pre, norm_st_inf_interact
-doubleprecision nat_inflow_t, release_pre_t, storage_pre_t, st_inf_interact
+doubleprecision inflow_t, release_pre_t, storage_pre_t, st_inf_interact
 doubleprecision inflow_roll7, release_roll7, storage_roll7
 doubleprecision norm_inflow_roll7, norm_release_roll7, norm_storage_roll7
 
+call jed_to_ymdf_julian(jed_init + t, year, month, day, f)
 
 rel_mean = my_reservoir(iblock_id)%mean_release
 rel_sd = my_reservoir(iblock_id)%sd_release
@@ -1139,15 +1207,24 @@ st_mean = my_reservoir(iblock_id)%mean_storage
 st_sd = my_reservoir(iblock_id)%sd_storage
 inf_mean = my_reservoir(iblock_id)%mean_inflow
 inf_sd = my_reservoir(iblock_id)%sd_inflow
+st_inf_mean = my_reservoir(iblock_id)%mean_st_inf
+st_inf_sd = my_reservoir(iblock_id)%sd_st_inf
 
-nat_inflow_t = my_reservoir(iblock_id)%nat_inflow(t)
-release_pre_t = my_reservoir(iblock_id)%release(t)
-storage_pre_t = my_reservoir(iblock_id)%storage(t)
-st_inf_interact = nat_inflow_t * storage_pre_t
+! inflow is a ntime + 6 array with the first 6 values being provided by the user
+! these are provided so we can calculate rolling 7 day average
+! therefore, to get the current time step inflow, we have to get t + 6
+inflow_t = my_reservoir(iblock_id)%inflow(t+6)
+! these arrays are dim ntime + 7 with the first 7 values 
+! being provided by the user as previous values
+! therefore, to get the previous storage and release,
+! we need the value at t + 6
+release_pre_t = my_reservoir(iblock_id)%release(t+6)
+storage_pre_t = my_reservoir(iblock_id)%storage(t+6)
+st_inf_interact = inflow_t * storage_pre_t
 
-norm_inflow = (nat_inflow_t - inf_mean)/inf_sd
+norm_inflow = (inflow_t - inf_mean)/inf_sd
 norm_release_pre = (release_pre_t - rel_mean)/rel_sd
-norm_storage_pre = (storage_pre_t - sto_mean)/sto_sd
+norm_storage_pre = (storage_pre_t - st_mean)/st_sd
 norm_st_inf_interact = (st_inf_interact - st_inf_mean) / st_inf_sd
 
 ! until we get enough for the seven day rolling
@@ -1155,18 +1232,18 @@ norm_st_inf_interact = (st_inf_interact - st_inf_mean) / st_inf_sd
 inflow_roll7 = 0.0
 storage_roll7 = 0.0
 release_roll7 = 0.0
-do i = max(t - 7, 1), t
-	inflow_roll7 = inflow_roll7 + my_reservoir(iblock_id)%nat_inflow(i)
+do i = t, t + 6
+	inflow_roll7 = inflow_roll7 + my_reservoir(iblock_id)%inflow(i)
 	storage_roll7 = storage_roll7 + my_reservoir(iblock_id)%release(i)
 	release_roll7 = release_roll7 + my_reservoir(iblock_id)%storage(i)
 end do
 
-inflow_roll7 = inflow_roll7 / max(t, 7)
-storage_roll7 = storage_roll7 / max(t, 7)
-release_roll7 = release_roll7 / max(t, 7)
+inflow_roll7 = inflow_roll7 / 7
+storage_roll7 = storage_roll7 / 7
+release_roll7 = release_roll7 / 7
 
 norm_inflow_roll7 = (inflow_roll7 - inf_mean) / inf_sd
-norm_storage_roll7 = (storage_roll7 - sto_mean) / sto_sd
+norm_storage_roll7 = (storage_roll7 - st_mean) / st_sd
 norm_release_roll7 = (release_roll7 - rel_mean) / rel_sd
 
 ! check for natural reservoirs, which are parameterized with a tree structure
@@ -1178,19 +1255,19 @@ if (my_reservoir(iblock_id)%is_natural.eq.1) then
 			! level 3 split
 			if (norm_release_pre.le.-0.768) then
 				! leaf 1
-				release = 0
+				leaf = 1
 			else
 				! leaf 2
-				release = 0
+				leaf = 2
 			end if
 		else
 			! level 3 split
 			if (norm_release_pre.le.-0.282) then
 				! leaf 3
-				release = 0
+				leaf = 3
 			else
 				! leaf 4
-				release = 0
+				leaf = 4
 			end if
 		end if
 	else
@@ -1199,31 +1276,59 @@ if (my_reservoir(iblock_id)%is_natural.eq.1) then
 			! level 3 split
 			if (norm_release_pre.le.0.914) then
 				! leaf 5
-				release = 0
+				leaf = 5
 			else
 				! leaf 6
-				release = 0
+				leaf = 6
 			end if
 		else
 			! level 3 split
 			if (norm_release_pre.le.2.782) then
 				! leaf 7
-				release = 0
+				leaf = 7
 			else
 				! leaf 8
-				release = 0
+				leaf = 8
 			end if
 		end if
 	end if
+	norm_release = my_release_params%tree_params(leaf,1) + &
+			  	   my_release_params%tree_params(leaf,2) * norm_storage_pre + &
+			  	   my_release_params%tree_params(leaf,3) * norm_release_pre + &
+			  	   my_release_params%tree_params(leaf,4) * norm_inflow + &
+			  	   my_release_params%tree_params(leaf,5) * norm_st_inf_interact + &
+			  	   my_release_params%tree_params(leaf,6) * norm_inflow_roll7 + &
+			  	   my_release_params%tree_params(leaf,7) * norm_storage_roll7 + &
+			  	   my_release_params%tree_params(leaf,8) * norm_release_roll7
+	release = norm_release * rel_sd + rel_mean
 else if(my_reservoir(iblock_id)%is_run_of_river.eq.1) then
 	! do the run of river equation here
-	release = 0
+	norm_release = my_release_params%month_params(1,month) + &
+				   my_release_params%ror_params(1) + &
+				   my_release_params%ror_params(2) * norm_inflow + &
+				   my_release_params%ror_params(3) * norm_storage_pre + &
+				   my_release_params%ror_params(4) * norm_release_pre + &
+				   my_release_params%ror_params(5) * norm_release_roll7 + &
+				   my_release_params%ror_params(6) * norm_storage_roll7 + &
+				   my_release_params%ror_params(7) * norm_inflow_roll7 + &
+				   my_release_params%ror_params(8) * norm_st_inf_interact
+	release = norm_release * rel_sd + rel_mean
 else
 	! do the stuff for the downstream storage dams here
-	release = 0
+	norm_release = my_release_params%month_params(2,month) + &
+				   my_release_params%stdam_params(1) + &
+				   my_release_params%stdam_params(2) * norm_inflow + &
+				   my_release_params%stdam_params(3) * norm_storage_pre + &
+				   my_release_params%stdam_params(4) * norm_release_pre + &
+				   my_release_params%stdam_params(5) * norm_release_roll7 + &
+				   my_release_params%stdam_params(6) * norm_storage_roll7 + &
+				   my_release_params%stdam_params(7) * norm_inflow_roll7 + &
+				   my_release_params%stdam_params(8) * norm_st_inf_interact
+	release = norm_release * rel_sd + rel_mean
 end if
-
-
+! if (release.lt.0) write (*,*) my_reservoir(iblock_id)%name, release, inflow
+my_reservoir(iblock_id)%release(t+7) = release
+rel = release
 end
 
 
@@ -1283,14 +1388,16 @@ return
 
 end 
 ! Subroutine for reservoir simulation
-subroutine reser_simul(icurrent_id,q, ntime,release,storage_max, storage_ini,rate_area, &
-					 simul_stor,simul_spill, simul_evapo, simul_deficit,iflag,nparam)
+subroutine reser_simul(icurrent_id,q, release,storage_max, storage_ini,rate_area, &
+					 simul_stor,simul_spill, simul_evapo, simul_deficit,iflag,nparam,nchild,ensem_num)
+use My_variables
 implicit doubleprecision(a-h,o-z)
 common /final_print/ifinal
 integer nparam
 double precision q(ntime), rate_area(ntime),release(ntime) 
 double precision simul_stor(ntime),simul_evapo(ntime)
 double precision simul_deficit(ntime), simul_spill(ntime)
+integer ensem_num
 
 common/et_est/et_rate,storage_pre,current_flow,current_release,bal_net, iwrite
 
@@ -1302,15 +1409,23 @@ storage_pre = storage_ini
 
 ! Loop for reservoir mass balance
 do j = 1, ntime
+	! do i1 = 1,nchild
+	! 	ichild_type = my_reservoir(icurrent_id)%child_type(i1)
+	! 	ichild_id   = my_reservoir(icurrent_id)%child_id(i1)
+	! 	! call calculate_outflows_pred_release(ichild_type,ichild_id,icurrent_id, icurrent_type, release,nparam,ensem_num,j)
+	! 	call calculate_outflows(ichild_type,ichild_id,icurrent_id, icurrent_type,release,decision_var,nparam)
+	! end do
                   
 	sum_release = release(j) 
 	bal_net = q(j) - sum_release 
 	current_flow  = q(j)
 	current_release = sum_release
+	! decision_var(((icurrent_id-1)*ntime)+j) = current_release
 
-	et_rate  = rate_area(j)
+	et_rate  = rate_area(j) / 1000
 
-	call evaporation_iter(icurrent_id, storage_current, storage_max,evapo_current, spill, deficit, j, nparam) 			
+	call evaporation_iter(icurrent_id, storage_current, evapo_current, spill, deficit, j, nparam) 	
+	my_reservoir(icurrent_id)%storage(j+7) = storage_current
 	simul_stor(j) = storage_current
 	simul_evapo(j) = evapo_current
 	simul_spill(j) = spill
@@ -1610,7 +1725,7 @@ if (ifinal.eq.1) print *, 'Exiting expected benefits.......'
 end
 
 
-Subroutine evaporation_iter(icurrent_id,storage_current,storage_max,evapo_current, spill,deficit, time_step, nparam) 			 
+Subroutine evaporation_iter(icurrent_id,storage_current,evapo_current, spill,deficit, time_step, nparam) 			 
 ! Use NUmerical_libraries
 USE My_variables
 
@@ -1618,7 +1733,7 @@ USE My_variables
 implicit doubleprecision(a-h,o-z)
 external et_function
 integer time_step, spill_con_index, deficit_con_index, lower_target_con_index, upper_target_con_index, nparam
-double precision bottom_bound, upper_bound, target_storage, target_lower, target_upper, min_release, max_release
+double precision bottom_bound, upper_bound, target_storage, target_lower, target_upper, min_release, max_release, storage_max
 Character*2 st_flag, lbound_type, ubound_type
 common /et_est/et_rate,storage_pre,current_flow,current_release,bal_net, iwrite
 common /final_print/ifinal
@@ -1626,13 +1741,13 @@ common /final_print/ifinal
 alpha = my_reservoir(icurrent_id)%storage_area_coeff(1)
 beta = my_reservoir(icurrent_id)%storage_area_coeff(2)
 
-upper_curve = my_reservoir(icurrent_id)%rule_curve_upper(time_step)*1.05
-lower_curve = my_reservoir(icurrent_id)%rule_curve_lower(time_step)*0.95 ! allow reservoir to dip 5% below supply curve
+! upper_curve = my_reservoir(icurrent_id)%rule_curve_upper(time_step)*1.05
+! lower_curve = my_reservoir(icurrent_id)%rule_curve_lower(time_step)*0.95 ! allow reservoir to dip 5% below supply curve
 
 spill_con_index = (icurrent_id - 1)*ntime+time_step
 deficit_con_index = (icurrent_id - 1)*ntime+time_step + nparam
-! target_storage = my_reservoir(icurrent_id)%target_storage
-target_storage = lower_curve
+target_storage = my_reservoir(icurrent_id)%target_storage
+! target_storage = lower_curve
 
 
 
@@ -1648,6 +1763,7 @@ target_storage = lower_curve
 	temp = current_flow - current_release + storage_pre
 
 	storage_min = my_reservoir(icurrent_id)%storage_min
+	storage_max = my_reservoir(icurrent_id)%storage_max
 
 	temp_min = (storage_pre + storage_min)/2.0
 
@@ -1688,44 +1804,50 @@ target_storage = lower_curve
 		
 	! Cases for when the storage is greater than the maximum, less than the minimum
 	! or in between, respectively.
-	if (lower_curve.lt.storage_min) then
+	! if (lower_curve.lt.storage_min) then
 		bottom_bound = storage_min
 		lbound_type = "mn"
-	else
-		bottom_bound = lower_curve
-		lbound_type = "lc"
-	end if
+	! else
+	! 	bottom_bound = lower_curve
+	! 	lbound_type = "lc"
+	! end if
 
-	if (upper_curve.gt.storage_max) then
+	! if (upper_curve.gt.storage_max) then
 		upper_bound = storage_max
 		ubound_type = "mx"
-	else
-		upper_bound = upper_curve
-		ubound_type = "uc"
-	end if
+	! else
+		! upper_bound = upper_curve
+		! ubound_type = "uc"
+	! end if
 
-
+	bottom_bound = storage_min
+	lbound_type = "mn"
+	upper_bound = storage_max
+	ubound_type = "mx"
+	
 	max_release = my_user(icurrent_id)%maximum_release
 	min_release = my_user(icurrent_id)%minimum_release
 
 	if (x.ge.upper_bound) then 
+		! write (*, *) x, upper_bound
 		st_flag = 'ge'
 		storage_current = upper_bound
 		temp = 0.5*(storage_current + storage_pre)
 		evapo_current = et_cal(et_rate, temp, alpha, beta)
 		deficit = 0.0
-		spill = 0.0
+		spill = current_flow - current_release + storage_pre - storage_current - evapo_current
+		
 		! if (ubound_type.eq."mx") then
 		! spill = current_flow - current_release + storage_pre - storage_current - evapo_current
 		! else if(ubound_type.eq."uc") then
 		! 	! is the upper bound is our implemented rule curve, decrease release first
 		! 	! then check for spill
-			current_release = current_flow + storage_pre - storage_current - evapo_current
-			if (current_release.gt.max_release) then
-				spill = current_release - max_release
-				! write(*, "(A, A, F, F, F, F, F)") my_reservoir(icurrent_id)%name, "spill", current_release, x, upper_bound, max_release, spill
-				current_release = max_release
-			end if
+			! current_release = current_flow + storage_pre - storage_current - evapo_current
+			! if (current_release.gt.max_release) then
+			! 	spill = current_release - max_release
+			! 	! write(*, "(A, A, F, F, F, F, F)") my_reservoir(icurrent_id)%name, "spill", current_release, x, upper_bound, max_release, spill
+			! 	current_release = max_release
+			! end if
 		! end if
 	end if
 	
@@ -1734,19 +1856,19 @@ target_storage = lower_curve
 		storage_current = bottom_bound
 		temp = 0.5*(storage_current + storage_pre)
 		evapo_current = et_cal(et_rate, temp, alpha, beta)
-		deficit = 0.0
+		deficit = current_release - current_flow - storage_pre + evapo_current + storage_current
 		spill = 0.0
 		! if (lbound_type.eq."mn") then
 		! deficit = current_release - current_flow  - storage_pre + evapo_current + storage_current
 		! else if (lbound_type.eq."lc") then
 			! is the bottom bound is our implemented rule curve, increase release first
 			! then check for deficit
-			current_release = current_flow + storage_pre - storage_current - evapo_current
-			if (current_release.lt.min_release) then
-				deficit = min_release - current_release
-				! write(*, "(A, A, F, F, F, F, F)") my_reservoir(icurrent_id)%name, "deficit", current_release, x, bottom_bound, min_release, deficit
-				current_release = min_release
-			end if
+			! current_release = current_flow + storage_pre - storage_current - evapo_current
+			! if (current_release.lt.min_release) then
+			! 	deficit = min_release - current_release
+			! 	! write(*, "(A, A, F, F, F, F, F)") my_reservoir(icurrent_id)%name, "deficit", current_release, x, bottom_bound, min_release, deficit
+			! 	current_release = min_release
+			! end if
 		! end if
 	end if
 	! 	storage_current = upper_curve
@@ -1839,7 +1961,7 @@ target_storage = lower_curve
 	1072 format(A30, F10.2, F10.2, F10.2, F10.2, F10.2, F10.2, F10.2, F10.2, A10, A10, A10)	
 
 	if (abs(check1.gt.0.01)) print *, my_reservoir(icurrent_id)%name, "  Check 1  ", check1
-	if (ifinal.eq.1) write(107, 1072) my_reservoir(icurrent_id)%name, current_flow, storage_pre, deficit, spill, current_release, evapo_current, storage_current, check1, st_flag, lbound_type, ubound_type
+	if (ifinal.eq.1) write(107,1072) my_reservoir(icurrent_id)%name, current_flow, storage_pre, deficit, spill, current_release, evapo_current, storage_current, check1, st_flag, lbound_type, ubound_type
 	
 	
 

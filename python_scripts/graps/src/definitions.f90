@@ -50,9 +50,9 @@
 		! Need these variables for release prediction
 		! These variables will not change during simulation
 		integer is_natural, is_run_of_river
-		double precision mean_release, sd_release, mean_storage, sd_storage, mean_inflow, sd_inflow, st_inf_mean, st_inf_sd
+		double precision mean_release, sd_release, mean_storage, sd_storage, mean_inflow, sd_inflow, mean_st_inf, sd_st_inf
 		! These variables are provided, and they are modified during simulation
-		double precision, allocatable :: nat_inflow(:), release(:), storage(:)
+		double precision, allocatable :: release(:), storage(:), inflow(:)
 
 	END TYPE Reservoir
 

@@ -13,12 +13,15 @@ subroutine initialize(init_nparam, init_index_cons, init_dec_vars, num_res, num_
     integer :: init_nparam, init_index_cons, num_res, num_user, num_restr
     double precision, dimension(init_nparam), INTENT(OUT) :: init_dec_vars
 
+
     ! Read input files.
     open(unit=9 ,  file = '../path.dat',                                ACTION = 'READ', STATUS = 'OLD')
     0001 format(A)
     read(9, 0001)input_path
     read(9, 0001)output_path
+    read(9, *)year, month, day
     close(9)
+    call ymd_to_jed_julian(year, month, day, jed_init)
 
     open(unit=10,  file = trim(input_path)//'input.dat',				ACTION = 'READ', STATUS = 'OLD')
     open(unit=11,  file = trim(input_path)//'watershed_details.dat',	ACTION = 'READ', STATUS = 'OLD')
@@ -37,6 +40,7 @@ subroutine initialize(init_nparam, init_index_cons, init_dec_vars, num_res, num_
     open(unit=25,  file = trim(input_path)//'storage_flood_rule.dat',   ACTION = 'READ', STATUS = 'OLD')    
     open(unit=26,  file = trim(input_path)//'storage_supply_rule.dat',  ACTION = 'READ', STATUS = 'OLD')
     open(unit=27,  file = trim(input_path)//'release_params.dat',       ACTION = 'READ', STATUS = 'OLD')
+    open(unit=33,  file = trim(input_path)//'tw_data.dat',              ACTION = 'READ', STATUS = 'OLD')
     ! open output files for writing.
     open(unit=31,  file = trim(output_path)//'storage.out')
     open(unit=54,  file = trim(output_path)//'hydro.out')
@@ -105,6 +109,7 @@ subroutine initialize(init_nparam, init_index_cons, init_dec_vars, num_res, num_
 
     ! IF(ALLOCATED(my_release_params))    DEALLOCATE(my_release_params)
     ! ALLOCATE(my_release_params)
+    call read_release_params(my_release_params)
 
     ! Reads the system details from individual files until the connectivity given in input.dat comes to an end.
     icount = 0
@@ -145,6 +150,7 @@ subroutine initialize(init_nparam, init_index_cons, init_dec_vars, num_res, num_
     close(21)
     close(22)
     close(23)
+    close(33)
     ! close(24)
     ! print *, ('-', i=1,75)
     ! print *, "Done Reading Input"
@@ -315,20 +321,24 @@ subroutine read_release_params(my_release_params)
 
     DO
         read(27,*,IOSTAT=IOSTATUS) param_type, nrows
-        if (IOSTATUS > 0) then
+        if (IOSTATUS < 0) then
             return
         else
             if (trim(param_type).eq."Tree") then
+                ALLOCATE(my_release_params%tree_params(nrows,8))
                 do i = 1, nrows
                     read(27,*)(my_release_params%tree_params(i,j), j=1,8)
                 end do
             else if (trim(param_type).eq."Month") then 
+                ALLOCATE(my_release_params%month_params(nrows,12))
                 do i = 1, nrows
                     read(27,*)(my_release_params%month_params(i,j), j=1,12)
                 end do
             else if (trim(param_type).eq."RunOfRiver") THEN
+                ALLOCATE(my_release_params%ror_params(8))
                 read(27,*)(my_release_params%ror_params(i), i=1,8)
             else if (trim(param_type).eq."StorageDam") then
+                ALLOCATE(my_release_params%stdam_params(8))
                 read(27,*)(my_release_params%stdam_params(i), i=1,8)
             end if
         end if
@@ -419,6 +429,7 @@ END
 ! reads unit 13 : reservoir_details.dat 
 Subroutine read_reservoir_details(my_reservoir,nres,ntime,nensem)
     USE Definitions
+    USE path_vars
     implicit doubleprecision(a-h,o-z)
 
     TYPE(Reservoir) my_reservoir(nres)
@@ -493,17 +504,40 @@ Subroutine read_reservoir_details(my_reservoir,nres,ntime,nensem)
     End do
 
     
-    ALLOCATE(my_reservoir(inum)%rule_curve_upper(ntime), my_reservoir(inum)%rule_curve_lower(ntime), my_reservoir(inum)%evaporation_rate(ntime))
+    ! ALLOCATE(my_reservoir(inum)%rule_curve_upper(ntime), my_reservoir(inum)%rule_curve_lower(ntime), my_reservoir(inum)%evaporation_rate(ntime))
+    ALLOCATE(my_reservoir(inum)%evaporation_rate(ntime))
 
-    read(13,*)(my_reservoir(inum)%rule_curve_upper(i),i=1,ntime)
-    read(13,*)(my_reservoir(inum)%rule_curve_lower(i),i=1,ntime)
-    read(13,*)(my_reservoir(inum)%evaporation_rate(i),i=1,ntime)
+    ! read(13,*)(my_reservoir(inum)%rule_curve_upper(i),i=1,ntime)
+    ! read(13,*)(my_reservoir(inum)%rule_curve_lower(i),i=1,ntime)
+
+    open(unit=32,  file = trim(input_path)//'et_data.dat',       ACTION = 'READ', STATUS = 'OLD')
+    read(32,*)(my_reservoir(inum)%evaporation_rate(i),i=1,ntime)
+    close(32)
 
     n4 = my_reservoir(inum)%nres_level
 
     ALLOCATE(my_reservoir(inum)%tar_restr_prob(n4))
         
     read(13,*)(my_reservoir(inum)%tar_restr_prob(i),i=1,n4)
+
+    ! reading information for release parameterization
+    read(13,*) my_reservoir(inum)%is_natural, my_reservoir(inum)%is_run_of_river
+    read(13,*) my_reservoir(inum)%mean_release, my_reservoir(inum)%sd_release
+    read(13,*) my_reservoir(inum)%mean_storage, my_reservoir(inum)%sd_storage
+    read(13,*) my_reservoir(inum)%mean_inflow, my_reservoir(inum)%sd_inflow
+    read(13,*) my_reservoir(inum)%mean_st_inf, my_reservoir(inum)%sd_st_inf
+
+    ! need to store these values so we can calculate rolling means
+    ! inflow is averaged with the current time step
+    ! release and storage and averaged with the previous time step
+    ALLOCATE(my_reservoir(inum)%inflow(ntime+6))
+    ALLOCATE(my_reservoir(inum)%release(ntime+7))
+    ALLOCATE(my_reservoir(inum)%storage(ntime+7))
+
+    read(13,*) (my_reservoir(inum)%release(i), i = 1, 7)
+    read(13,*) (my_reservoir(inum)%storage(i), i = 1, 7)
+    read(13,*) (my_reservoir(inum)%inflow(i), i = 1, 6)
+    ! my_reservoir(inum)%storage(1) = my_reservoir(inum)%current_storage
 
     20 FORMAT(A40)
     RETURN
@@ -553,10 +587,10 @@ Subroutine read_user_details(my_user,nuser,ntime, nensem)
         my_user(inum)%con_res_vol	   = t2
         my_user(inum)%tariff           = t3
         my_user(inum)%penalty		   = t4
-        my_user(inum)%minimum_release = t5
-        my_user(inum)%maximum_release = t6
+        my_user(inum)%minimum_release = t5 / (365/12) ! monthly values are provided
+        my_user(inum)%maximum_release = t6 / (365/12) ! need them in daily values (365 days / 12 months)
         my_user(inum)%penalty_compen  = t7
-        read(14,*)(my_user(inum)%demand_fract(i), i=1,ntime)
+        ! read(14,*)(my_user(inum)%demand_fract(i), i=1,ntime)
         read(14,*)(my_user(inum)%restr_fract(i), i=1,nres_level)
         read(14,*)(my_user(inum)%res_compensation(i), i=1,nres_level)
         
@@ -577,7 +611,7 @@ Subroutine read_user_details(my_user,nuser,ntime, nensem)
         ! I don't know if it has to change but I think it would make the user_details file
         ! extremely long when using ensembles
         DO k = 1,nensem
-            read(14,*)(my_user(inum)%tail_elevation(j1), j1=1,ntime)
+            read(33,*)(my_user(inum)%tail_elevation(j1), j1=1,ntime)
         END DO
     end if
 
@@ -887,11 +921,14 @@ subroutine  constr_decision_extract(decision_var_lb,decision_var_ub, decision_va
         open(unit=43, file = trim(input_path)//'decisionvar_details.dat',  ACTION = 'READ', STATUS = 'OLD')
         DO i = 1,nparam
             read(43,*)t1
+            ! t1 = 0.0 ! dont care about these because we are calculating them
             decision_var(i) = t1
         END DO
         close(43)
     end if 
 
+
+    
     Return
 end
 
