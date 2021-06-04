@@ -138,6 +138,8 @@ def parse_args(plot_functions):
                         help="Column plotted on Y axis in versus plots.")
     parser.add_argument("-D", "--days", dest="days", action="store", default=None, type=int,
                         help="Specify the number of days past the initial date to plot results for.")
+    parser.add_argument("-G", "--graps", action="store_true",
+                        help="Flag indicating plots should be created using the output from GRAPS.")
     args = parser.parse_args()
     return args
 
@@ -234,6 +236,8 @@ def select_correct_data(data, args):
         else:
             groupnames = data["data"]["X_test"]["compositegroup"]
 
+    modeled = modeled.dropna()
+    actual = actual.loc[modeled.index]
     return modeled, actual, groupnames
 
 
@@ -260,7 +264,17 @@ def metric_linker(metric_arg):
         "mae"  : mean_absolute_error,
         "rmse" : lambda x,y : np.sqrt(mean_squared_error(x,y))
     }
-    return linker[metric_arg]
+    return linker.get(metric_arg, "Metric Not Defined")
+
+def metric_title(metric_arg):
+    linker = {
+        "bias" : "Bias",
+        "nse"  : "NSE",
+        "corr" : r"Pearson's $r$",
+        "mae"  : "MAE",
+        "rmse" : "RMSE"
+    }
+    return linker.get(metric_arg, "Metric Not Defined")
 
 
 def plot_score_bars(data, args):
@@ -613,7 +627,8 @@ def plot_time_series(data, args):
         enddate = actual.index[0] + timedelta(days=args.days)
         actual = actual[actual.index < enddate]
         modeled = modeled[modeled.index < enddate]
-
+    modeled = modeled.dropna()
+    actual = actual.loc[modeled.index]
     grid_size = determine_grid_size(res_names.size)
     if res_names.size > 4:
         sns.set_context("paper")
@@ -621,6 +636,7 @@ def plot_time_series(data, args):
     axes = axes.flatten()
     error = args.error
     means = actual.mean()
+    II()
     for ax, col in zip(axes, res_names):
         if error:
             error_series = (modeled[col] - actual[col]) #/ means[col]
@@ -628,7 +644,10 @@ def plot_time_series(data, args):
         else:
             actual[col].plot(ax=ax, label="Observed")
             modeled[col].plot(ax=ax, label="Modeled")
-        score = r2_score(actual[col], modeled[col])
+        try:
+            score = r2_score(actual[col], modeled[col])
+        except ValueError as e:
+            II()
         xlim = ax.get_xlim()
         ylim = ax.get_ylim()
         x = 0.8*(xlim[1] - xlim[0]) + xlim[0]
@@ -1283,12 +1302,166 @@ def plot_model_params(data, args):
     fig.align_ylabels()
     plt.show()
 
+def load_graps_results(args):
+    path = pathlib.Path(args.model_path)
+    output_folder = f"{path.name}_output"
+    data_path = path / output_folder
+
+    obs = read_tva_data(just_load=True)
+
+    if args.storage:
+        file = "storage.out"
+        obs = obs["Storage"].unstack() / 43560 / 1000
+    else:
+        file = "release.out"
+        obs = obs["Release"].unstack() / 43560 / 1000
+    fc_period = pd.date_range("2010-01-01", "2015-12-31")
+    obs = obs.loc[fc_period]
+    with open((data_path / file).as_posix(), "r") as f:
+        data = f.readlines()
+    
+    # space delimited values
+    data = [i.split() for i in data]
+    # get rid of column that is just `Reservoir`
+    for i in data:
+        i.pop(1)
+    
+    df = pd.DataFrame.from_records(data)
+    df = df.set_index(0)
+    df = df.T
+    df.index = obs.index
+    df = df.drop("RacoonMt", axis=1)
+    df = df.astype(float)
+    obs = obs[df.columns]
+    return {"obs":obs, "mod":df}
+
+def plot_graps_time_series(data, args):
+    sns.set_context("paper")
+    obs = data["obs"]
+    mod = data["mod"]
+    if args.storage:
+        units = "1000 acre-ft"
+        title = "Storage"
+    else:
+        units = "1000 acre-ft / day"
+        title = "Release"
+    res_names = mod.columns
+    grid_size = determine_grid_size(res_names.size)
+
+    if args.days:
+        enddate = obs.index[0] + timedelta(days=args.days)
+        obs = obs[obs.index < enddate]
+        mod = mod[mod.index < enddate]
+
+    fig, axes = plt.subplots(*grid_size, sharex=True)
+    axes = axes.flatten()
+    
+    for res, ax in zip(res_names, axes):
+        obs[res].plot(ax=ax, label="Observed")
+        mod[res].plot(ax=ax, label="Modeled")
+        handles, labels = ax.get_legend_handles_labels()
+        ax.set_title(res)
+    
+    axes[-1].set_axis_off()
+    axes[-1].legend(handles, labels, loc="center", prop={"size":14})
+    fig.text(0.02, 0.5, f"{title} [{units}]", fontsize=14, ha="center", rotation=90, va="center")
+
+    plt.subplots_adjust(
+        top=0.951,
+        bottom=0.09,
+        left=0.046,
+        right=0.975,
+        hspace=0.217,
+        wspace=0.241
+    )
+    
+    plt.show()
+
+def plot_graps_metric_map(data, args):
+    obs = data["obs"]
+    mod = data["mod"]
+    if args.storage:
+        units = "1000 acre-ft"
+        title = "Storage"
+    else:
+        units = "1000 acre-ft / day"
+        title = "Release"
+    res_names = mod.columns
+    grid_size = determine_grid_size(res_names.size)
+
+    if args.days:
+        enddate = obs.index[0] + timedelta(days=args.days)
+        obs = obs[obs.index < enddate]
+        mod = mod[mod.index < enddate]
+    # groupnames = groupnames.unstack().values[0, :]
+    fig = plt.figure()
+    spec = GS.GridSpec(ncols=2, nrows=1, width_ratios=[20, 1])
+    ax = fig.add_subplot(spec[0])
+    leg_ax = fig.add_subplot(spec[1])
+    leg_ax.axis("off")
+
+    west, south, east, north = -89.62, 33.08, -80.94, 37.99
+    coords = (west, south, east, north)
+
+    m = setup_map(ax, control_area=False, coords=coords)
+    reservoirs = GIS_DIR.joinpath("kml_converted", "Hydroelectric-point.shp")
+    res_loc = gpd.read_file(reservoirs)
+    res_drop = ["Great Falls Dam", "Ocoee #2 Dam",
+                "Tellico Dam", "Nolichucky Dam",
+                "Raccoon Mountain Pumped-Storage Plant"]
+    res_loc = res_loc[~res_loc["Name"].isin(res_drop)]
+
+    res_name_map = {}
+    with open("loc_name_map.csv", "r") as f:
+        for line in f:
+            line = line.strip("\r\n")
+            old, new = line.split(",")
+            res_name_map[old] = new
+
+    res_loc["Name"] = [res_name_map[i] for i in res_loc["Name"]]
+
+    name_conv = {}
+    with open("name_conversion.txt", "r") as f:
+        for line in f:
+            name_t, name_act, region = line.split()
+            name_conv[name_t.split("_")[0]] = name_act.split("_")[0]
+
+    scores = pd.DataFrame(index=mod.columns, columns=[
+                          "Score"], dtype="float64")
+    for index in scores.index:
+        score = metric_linker(args.metric)(obs[index], mod[index])
+        scores.loc[index, "Score"] = score
+
+    sizes = np.array([scores.loc[name_conv[i], "Score"]
+                      for i in res_loc["Name"]])
+    max_size = 800
+    max_score = sizes.max()
+    scale = max_size / max_score
+    # plot_sizes = sizes * scale
+    plot_sizes = np.power(max_size, sizes)
+    ax.scatter(*zip(*[(i.x, i.y) for i in res_loc["geometry"]]),
+               facecolor="#00bce5", marker="o", s=plot_sizes, alpha=1, zorder=4, edgecolor="k")
+
+    legend_scores = np.linspace(sizes.min(), sizes.max(), 4)
+    legend_sizes = np.power(max_size, legend_scores)
+    legend_markers = [plt.scatter(
+        [], [], s=i, edgecolors="k", c="#00bce5", alpha=1
+    ) for i in legend_sizes]
+    leg_kwargs = dict(ncol=1, frameon=True, handlelength=1, loc='center', borderpad=1,
+                      scatterpoints=1, handletextpad=1, labelspacing=1, title=metric_title(args.metric))
+    ax_legend = leg_ax.legend(
+        legend_markers, [f"{i:.2f}" for i in legend_scores], **leg_kwargs)
+    plt.show()
+
 
 if __name__ == "__main__":
     namespace = dir()
     plot_functions = find_plot_functions(namespace)
     args = parse_args(plot_functions=plot_functions)
-    data = load_results(args)
+    if args.graps:
+        data = load_graps_results(args)
+    else:
+        data = load_results(args)
     if args.plot_func:
         globals()[plot_functions[args.plot_func]](data, args)
     else:
