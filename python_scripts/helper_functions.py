@@ -105,13 +105,11 @@ def read_tva_data(just_load=False):
     df["Release"] = df["Release"] * 86400  # cfs to ft3/day
     # df["Release"] = df["Release"] / 43560 / 1000  # ft3/day to 1000 acre-ft/day
     # df["Release_pre"] = df["Release_pre"] * 86400  # cfs to ft3/day
-
+    df[["Storage_pre", "Release_pre"]] = df.groupby(df.index.get_level_values(1))[
+        ["Storage", "Release"]].shift(1)
 
     # create a time series of previous days storage for all reservoirs
     if not just_load:
-        df[["Storage_pre", "Release_pre"]] = df.groupby(df.index.get_level_values(1))[
-            ["Storage", "Release"]].shift(1)
-
         df[["Storage_7", "Release_7"]] = df.groupby(df.index.get_level_values(1))[
             ["Storage", "Release"]].shift(7)
         
