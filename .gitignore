@@ -4,3 +4,4 @@ data_from_dol/hess_formatted_data
 python_scripts/graps/bin/*
 python_scripts/graps/json-fortran
 python_scripts/graps/json-fortran/*
+plotly_config.json

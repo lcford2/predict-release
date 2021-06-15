@@ -1069,7 +1069,7 @@ do j = 1,ntime
 			fract = (1-my_user(iblock_id)%ffraction(k))
 			! rflow = my_user(iblock_id)%demand_fract(j-k) &
 			! 				*decision_var(iblock_id)*fract
-			rflow  = decision_var(iblock_id) * fract
+			rflow  = decision_var((iblock_id-1)*ntime+j) * fract
 			temp1 = temp1 + rflow
 
 		end do
