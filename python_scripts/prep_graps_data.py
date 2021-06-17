@@ -110,15 +110,16 @@ def main():
              'Chatuge', 'Nottely', 'Hiwassee', 'Apalachia',
              'BlueRidge', 'Ocoee3', 'Ocoee1', 'Chikamauga',
              'RacoonMt', 'Nikajack', 'Guntersville', 'TimsFord',
-             'Wheeler', 'Wilson', 'Pickwick', 'Kentucky']
+             'Wheeler', 'Wilson', 'Pickwick', 'Kentucky', "RcMt_intake"]
 
     release = read_results() # ft3 / day
     tva_dat = read_actual()
     storage = tva_dat["Storage_pre"].unstack()
     # release = tva_dat["Release"].unstack()
     rcmt = get_rcmt_data() # cfs
-    storage["RacoonMt"] = rcmt["sto"].shift(1)
-    release["RacoonMt"] = rcmt["rel"] * 86400 # cfs to cf/day
+    storage["RacoonMt"] = rcmt["Sto"].shift(1)
+    release["RacoonMt"] = rcmt["TurbQ"] * 86400 # cfs to cf/day
+    release["RcMt_intake"] = rcmt["Canal"] * 86400 # cfs to cf/day
 
     # trim dfs to my date range
     release, storage, rcmt = trim_dfs(

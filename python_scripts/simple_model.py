@@ -399,8 +399,6 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col
                                        ]["Net Inflow"] * inf_std + inf_means
         
         storage_act = stor_pre_act + inflow_act - rel_act
-        if storage_act > storage_max:
-            storage_act = storage_max
             
         if timelevel != "all":
             tl = getattr(date, timelevel)

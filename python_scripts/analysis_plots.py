@@ -1353,12 +1353,12 @@ def load_graps_results(args):
     elif ntime == 1918:
         start = "2010-10-01"
     else:
-        start = datetime(2015,12,31) - timedelta(days=ntime)
+        start = datetime(2015,12,31) - timedelta(days=ntime-1)
         start = start.strftime("%Y-%m-%d")
 
     fc_period = pd.date_range(start, "2015-12-31")
     obs = obs.loc[fc_period]
-    
+    # II()
     df.index = obs.index
     df = df.drop("RacoonMt", axis=1)
     df = df.astype(float)
@@ -1955,6 +1955,103 @@ def plot_graps_spatial_corrs(data, args):
                       title=r"$r(\varepsilon_{US},\varepsilon_{DS})$")
     ax_legend = leg_ax.legend(
         legend_markers, [f"{i:.2f}" for i in legend_scores], **leg_kwargs)
+    plt.show()
+
+def plot_graps_error_prop(data, args):
+    DS_RES_PATH = pathlib.Path(
+        "..",
+        "results",
+        "multi-level-results",
+        "for_graps",
+        "NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7.pickle"
+    )
+    US_RES_PATH = pathlib.Path(
+        "..",
+        "results",
+        "treed_ml_model",
+        "upstream_basic_td3_roll7_new",
+        "results.pickle"
+    )
+    ds_res_data = pd.read_pickle(DS_RES_PATH)
+    us_res_data = pd.read_pickle(US_RES_PATH)
+    ds_fc = ds_res_data["data"]["forecasted"]["Storage_act"].unstack()
+    us_fc = us_res_data["data"]["forecasted"]["Storage_act"].unstack()
+    ds_fc[us_fc.columns] = us_fc
+    ds_fc = ds_fc / 43560 / 1000
+    obs = data["obs"]
+    mod = data["mod"]
+    simp_mod = ds_fc.loc[mod.index,:]
+
+    if args.days:
+        enddate = obs.index[0] + timedelta(days=args.days)
+        obs = obs[obs.index < enddate]
+        mod = mod[mod.index < enddate]
+        simp_mod = simp_mod[simp_mod.index < enddate]
+
+    scores = pd.DataFrame(index=mod.columns, columns=[
+                          "Graps", "Simple"], dtype="float64")
+    for index in scores.index:
+        gscore = metric_linker(args.metric)(obs[index], mod[index])
+        sscore = metric_linker(args.metric)(obs[index], simp_mod[index])
+        if args.relative:
+            gscore = gscore / obs[index].mean() * 100
+            sscore = sscore / obs[index].mean() * 100
+        scores.loc[index, "Graps"] = gscore
+        scores.loc[index, "Simple"] = sscore
+
+    if args.storage:
+        units = "1000 acre-ft"
+        title = "Storage"
+    else:
+        units = "1000 acre-ft / day"
+        title = "Release"
+    res_names = mod.columns
+    grid_size = determine_grid_size(res_names.size)
+    sns.set_context("paper")
+    fig, axes = plt.subplots(*grid_size, figsize=(20,8.7))
+    fig.patch.set_alpha(0.0)
+    axes = axes.flatten()
+
+    tree_res = ['BlueRidge', 'Chatuge', 'Cherokee', 'Douglas', 'Fontana', 'Hiwassee',
+                'Norris', 'Nottely', 'SHolston', 'TimsFord', 'Watauga']
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    m_title = metric_title(args.metric)
+    for res, ax in zip(res_names, axes):
+        if res in tree_res:
+            tcolor = colors[0]
+        else:
+            tcolor = colors[1]
+        # ax.scatter(obs[res], mod[res], label="GRAPS Storage")
+        # ax.scatter(obs[res], simp_mod[res], label="Simple Storage")
+        (mod[res] - simp_mod[res]).plot(ax=ax)
+        # mod[res].plot(ax=ax)
+        # simp_mod[res].plot(ax=ax)
+        ax.set_title(res,color=tcolor)
+
+    # handles = [
+    #     mlines.Line2D([], [], color=colors[0], marker="o", linestyle="None",
+    #                   label="GRAPS Storage", markersize=12),
+    #     mlines.Line2D([], [], color=colors[1], marker="o", linestyle="None",
+    #                   label="Simple Storage", markersize=12)
+    # ]
+    # axes[-1].legend(handles=handles, loc="center", prop={"size": 14},
+    #                 frameon=False)
+    # axes[-1].set_axis_off()
+    fig.text(0.02, 0.5, f"Modeled {title} [{units}]",
+             fontsize=14, ha="center", rotation=90, va="center")
+
+    fig.text(0.5, 0.02, f"Observed {title} [{units}]",
+             fontsize=14, ha="center")
+
+    plt.subplots_adjust(
+        top=0.951,
+        bottom=0.075,
+        left=0.046,
+        right=0.975,
+        hspace=0.28,
+        wspace=0.241
+    )
+
     plt.show()
 
 if __name__ == "__main__":
