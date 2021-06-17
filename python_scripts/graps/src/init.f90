@@ -114,8 +114,7 @@ subroutine initialize(init_nparam, init_index_cons, init_dec_vars, num_res, num_
     ! Reads the system details from individual files until the connectivity given in input.dat comes to an end.
     icount = 0
     icount_max = checksum
-    ! print *, ('-', i=1,75)
-    ! print *, "Reading Input Files"
+
     DO WHILE (icount<icount_max)
         ! call each subroutines and read input files 
         read(10,21)itype,type_details
@@ -152,8 +151,6 @@ subroutine initialize(init_nparam, init_index_cons, init_dec_vars, num_res, num_
     close(23)
     close(33)
     ! close(24)
-    ! print *, ('-', i=1,75)
-    ! print *, "Done Reading Input"
     ! Convert the data structure into input parameters for the optimization routine.
     ! each reservoir should be given a minimum of one user for downstream release and it should be defined in the user_details.dat
     nparam = (nuser*ntime)
@@ -176,6 +173,9 @@ subroutine initialize(init_nparam, init_index_cons, init_dec_vars, num_res, num_
 
     IF(ALLOCATED(searched_vertices))    DEALLOCATE(searched_vertices)
     ALLOCATE(searched_vertices(ntotal_vertices))
+    IF(ALLOCATED(inproc_vertices))    DEALLOCATE(inproc_vertices)
+    ALLOCATE(inproc_vertices(ntotal_vertices))
+
 
     ! lukes contraints
     IF(ALLOCATED(lukes_cons))           DEALLOCATE(lukes_cons)
@@ -950,8 +950,16 @@ implicit doubleprecision (a-h,o-z)
     iblock = 0
     ijump = 0
 
+    inproc_top = 0
+    do i = 1, ntotal_vertices
+        inproc_vertices(i)%order_id = 0
+        inproc_vertices(i)%order_type = 0
+    end do
+
+
     call update_search_block(icurrent_id,icurrent_type)
     DO while (ijump.eq.0)
+        call push_inproc_vert(icurrent_id, icurrent_type)
         call child_id_finder(icurrent_id,icurrent_type)
         if(iblock.eq.ntotal_vertices)ijump =1
         icurrent_id = searched_vertices(iblock)%order_id
@@ -973,11 +981,11 @@ implicit doubleprecision (a-h,o-z)
 
     itemp_id = icurrent_id
     itemp_type = icurrent_type
-
     DO i = 1, nchild
 
         icurrent_type = itemp_type
         icurrent_id = itemp_id 
+
 
         if(icurrent_type.eq.1)then
             icurrent_type = my_watershed(icurrent_id)%child_type(i)
@@ -1004,28 +1012,44 @@ implicit doubleprecision (a-h,o-z)
 
 
         if(nparent.eq.1)then
-
-        ifound = icheck_searched(icurrent_type,icurrent_id)
-        if(ifound.eq.0)then
-            call update_search_block(icurrent_id,icurrent_type)
-            if((icurrent_type.eq.3).or.(icurrent_type.eq.5)) &
-                call update_simul_block(icurrent_id,icurrent_type)
-        end if 
-
+            call pop_inproc_vert()
+            ifound = icheck_searched(icurrent_type,icurrent_id)
+            if(ifound.eq.0)then
+                call update_search_block(icurrent_id,icurrent_type)
+                if((icurrent_type.eq.3).or.(icurrent_type.eq.5)) &
+                    call update_simul_block(icurrent_id,icurrent_type)
+            end if
         else
+            call push_inproc_vert(icurrent_id, icurrent_type)
             call subnetworks(nparent,icurrent_type,icurrent_id)
+            call pop_inproc_vert()
         end if
     end do
     return  
 end
 
+! subroutine push_vert_stack(icurrent_type, icurrent_id)
+! use my_variables
+
+!     call id_stack%push(icurrent_id)
+!     call type_stack%push(icurrent_type)
+
+! end subroutine
+
+! subroutine pop_vert_stack(icurrent_type, icurrent_id)
+! use my_variables
+
+!     call id_stack%pop(icurrent_id)
+!     call type_stack%pop(icurrent_type)
+
+! end subroutine
 
 recursive subroutine subnetworks(nparent,icurrent_type,icurrent_id)
 Use my_variables
 implicit doubleprecision(a-h,o-z)
+integer i_inproc
 
     iup_resolve = 0
-
     Do i = 1,nparent
 
         if(icurrent_type.eq.3)then
@@ -1041,25 +1065,29 @@ implicit doubleprecision(a-h,o-z)
             itemp_id = my_sink(icurrent_id)%parent_id(i)
             itemp_type = my_sink(icurrent_id)%parent_type(i)
         end if
-
+        
         if((itemp_type.eq.13).or.(itemp_type.eq.1))then        
             ifound = icheck_searched(itemp_type,itemp_id)
-            if(ifound.eq.0)call update_search_block(itemp_id,itemp_type)
+            if(ifound.eq.0) then 
+                call update_search_block(itemp_id,itemp_type)
+            end if
             iup_resolve = iup_resolve+1
         else            
             ifound = icheck_searched(itemp_type,itemp_id)
+            i_inproc = icheck_inproc(itemp_type, itemp_id)
             if(ifound.eq.1)then
                 iup_resolve = iup_resolve+1
+            else if (i_inproc.eq.1) then
+                iup_resolve = iup_resolve + 1
             else
-
-            if(itemp_type.eq.3)ntemp  = my_reservoir(itemp_id)%nparent
-            if(itemp_type.eq.4)ntemp  = my_user(itemp_id)%nparent
-            if(itemp_type.eq.5)ntemp  = my_node(itemp_id)%nparent
-            if(itemp_type.eq.12)ntemp = my_sink(itemp_id)%nparent
-
-            call subnetworks(ntemp,itemp_type,itemp_id)
-            iup_resolve = iup_resolve+1
-
+                if(itemp_type.eq.3)ntemp  = my_reservoir(itemp_id)%nparent
+                if(itemp_type.eq.4)ntemp  = my_user(itemp_id)%nparent
+                if(itemp_type.eq.5)ntemp  = my_node(itemp_id)%nparent
+                if(itemp_type.eq.12)ntemp = my_sink(itemp_id)%nparent
+                call push_inproc_vert(itemp_id, itemp_type)
+                call subnetworks(ntemp,itemp_type,itemp_id)
+                call pop_inproc_vert()
+                iup_resolve = iup_resolve+1
             end if
         end if
     end do
@@ -1074,12 +1102,6 @@ implicit doubleprecision(a-h,o-z)
     end if
     return
 end
-
-
-		
-
-
-
 
 
 Integer function icheck_searched(icurrent_type,icurrent_id)
@@ -1098,14 +1120,91 @@ Integer function icheck_searched(icurrent_type,icurrent_id)
     return
 end
 
+Integer function icheck_inproc(icurrent_type,icurrent_id)
+    Use my_variables
+    implicit doubleprecision (a-h,o-z)
+
+    icheck_inproc = 0
+    DO i = 1,iblock
+        if((icurrent_id.eq.inproc_vertices(i)%order_id).and. &
+            (icurrent_type.eq.inproc_vertices(i)%order_type))then            
+            icheck_inproc =1
+            GO TO 12
+        end if
+    END DO
+    12	continue
+    return
+end
+
 
 subroutine update_search_block(icurrent_id,icurrent_type)
     Use my_variables
     implicit doubleprecision (a-h,o-z)
 
-    iblock = iblock +1
+    iblock = iblock + 1
     searched_vertices(iblock)%order_type = icurrent_type
     searched_vertices(iblock)%order_id = icurrent_id
+
+    return
+end
+
+subroutine push_inproc_vert(icurrent_id,icurrent_type)
+    Use my_variables
+    implicit doubleprecision (a-h,o-z)
+
+    inproc_top = inproc_top + 1
+    inproc_vertices(inproc_top)%order_type = icurrent_type
+    inproc_vertices(inproc_top)%order_id = icurrent_id
+
+    return
+end
+
+subroutine pop_inproc_vert()
+    Use my_variables
+    implicit doubleprecision (a-h,o-z)
+
+    inproc_vertices(inproc_top)%order_type = 0
+    inproc_vertices(inproc_top)%order_id = 0
+    inproc_top = inproc_top - 1
+
+    return
+end
+
+subroutine print_inproc_vert()
+    Use my_variables
+    implicit doubleprecision (a-h,o-z)
+
+    do i = 1, inproc_top
+        print *, i, inproc_vertices(i)%order_type, &
+                    inproc_vertices(i)%order_id
+    end do
+
+    return
+end
+
+subroutine remove_inproc_vert(icurrent_id,icurrent_type)
+    Use my_variables
+    implicit doubleprecision (a-h,o-z)
+    integer rm_index
+
+    rm_index = inproc_top
+    do i = 1, inproc_top
+        if((icurrent_id.eq.inproc_vertices(i)%order_id).and. &
+            (icurrent_type.eq.inproc_vertices(i)%order_type)) then
+
+                inproc_vertices(i)%order_type = 0
+                inproc_vertices(i)%order_id = 0
+                rm_index = i
+            GO TO 13
+        end if
+    end do
+    13 continue
+    do i = rm_index, inproc_top - 1
+        inproc_vertices(i)%order_type = inproc_vertices(i+1)%order_type
+        inproc_vertices(i)%order_id = inproc_vertices(i+1)%order_id
+    end do
+
+    inproc_top = inproc_top - 1
 
     return
 end

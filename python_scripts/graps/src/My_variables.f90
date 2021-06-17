@@ -1,6 +1,7 @@
 MODULE my_variables
 
 USE DEFINITIONS
+! USE type_Stack
 
 TYPE (User), allocatable			::	my_user(:)
 TYPE (Reservoir), allocatable		::	my_reservoir(:)
@@ -15,9 +16,10 @@ TYPE (Natural_flow), allocatable	::	my_natural_flow(:)
 TYPE (Interbasin_flow), allocatable ::	my_interbasin_flow(:)
 TYPE (demand_release), allocatable	::	my_demand_release(:)
 TYPE (Interbasin), allocatable		::	my_interbasin(:)
-TYPE (ordered_network), allocatable ::  my_network_order(:),searched_vertices(:),parallel_track(:)
+TYPE (ordered_network), allocatable ::  my_network_order(:),searched_vertices(:),inproc_vertices(:),parallel_track(:)
 TYPE (flow_definitions), allocatable ::  my_flow_set(:)
 TYPE (release_params) :: my_release_params ! new object for release parameters from regression
+! TYPE (Stack) :: id_stack, type_stack
 
 character*40 type_details
 ! character*500 input_path, output_path
@@ -39,5 +41,7 @@ double precision, allocatable :: lukes_cons(:), hydro_benefit(:), all_release(:)
 integer :: year, month, day
 real ( kind = 8 ) :: jed_init, jed_current, f
 
+! inproc_vertices length, to treat it similar to a stack
+integer :: inproc_top
 
 END MODULE my_variables

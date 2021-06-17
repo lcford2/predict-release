@@ -80,7 +80,9 @@ icount = 0
 
 !call solution_path()
 
-
+open(unit=45,  file = '../model_val/model_val_output/junction5.out')
+open(unit=46,  file = '../model_val/model_val_output/junction5_out.out')
+open(unit=47,  file = '../model_val/model_val_output/nikajack_flows.out')
 do i = 1, nsimul_block
 
 
@@ -94,7 +96,6 @@ do i = 1, nsimul_block
 
 	!    iprev_type,nparam,decision_var,total_deficit,nend_cons,id_output,value_output, &
 	!    min_rel, max_rel, user_id,spill_values,deficit_values,res_ids_for_spdef)
-	
 	if (icurrent_type.eq.5) then
 		call node_simul_module(icurrent_type,icurrent_id,iprev_id, &
 							   iprev_type, nparam, decision_var)
@@ -127,6 +128,10 @@ do i = 1, nsimul_block
 		! end if
 	end if
 end do
+! open(unit=45,  file = '../model_val/model_val_output/junction5.out')
+close(45)
+close(46)
+close(47)
 
 do i=1,nuser
 	user_id(i) = my_user(i)%ID
@@ -543,6 +548,12 @@ end if
 
 		if((iparent_type.eq.4).or.(iparent_type.eq.13))call add_controlled_flows  &
 		  (iparent_type,iparent_id, decision_var,nparam)
+		
+		if (icurrent_id.eq.22) then
+			do j = 1, ntime
+				write(47, '(I,I,F)') iparent_type, iparent_id, my_flow_set(iflow_set)%controlled_flows(j)
+			end do
+		end if
 
 	end do		
 
@@ -657,15 +668,15 @@ do i = 1,nensem
 		write(30,15) my_reservoir(icurrent_id)%name, (simul_spill(j), j=1, ntime)
 		write(24,15) my_reservoir(icurrent_id)%name, (release(j), j=1, ntime)
 		
-		open(unit=45,  file = '../forecast_period/forecast_period_output/forecast_vars/'//trim(my_reservoir(icurrent_id)%name)//'.out')
-		do j = 1, ntime+7
-			if (j.lt.ntime+7) then
-				write(45,'(F,F,F)') my_reservoir(icurrent_id)%release(j), my_reservoir(icurrent_id)%storage(j), my_reservoir(icurrent_id)%inflow(j)
-			else
-				write(45,'(F,F)') my_reservoir(icurrent_id)%release(j), my_reservoir(icurrent_id)%storage(j)
-			end if
-		end do
-		close(45)
+		! open(unit=45,  file = '../forecast_period/forecast_period_output/forecast_vars/'//trim(my_reservoir(icurrent_id)%name)//'.out')
+		! do j = 1, ntime+7
+		! 	if (j.lt.ntime+7) then
+		! 		write(45,'(F,F,F)') my_reservoir(icurrent_id)%release(j), my_reservoir(icurrent_id)%storage(j), my_reservoir(icurrent_id)%inflow(j)
+		! 	else
+		! 		write(45,'(F,F)') my_reservoir(icurrent_id)%release(j), my_reservoir(icurrent_id)%storage(j)
+		! 	end if
+		! end do
+		! close(45)
 		! do j = 1, ntime
 		! 	print *, my_reservoir(icurrent_id)%name, j, release(j)
 		! end do
@@ -874,7 +885,6 @@ double precision decision_var(nparam),release(ntime),inflow(ntime)
 
 	nparent = my_node(icurrent_id)%nparent
 
-
 ijump = 0
 iadd = 0
 
@@ -952,7 +962,7 @@ end do
 				  (parallel_track(j1)%order_id.eq.iparent_id))call add_all_flows &
 				  (j1,iparent_type,iparent_id,decision_var,nparam)
 
-			end do
+			end do 
 
             if((iparent_type.ne.iprev_type).and.(iparent_id.ne.iprev_id))call  &
 			add_controlled_flows(iparent_type,iparent_id, decision_var,nparam)
@@ -964,7 +974,19 @@ end do
 		if((iparent_type.eq.4).or.(iparent_type.eq.13))call add_controlled_flows  &
 		  (iparent_type,iparent_id, decision_var,nparam)
 
+		if (icurrent_id.eq.3) then
+			do j = 1, ntime
+				write(45, '(I,I,F)') iparent_type, iparent_id, my_flow_set(iflow_set)%controlled_flows(j)
+			end do
+		end if
+
 	end do
+
+	! if (icurrent_id.eq.3) then
+	! 	do j = 1, ntime
+	! 		print *, my_flow_set (iflow_set)%controlled_flows(j)
+	! 	end do
+	! end if
 !write(28, *) iflow_set, (my_flow_set(iflow_set)%controlled_flows(i), i=1,ntime)
 !write(28, *) iflow_set, ((my_flow_set(iflow_set)%uncontrolled_flows(i,j), i=1,ntime), j=1,nensem)
 ! Prepare the outflow sets from uses
@@ -984,9 +1006,12 @@ nchild = my_node(icurrent_id)%nchild
 			do j  = 1,ntime
 !       fract = my_user(ichild_id)%demand_fract(j)
 !		    if(ichild_type.eq.4)release (j) = release(j) + fract*decision_var(ichild_id)
-				if(ichild_type.eq.4) then
-					release (j) = release(j) + decision_var(((ichild_id-1)*ntime)+j)
-				end if
+				release (j) = release(j) + decision_var(((ichild_id-1)*ntime)+j)
+			end do
+		end if
+		if (icurrent_id.eq.3) then
+			do j = 1, ntime
+				write(46, '(I,I,F)') ichild_type, ichild_id, release(j)
 			end do
 		end if
 
@@ -998,7 +1023,11 @@ nchild = my_node(icurrent_id)%nchild
 
 !				end do
 !		end if
-
+		! if (icurrent_id.eq.3) then
+		! 	do j = 1, ntime
+		! 		write(*,*) ichild_id, ichild_type, release(j)
+		! 	end do
+		! end if
 	end do
 15 format(a,2x, <ntime>(2x,F12.2))
 if (ifinal.eq.1) write(29,15) my_node(icurrent_id)%name, (release(j), j=1,ntime)
