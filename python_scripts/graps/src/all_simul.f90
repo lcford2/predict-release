@@ -80,9 +80,9 @@ icount = 0
 
 !call solution_path()
 
-open(unit=45,  file = '../model_val/model_val_output/junction5.out')
-open(unit=46,  file = '../model_val/model_val_output/junction5_out.out')
-open(unit=47,  file = '../model_val/model_val_output/nikajack_flows.out')
+open(unit=45,  file = '../forecast_period/forecast_period_output/junction5.out')
+open(unit=46,  file = '../forecast_period/forecast_period_output/junction5_out.out')
+open(unit=47,  file = '../forecast_period/forecast_period_output/nikajack_flows.out')
 do i = 1, nsimul_block
 
 
@@ -924,9 +924,6 @@ end do
 
 
 
-
-
-
 ! Add controlled and uncontrolled flows from parents
 	do i1 = 1,nparent
 
@@ -959,20 +956,23 @@ end do
 		    do j1 = 1,nwatershed
 
 				if((parallel_track(j1)%order_type.eq.iparent_type).and. &
-				  (parallel_track(j1)%order_id.eq.iparent_id))call add_all_flows &
-				  (j1,iparent_type,iparent_id,decision_var,nparam)
+				  		(parallel_track(j1)%order_id.eq.iparent_id)) then
+							call add_all_flows(j1,iparent_type,iparent_id,decision_var,nparam)
+				end if
 
 			end do 
 
-            if((iparent_type.ne.iprev_type).and.(iparent_id.ne.iprev_id))call  &
-			add_controlled_flows(iparent_type,iparent_id, decision_var,nparam)
+            if ((iparent_type.ne.iprev_type).and.(iparent_id.ne.iprev_id)) then 
+				call add_controlled_flows(iparent_type,iparent_id, decision_var,nparam)
+			end if
 
 		end if
 
 
 
-		if((iparent_type.eq.4).or.(iparent_type.eq.13))call add_controlled_flows  &
-		  (iparent_type,iparent_id, decision_var,nparam)
+		if((iparent_type.eq.4).or.(iparent_type.eq.13)) then
+			call add_controlled_flows (iparent_type,iparent_id, decision_var,nparam)
+		end if
 
 		if (icurrent_id.eq.3) then
 			do j = 1, ntime
@@ -1025,7 +1025,7 @@ nchild = my_node(icurrent_id)%nchild
 !		end if
 		! if (icurrent_id.eq.3) then
 		! 	do j = 1, ntime
-		! 		write(*,*) ichild_id, ichild_type, release(j)
+		! 		write(*,'(I,I,F,F)') ichild_id, ichild_type, release(j), my_flow_set(iflow_set)%controlled_flows(j)
 		! 	end do
 		! end if
 	end do
@@ -1828,6 +1828,7 @@ target_storage = my_reservoir(icurrent_id)%target_storage
 	!10	call DNEQNF(et_function,errel,nvar,itmax,storage_current,x,fnorm)
 
 		x=rtsec(x1,x2,xacc, alpha, beta)
+		! x = storage_pre + current_flow - current_release
 
 	12     continue  
 		
@@ -1982,6 +1983,7 @@ target_storage = my_reservoir(icurrent_id)%target_storage
 		temp = 0.5*(storage_current+storage_pre)
 		evapo_current = et_cal(et_rate,temp, alpha, beta)
 		deficit = 0.0
+
 	end if 
 
   ! check mass balance
