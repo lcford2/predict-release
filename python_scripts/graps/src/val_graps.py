@@ -1,8 +1,12 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 from IPython import embed as II
+import pickle
 
+plt.style.use("ggplot")
+sns.set_context("talk")
 
 def abline(intercept, slope, ax=None, **kwargs):
     if not ax:
@@ -11,9 +15,9 @@ def abline(intercept, slope, ax=None, **kwargs):
     y_values = intercept + slope * x_values
     ax.plot(x_values, y_values, "--", **kwargs)
 
-mb = pd.read_csv("../model_val/model_val_output/mass_balance_vars.out",
+mb = pd.read_csv("../forecast_period/forecast_period_output/mass_balance_vars.out",
                 delim_whitespace=True, header=None)
-inf = pd.read_csv("../model_val/model_val_output/res_inflow_breakdown.out",
+inf = pd.read_csv("../forecast_period/forecast_period_output/res_inflow_breakdown.out",
                 delim_whitespace=True, header=None)
  
 mb = mb.drop(1, axis=1)
@@ -29,6 +33,77 @@ obs_unct   = pd.read_pickle("../../../pickles/new_observed_uncont_inflow.pickle"
 obs_rel    = pd.read_pickle("../../../pickles/observed_turbine.pickle")
 obs_totrel = pd.read_pickle("../../../pickles/observed_total.pickle")
 
+tva = pd.read_pickle("../../../pickles/tva_dam_data.pickle")
+tva["Storage_pre"] = tva.groupby(tva.index.get_level_values(1))["Storage"].shift(1)
+tva["Storage_pre"] *= 86400 / 43560
+tva["Net Inflow"] = tva["Net Inflow"] / 43560 / 1000 * 86400
+
+
 dates = pd.date_range("2010-01-01", "2015-12-31")
 
-II()
+with open("../../../results/treed_ml_model/upstream_basic_td3_roll7_new/results.pickle", "rb") as f:
+    us_results = pickle.load(f)
+
+with open("../../../results/multi-level-results/for_graps/NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7.pickle", "rb") as f:
+    ds_results = pickle.load(f)
+
+idx = pd.IndexSlice
+ds_fc = ds_results["data"]["forecasted"]
+us_fc = us_results["data"]["forecasted"]
+
+# wat_fc_rel = fc.loc[idx[dates, "Watauga"], "Release_act"] / 43560 / 1000
+# wat_fc_sto = fc.loc[idx[dates, "Watauga"], "Storage_act"] / 43560 / 1000
+
+
+def make_my_sto(res):
+    res_tva = tva.loc[idx[dates, res],:]
+    res_tva.index = res_tva.index.get_level_values(0)
+    try:
+        fc_rel = us_fc.loc[idx[dates, res], "Release_act"] / 43560 / 1000
+    except KeyError as e:
+        fc_rel = ds_fc.loc[idx[dates, res], "Release_act"] / 43560 / 1000
+    fc_rel.index = fc_rel.index.get_level_values(0)
+
+
+    # fc_sto = fc.loc[idx[dates, res], "Storage_act"] / 43560 / 1000
+    my_sto = []
+    for i, date in enumerate(dates):
+        if i == 0:
+            sto_i = res_tva.loc[date, "Storage_pre"] + res_tva.loc[date, "Net Inflow"] - fc_rel.loc[date]
+        else:
+            sto_i = my_sto[i - 1] + res_tva.loc[date, "Net Inflow"] - fc_rel.loc[date]
+        my_sto.append(sto_i)
+    return np.array(my_sto)
+
+
+# II()
+# sys.exit()
+
+fig, axes = plt.subplots(2,1,sharex=True,sharey=True,figsize=(20,8.7))
+fig.patch.set_alpha(0.0)
+axes = axes.flatten()
+ax1, ax2 = axes
+
+ax1.set_title("Storage from FC process")
+ax2.set_title("Post-calculated storage")
+
+res = "Fontana"
+my_sto = make_my_sto(res)
+st_cur = mb.loc[mb["res"] == res, "st_cur"]
+fc_sto = us_fc.loc[idx[dates,res], "Storage_act"] / 43560 / 1000
+
+ax1.plot(dates, st_cur, label="GRAPS")
+ax1.plot(dates, fc_sto, label="FC")
+
+ax2.plot(dates, st_cur, label="GRAPS")
+ax2.plot(dates, my_sto, label="Post Calc.")
+
+ax1.legend(loc="upper right")
+ax2.legend(loc="upper right")
+
+ax2.set_xlabel("Date")
+
+ax1.set_ylabel("Storage [1000 acre-ft]")
+ax2.set_ylabel("Storage [1000 acre-ft]")
+
+plt.show()
