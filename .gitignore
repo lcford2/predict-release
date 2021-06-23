@@ -5,3 +5,4 @@ python_scripts/graps/bin/*
 python_scripts/graps/json-fortran
 python_scripts/graps/json-fortran/*
 plotly_config.json
+python_scripts/sry_python.code-workspace
