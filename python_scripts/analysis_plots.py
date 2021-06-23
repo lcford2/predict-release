@@ -144,6 +144,9 @@ def parse_args(plot_functions):
                         help="Flag indicating plots should be created using the output from GRAPS.")
     parser.add_argument("--metric_table", action="store_true",
                         help="Flag indicating the user wants to create and display a dataframe of metrics")
+    parser.add_argument("--upstream", action="store_true",
+                        help="Flag to only plot the upstream reservoirs")
+
     args = parser.parse_args()
     return args
 
@@ -1332,7 +1335,9 @@ def load_graps_results(args):
     else:
         file = "release.out"
         obs = obs["Release"].unstack() / 43560 / 1000
-    
+        # obs = obs["Net Inflow"].unstack() / 43560 / 1000
+
+      
     with open((data_path / file).as_posix(), "r") as f:
         data = f.readlines()
 
@@ -1341,11 +1346,29 @@ def load_graps_results(args):
     # get rid of column that is just `Reservoir`
     for i in data:
         i.pop(1)
-    # II()
+
     df = pd.DataFrame.from_records(data)
     df = df.set_index(0)
     df = df.T
+
+    # start = "2010-01-01"
+    # dates = pd.date_range(start, "2015-12-31")
+    # df = pd.read_csv((data_path / "mass_balance_vars.out").as_posix(), 
+    #                  delim_whitespace=True, header=None, )
+    # df = df.drop(1, axis=1)
+    # df = df.rename(columns={0: "res", 2: "inf", 3: "st_pre", 4: "def", 5: "spill", 6: "rel",
+                        # 7: "evap", 8: "st_cur", 9: "chk", 10: "stflag", 11: "lbound", 12: "ubound"})
+    # df = df[["res","inf"]]
+    # dates = obs.index
+    # long_dates = []
+    # for i in range(28):
+        # long_dates.extend(dates.values)
     
+    # df["dates"] = long_dates
+    
+    # df = df.pivot(index="dates", columns="res")
+    # df.columns = df.columns.get_level_values(1)
+
     ntime = df.shape[0]
 
     if ntime == 2191:
@@ -1787,8 +1810,8 @@ def plot_graps_distributions(data, args):
         else:
             color = colors[1]
         # scores.loc[res].plot.bar(ax=ax, width=0.8, color=color)
-        sns.histplot(obs[res], stat="density", element="poly", cumulative=True, ax=ax, color=colors[0])
-        sns.histplot(mod[res], stat="density", element="poly", cumulative=True, ax=ax, color=colors[1])
+        sns.histplot(obs[res], stat="density", element="poly", cumulative=False, ax=ax, color=colors[0])
+        sns.histplot(mod[res], stat="density", element="poly", cumulative=False, ax=ax, color=colors[1])
         ax.set_xlabel("")
         
         ax.set_title(res, color=color)
@@ -1974,10 +1997,16 @@ def plot_graps_error_prop(data, args):
     )
     ds_res_data = pd.read_pickle(DS_RES_PATH)
     us_res_data = pd.read_pickle(US_RES_PATH)
-    ds_fc = ds_res_data["data"]["forecasted"]["Storage_act"].unstack()
-    us_fc = us_res_data["data"]["forecasted"]["Storage_act"].unstack()
+    if args.storage:
+        selector = "Storage_act"
+    else:
+        selector = "Release_act"
+    ds_fc = ds_res_data["data"]["forecasted"][selector].unstack()
+    us_fc = us_res_data["data"]["forecasted"][selector].unstack()
     ds_fc[us_fc.columns] = us_fc
     ds_fc = ds_fc / 43560 / 1000
+
+    ds_fc = pd.read_pickle("../results/all_res_output/post_storage.pickle")
     obs = data["obs"]
     mod = data["mod"]
     simp_mod = ds_fc.loc[mod.index,:]
@@ -2005,15 +2034,28 @@ def plot_graps_error_prop(data, args):
     else:
         units = "1000 acre-ft / day"
         title = "Release"
-    res_names = mod.columns
+    tree_res = ['BlueRidge', 'Chatuge', 'Cherokee', 'Douglas', 'Fontana', 'Hiwassee',
+                'Norris', 'Nottely', 'SHolston', 'TimsFord', 'Watauga']
+    upstream = ['BlueRidge', 'Chatuge', 'Fontana', 
+                'Norris', 'Nottely', 'SHolston', 'TimsFord', 'Watauga']
+    bad = ["Wilbur", "Boone", "Douglas", "FtLoudoun", "MeltonH", "WattsBar", 
+            "Hiwassee", "Apalachia", "Ocoee3", "Chikamauga", "Nikajack", "Guntersville", "Wheeler", "Wilson"]
+
+    if args.upstream:
+        res_names = np.array(upstream)
+        mod = mod[upstream]
+        obs = obs[upstream]
+    else:
+        res_names = mod.columns
+        # res_names = np.array(bad)
+        # mod = mod[res_names]
+        # obs = obs[res_names]
     grid_size = determine_grid_size(res_names.size)
     sns.set_context("paper")
     fig, axes = plt.subplots(*grid_size, figsize=(20,8.7))
     fig.patch.set_alpha(0.0)
     axes = axes.flatten()
 
-    tree_res = ['BlueRidge', 'Chatuge', 'Cherokee', 'Douglas', 'Fontana', 'Hiwassee',
-                'Norris', 'Nottely', 'SHolston', 'TimsFord', 'Watauga']
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     m_title = metric_title(args.metric)
     for res, ax in zip(res_names, axes):
@@ -2021,22 +2063,22 @@ def plot_graps_error_prop(data, args):
             tcolor = colors[0]
         else:
             tcolor = colors[1]
-        # ax.scatter(obs[res], mod[res], label="GRAPS Storage")
-        # ax.scatter(obs[res], simp_mod[res], label="Simple Storage")
-        (mod[res] - simp_mod[res]).plot(ax=ax)
+        ax.scatter(obs[res], mod[res], label="GRAPS Storage")
+        ax.scatter(obs[res], simp_mod[res], label="Simple Storage")
+        # (mod[res] - simp_mod[res]).plot(ax=ax)
         # mod[res].plot(ax=ax)
         # simp_mod[res].plot(ax=ax)
         ax.set_title(res,color=tcolor)
 
-    # handles = [
-    #     mlines.Line2D([], [], color=colors[0], marker="o", linestyle="None",
-    #                   label="GRAPS Storage", markersize=12),
-    #     mlines.Line2D([], [], color=colors[1], marker="o", linestyle="None",
-    #                   label="Simple Storage", markersize=12)
-    # ]
-    # axes[-1].legend(handles=handles, loc="center", prop={"size": 14},
-    #                 frameon=False)
-    # axes[-1].set_axis_off()
+    handles = [
+        mlines.Line2D([], [], color=colors[0], marker="o", linestyle="None",
+                      label="GRAPS Storage", markersize=12),
+        mlines.Line2D([], [], color=colors[1], marker="o", linestyle="None",
+                      label="Simple Storage", markersize=12)
+    ]
+    axes[-1].legend(handles=handles, loc="center", prop={"size": 14},
+                    frameon=False)
+    axes[-1].set_axis_off()
     fig.text(0.02, 0.5, f"Modeled {title} [{units}]",
              fontsize=14, ha="center", rotation=90, va="center")
 

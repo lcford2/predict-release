@@ -217,6 +217,9 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     mdf = md.fit(free=free)
     fit_time_2 = timer()
 
+    actual_inflow_train = df["Net Inflow"].loc[df.index.get_level_values(0) < split_date]
+    actual_inflow_test = df["Net Inflow"].loc[df.index.get_level_values(0) >= split_date - timedelta(days=8)]
+
     trans_time_1 = timer()
     fitted = (mdf.fittedvalues.unstack() * std["Release"] + means["Release"]).stack()
     y_train_act = (y_train.unstack() * std["Release"] + means["Release"]).stack()
@@ -238,7 +241,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     mexog = exog[["const"]]
 
     predicted = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
-    forecasted = forecast_mixedLM(fe_coefs, re_coefs, mexog, exog_re, means, std, "compositegroup")
+    forecasted = forecast_mixedLM(fe_coefs, re_coefs, mexog, exog_re, means, std, actual_inflow_test, "compositegroup")
     predicted_act = (predicted.unstack() * std["Release"] + means["Release"]).stack()
     test_score = r2_score(y_test_act, predicted_act)
     forecast_score = r2_score(y_test_act.loc[forecasted["Release_act"].index], 
@@ -313,7 +316,7 @@ def predict_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, group_col):
     return output_df
 
 @time_function
-def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col, timelevel="all", tree=False):
+def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col, actual_inflow, timelevel="all", tree=False):
     # create output data frame
     output_df = pd.DataFrame(index=exog_re.index, 
                              columns=list(exog_re.columns) + ["Storage_act", "Release_act"],
@@ -322,7 +325,7 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col
     groups = exog_re[group_col].unique()
     re_keys = re_coefs[groups[0]].keys()
     fe_keys = exog_fe.columns
-    start_date = exog_re.index.get_level_values(0)[0] + timedelta(days=7)
+    start_date = exog_re.index.get_level_values(0)[0] + timedelta(days=8)
     end_date = exog_re.index.get_level_values(0)[-1]
     pre_dates = pd.date_range(start=exog_re.index.get_level_values(0)[0], end=start_date)
     calc_columns = ["Release_pre", "Storage_pre",
@@ -373,7 +376,8 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col
         rel_std = rel_std.unstack()
 
     my_coefs = pd.DataFrame(index=resers, columns=re_keys, dtype="float64")
-
+    # II()
+    # sys.exit()
     for date in dates:
         exog = output_df.loc[idx[date,:]][re_keys]
         fe_exog = exog_fe.loc[idx[date,:]][fe_keys]
@@ -391,13 +395,16 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col
             rel_act = rel*rel_std.loc[tl] + rel_means.loc[tl]
             stor_pre_act = output_df.loc[idx[date,:]]["Storage_pre"]*sto_p_std.loc[tl] + sto_p_means.loc[tl]
             inflow_act = output_df.loc[idx[date,:]]["Net Inflow"]*inf_std.loc[tl] + inf_means.loc[tl]
+            # inflow_act = actual_inflow.loc[idx[date,:]]
         else:
             rel_act = rel*rel_std+rel_means
             stor_pre_act = output_df.loc[idx[date, :]
                                          ]["Storage_pre"] * sto_p_std + sto_p_means
             inflow_act = output_df.loc[idx[date, :]
                                        ]["Net Inflow"] * inf_std + inf_means
+            # inflow_act = actual_inflow.loc[idx[date,:]]
         
+        # inflow_act.index = inflow_act.index.get_level_values(1)
         storage_act = stor_pre_act + inflow_act - rel_act
             
         if timelevel != "all":
@@ -434,14 +441,14 @@ def forecast_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, means, std, group_col
                 # output_df.loc[idx[tmrw,:],"Release_pre"] = rel.values
             output_df.loc[idx[tmrw,:],"Storage_pre"] = storage.values
             output_df.loc[idx[tmrw, :], [
-                "Storage_roll7", "Release_roll7"]] = tmp.values
+                "Storage_roll7", "Release_roll7"]] = tmp.values       
 
     try:
         output_df = output_df.drop(calendar.month_abbr[1:], axis=1)
     except KeyError as e:
         pass
 
-    return output_df.dropna()
+    return output_df
 
 def change_group_names(df, groups, names):
     for group in groups:

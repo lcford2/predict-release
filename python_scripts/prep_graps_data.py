@@ -101,7 +101,7 @@ def write_path_dat(start, path):
     
 
 def main():
-    start_date = "2010-01-01"
+    start_date = "2010-10-01"
     end_date = "2015-12-31"
 
     order = ['Watauga', 'Wilbur', 'SHolston', 'Boone',
@@ -113,11 +113,13 @@ def main():
              'Wheeler', 'Wilson', 'Pickwick', 'Kentucky', "RcMt_intake"]
 
     release = read_results() # ft3 / day
+    # II()
+    # sys.exit()
     tva_dat = read_actual()
     storage = tva_dat["Storage_pre"].unstack()
     # release = tva_dat["Release"].unstack()
     rcmt = get_rcmt_data() # cfs
-    storage["RacoonMt"] = rcmt["Sto"].shift(1)
+    storage["RacoonMt"] = rcmt["Sto"].shift(1) * 86400 * 1000
     release["RacoonMt"] = rcmt["TurbQ"] * 86400 # cfs to cf/day
     release["RcMt_intake"] = rcmt["Canal"] * 86400 # cfs to cf/day
 

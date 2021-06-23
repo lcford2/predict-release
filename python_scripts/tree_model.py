@@ -148,7 +148,7 @@ def sub_tree_multi_level_model(X, y, tree=None, groups=None, my_id=None):
     return mdf
 
 
-def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None, std=None, timelevel="all"):
+def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None, std=None, timelevel="all", actual_inflow=None):
     # means and std required if forecast is True
     leaves, groups = get_leaves_and_groups(X, tree)
 
@@ -172,7 +172,9 @@ def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None
                 means, 
                 std,
                 "group",
-                timelevel
+                actual_inflow,
+                timelevel,
+                tree=True
             )
     else:
         preds = predict_mixedLM(
@@ -197,6 +199,14 @@ def pipeline():
     timelevel="all"
     X,y,means,std = prep_data(df, groups, filter_groups, scaler="mine", timelevel=timelevel)
     train_index, test_index = split_train_test_dt(y.index, date=datetime(2010, 1, 1), level=0, keep=8)
+    # train_sto = df.loc[train_index,"Storage"]
+    # test_sto = df.loc[test_index,"Storage"]
+    # train_sto_scaled, train_sto_mean, train_sto_sd = scale_multi_level_df(train_sto)
+    # test_sto_scaled, test_sto_mean, test_sto_sd = scale_multi_level_df(test_sto)
+
+    
+    actual_inflow_train = df["Net Inflow"].loc[train_index]
+    actual_inflow_test = df["Net Inflow"].loc[test_index]
     # II()
     # sys.exit()
     # set exogenous variables
@@ -209,12 +219,40 @@ def pipeline():
 
     X = X.loc[:, X_vars]
 
+    reservoirs = X.index.get_level_values(1).unique()
+    print("These reservoirs are being modeled:")
+    print("\n".join(reservoirs))
+    # response = input("Is this what you want? [Y/n] ") or "y"
+    # if response.lower() != "y":
+    #     sys.exit()
+
   
     # split into training and testing sets
     X_train = X.loc[train_index,:]
     X_test = X.loc[test_index,:]
     y_train = y.loc[train_index]
     y_test = y.loc[test_index]
+
+    # X_train_scaled, X_train_means, X_train_sd = scale_multi_level_df(X_train)
+    # X_test_scaled, X_test_means, X_test_sd = scale_multi_level_df(X_test)
+    # y_train_scaled, y_train_means, y_train_sd = scale_multi_level_df(y_train)
+    # y_test_scaled, y_test_means, y_test_sd = scale_multi_level_df(y_test)
+    
+    # train_means = X_train_means.join(y_train_means)
+    # train_sd = X_train_sd.join(y_train_sd)
+    # test_means = X_test_means.join(y_test_means)
+    # test_sd = X_test_sd.join(y_test_sd)
+    # test_means = test_means.join(test_sto_mean)
+    # train_means = train_means.join(train_sto_mean)
+    # test_sd = test_sd.join(test_sto_sd)
+    # train_sd = train_sd.join(train_sto_sd)
+    # II()
+    # sys.exit()
+
+    # X_train = X_train_scaled
+    # X_test = X_test_scaled
+    # y_train = y_train_scaled
+    # y_test = y_test_scaled
 
     # fit the decision tree model
     max_depth=3
@@ -229,25 +267,41 @@ def pipeline():
 
     fitted = ml_model.fittedvalues
 
-    # predict and forecast from the sub_tree model    
+    # predict and forecast from the sub_tree model
+
     preds, pgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model)
     forecasted, fgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model, 
-                                             forecast=True, means=means, std=std,
-                                            timelevel=timelevel)
-    
+                                            #  forecast=True, means=test_means, std=test_sd,
+                                            forecast=True, means=means,std=std,
+                                            timelevel=timelevel, actual_inflow=actual_inflow_test)
+    forecasted = forecasted[forecasted.index.get_level_values(0).year >= 2010]
+
     # get all variables back to original space
     preds = preds.unstack()
     fitted = fitted.unstack()
     y_train = y_train.unstack()
     y_test = y_test.unstack()
+    # II()
+    try:
+        y_test.columns = y_test.columns.get_level_values(1)
+        y_train.columns = y_train.columns.get_level_values(1)
+    except IndexError as e:
+        pass
+    
+    train_means = means
+    test_means = means
+    train_sd = std
+    test_sd = std
     if timelevel == "all":
-        preds_act = (preds * std["Release"] + means["Release"]).stack()
-        fitted_act = (fitted * std["Release"] + means["Release"]).stack()
-        y_train_act = (y_train * std["Release"] + means["Release"]).stack()
-        y_test_act = (y_test * std["Release"] + means["Release"]).stack()
+        preds_act = (preds * test_sd["Release"] + test_means["Release"]).stack()
+        fitted_act = (fitted * train_sd["Release"] + train_means["Release"]).stack()
+        y_train_act = (y_train * train_sd["Release"] + train_means["Release"]).stack()
+        y_test_act = (y_test * test_sd["Release"] + test_means["Release"]).stack()
     else:
-        rel_means = means["Release"].unstack()
-        rel_std = std["Release"].unstack()
+        rel_means_test = test_means["Release"].unstack()
+        rel_std_test = test_sd["Release"].unstack()
+        rel_means_train = train_means["Release"].unstack()
+        rel_std_train = train_sd["Release"].unstack()
         preds_act = deepcopy(preds)
         fitted_act = deepcopy(fitted)
         y_train_act = deepcopy(y_train)
@@ -256,10 +310,10 @@ def pipeline():
         for tl in range(1,extent):
             ploc = getattr(preds.index, timelevel) == tl
             floc = getattr(fitted.index, timelevel) == tl
-            preds_act.loc[ploc] = preds_act.loc[ploc] * rel_std.loc[tl] + rel_means.loc[tl]
-            fitted_act.loc[floc] = fitted_act.loc[floc] * rel_std.loc[tl] + rel_means.loc[tl]
-            y_train_act.loc[floc] = y_train_act.loc[floc] * rel_std.loc[tl] + rel_means.loc[tl]
-            y_test_act.loc[ploc] = y_test_act.loc[ploc] * rel_std.loc[tl] + rel_means.loc[tl]
+            preds_act.loc[ploc] = preds_act.loc[ploc] * rel_std_test.loc[tl] + rel_means_test.loc[tl]
+            fitted_act.loc[floc] = fitted_act.loc[floc] * rel_std_train.loc[tl] + rel_means_train.loc[tl]
+            y_train_act.loc[floc] = y_train_act.loc[floc] * rel_std_train.loc[tl] + rel_means_train.loc[tl]
+            y_test_act.loc[ploc] = y_test_act.loc[ploc] * rel_std_test.loc[tl] + rel_means_test.loc[tl]
         preds_act = preds_act.stack()
         fitted_act = fitted_act.stack()
         y_train_act = y_train_act.stack()

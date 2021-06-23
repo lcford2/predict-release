@@ -17,17 +17,21 @@ acf_res = ['Woodruff', 'Buford', 'George', 'West']
 
 # @time_function
 def scale_multi_level_df(df, timelevel="all"):
+    if isinstance(df, pd.DataFrame):
+        columns = df.columns
+    else:
+        columns = [df.name]
     if timelevel == "all":
         grouper = df.index.get_level_values(1)
         means = df.groupby(grouper).mean()
         std = df.groupby(grouper).std()
-        scaled_df = pd.DataFrame(df.values, index=df.index, columns=df.columns)
+        scaled_df = pd.DataFrame(df.values, index=df.index, columns=columns)
         idx = pd.IndexSlice
         for index in means.index:
             scaled_df.loc[idx[:, index], :] = (
                 scaled_df.loc[idx[:, index], :] - means.loc[index]) / std.loc[index]
     else:
-        scaled_df = pd.DataFrame(df.values, index=df.index, columns=df.columns)
+        scaled_df = pd.DataFrame(df.values, index=df.index, columns=columns)
         df = df.reset_index().rename(
             columns={"level_0": "Date", "level_1": "Reservoir"})
         
@@ -46,6 +50,7 @@ def scale_multi_level_df(df, timelevel="all"):
                                               means.loc[index]) / std.loc[index]
 
     return scaled_df, means, std
+
 
 def prep_single_res_data(df, unit_change):
     keep_keys = []
