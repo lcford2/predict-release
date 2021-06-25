@@ -101,15 +101,21 @@ def read_tva_data(just_load=False):
     df = df[df.index.get_level_values(0) >= start_date]
 
     # get all variables to similar units for Mass Balance
-    df["Storage"] = df["Storage"] * 86400 * 1000  # 1000 second-ft-day to ft3
-    # df["Storage"] = df["Storage"] / 43560 / 1000 # ft3 to 1000 acre ft
-    # df["Storage_pre"] = df["Storage_pre"] * \
+    df.loc[:,"Storage"] *= 86400 * 1000  # 1000 second-ft-day to ft3
+    # df.loc[:,"Storage"] = df.loc[:,"Storage"] / 43560 / 1000 # ft3 to 1000 acre ft
+    # df.loc[:,"Storage_pre"] = df.loc[:,"Storage_pre"] * \
         # 86400 * 1000  # 1000 second-ft-day to ft3
-    df["Net Inflow"] = df["Net Inflow"] * 86400  # cfs to ft3/day
-    # df["Net Inflow"] = df["Net Inflow"] / 43560 / 1000 # ft3/day to 1000 acre-ft/day
-    df["Release"] = df["Release"] * 86400  # cfs to ft3/day
-    # df["Release"] = df["Release"] / 43560 / 1000  # ft3/day to 1000 acre-ft/day
-    # df["Release_pre"] = df["Release_pre"] * 86400  # cfs to ft3/day
+    df.loc[:,"Net Inflow"] *= 86400  # cfs to ft3/day
+    # df.loc[:,"Net Inflow"] = df.loc[:,"Net Inflow"] / 43560 / 1000 # ft3/day to 1000 acre-ft/day
+    df.loc[:,"Release"] *= 86400  # cfs to ft3/day
+    # df.loc[:,"Release"] = df.loc[:,"Release"] / 43560 / 1000  # ft3/day to 1000 acre-ft/day
+    # df.loc[:,"Release_pre"] = df.loc[:,"Release_pre"] * 86400  # cfs to ft3/day
+
+    # maybe make these values 1000 acre ft to help solver
+    df.loc[:,"Storage"] = df.loc[:,"Storage"] / 43560 / 1000
+    df.loc[:,"Release"] = df.loc[:,"Release"] / 43560 / 1000
+    df.loc[:,"Net Inflow"] = df.loc[:,"Net Inflow"] / 43560 / 1000
+ 
     df[["Storage_pre", "Release_pre"]] = df.groupby(df.index.get_level_values(1))[
         ["Storage", "Release"]].shift(1)
 

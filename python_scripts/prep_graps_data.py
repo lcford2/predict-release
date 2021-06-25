@@ -6,7 +6,7 @@ from IPython import embed as II
 
 
 DS_RES_PATH = "../results/multi-level-results/for_graps/NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7.pickle"
-US_RES_PATH = "../results/treed_ml_model/upstream_basic_td3_roll7_new/results.pickle"
+US_RES_PATH = "../results/treed_ml_model/upstream_basic_td3_roll7/results.pickle"
 
 def read_results():
     ds_res_data = pd.read_pickle(DS_RES_PATH)
@@ -113,22 +113,24 @@ def main():
              'Wheeler', 'Wilson', 'Pickwick', 'Kentucky', "RcMt_intake"]
 
     release = read_results() # ft3 / day
-    # II()
-    # sys.exit()
     tva_dat = read_actual()
     storage = tva_dat["Storage_pre"].unstack()
     # release = tva_dat["Release"].unstack()
     rcmt = get_rcmt_data() # cfs
-    storage["RacoonMt"] = rcmt["Sto"].shift(1) * 86400 * 1000
-    release["RacoonMt"] = rcmt["TurbQ"] * 86400 # cfs to cf/day
-    release["RcMt_intake"] = rcmt["Canal"] * 86400 # cfs to cf/day
+    # storage["RacoonMt"] = rcmt["Sto"].shift(1) * 86400 * 1000
+    # release["RacoonMt"] = rcmt["TurbQ"] * 86400 # cfs to cf/day
+    # release["RcMt_intake"] = rcmt["Canal"] * 86400 # cfs to cf/day
+
+    storage["RacoonMt"] = rcmt["Sto"].shift(1) * 86400 / 43560
+    release["RacoonMt"] = rcmt["TurbQ"] * 86400 / 43560 / 1000 # cfs to cf/day
+    release["RcMt_intake"] = rcmt["Canal"] * 86400 / 43560 / 1000 # cfs to cf/day
 
     # trim dfs to my date range
     release, storage, rcmt = trim_dfs(
         [release, storage, rcmt], start_date, end_date)
 
-    release = release / 43560 / 1000 # ft3 / day tp 1000 acre-ft/day
-    storage = storage / 43560 / 1000 # ft3 to 1000 acre-ft
+    # release = release / 43560 / 1000 # ft3 / day tp 1000 acre-ft/day
+    # storage = storage / 43560 / 1000 # ft3 to 1000 acre-ft
 
     path = "./graps/forecast_period"
     change_initial_storage(storage, start_date, path)

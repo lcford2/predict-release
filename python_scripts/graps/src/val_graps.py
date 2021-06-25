@@ -78,32 +78,37 @@ def make_my_sto(res):
 
 # II()
 # sys.exit()
+bad = ["Wilbur", "Boone", "Douglas", "FtLoudoun", "MeltonH", "WattsBar", 
+            "Hiwassee", "Apalachia", "Ocoee3", "Chikamauga", "Nikajack", "Guntersville", "Wheeler", "Wilson"]
+upstream = ['BlueRidge', 'Chatuge', 'Fontana', 
+                'Norris', 'Nottely', 'SHolston', 'TimsFord', 'Watauga']
 
-fig, axes = plt.subplots(2,1,sharex=True,sharey=True,figsize=(20,8.7))
-fig.patch.set_alpha(0.0)
-axes = axes.flatten()
-ax1, ax2 = axes
+for res in upstream:
+    fig, axes = plt.subplots(2,1,sharex=True,sharey=True,figsize=(20,8.7))
+    fig.patch.set_alpha(0.0)
+    axes = axes.flatten()
+    ax1, ax2 = axes
 
-ax1.set_title("Storage from FC process")
-ax2.set_title("Post-calculated storage")
+    ax1.set_title(res)
+    ax2.set_title("Post-calculated storage")
 
-res = "Fontana"
-my_sto = make_my_sto(res)
-st_cur = mb.loc[mb["res"] == res, "st_cur"]
-fc_sto = us_fc.loc[idx[dates,res], "Storage_act"] / 43560 / 1000
+    # res = "Fontana"
+    my_sto = make_my_sto(res)
+    st_cur = mb.loc[mb["res"] == res, "st_cur"]
+    fc_sto = us_fc.loc[idx[dates,res], "Storage_act"] / 43560 / 1000
 
-ax1.plot(dates, st_cur, label="GRAPS")
-ax1.plot(dates, fc_sto, label="FC")
+    ax1.plot(dates, st_cur, label="GRAPS")
+    ax1.plot(dates, fc_sto, label="FC")
 
-ax2.plot(dates, st_cur, label="GRAPS")
-ax2.plot(dates, my_sto, label="Post Calc.")
+    ax2.plot(dates, st_cur, label="GRAPS")
+    ax2.plot(dates, my_sto, label="Post Calc.")
 
-ax1.legend(loc="upper right")
-ax2.legend(loc="upper right")
+    ax1.legend(loc="upper right")
+    ax2.legend(loc="upper right")
 
-ax2.set_xlabel("Date")
+    ax2.set_xlabel("Date")
 
-ax1.set_ylabel("Storage [1000 acre-ft]")
-ax2.set_ylabel("Storage [1000 acre-ft]")
+    ax1.set_ylabel("Storage [1000 acre-ft]")
+    ax2.set_ylabel("Storage [1000 acre-ft]")
 
-plt.show()
+    plt.show()

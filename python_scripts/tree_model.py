@@ -150,7 +150,11 @@ def sub_tree_multi_level_model(X, y, tree=None, groups=None, my_id=None):
 
 def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None, std=None, timelevel="all", actual_inflow=None):
     # means and std required if forecast is True
-    leaves, groups = get_leaves_and_groups(X, tree)
+    if forecast:
+        leaves, groups = get_leaves_and_groups(X.drop("Storage_pre_act", axis=1), tree)
+    else:
+        leaves, groups = get_leaves_and_groups(X, tree)
+
 
     mexog = pd.DataFrame(np.ones((y.size, 1)), index=y.index, columns=["const"])
     exog_re = deepcopy(X)
@@ -217,6 +221,12 @@ def pipeline():
             #   "NaturalOnly", "RunOfRiver"
               ]
 
+    # Reverse Standardization
+    # X = df.loc[X.index, X.columns]
+    # y = df.loc[y.index, y.name]
+    # means = pd.DataFrame(0,index=means.index,columns=means.columns)
+    # std = pd.DataFrame(1,index=std.index,columns=std.columns)
+
     X = X.loc[:, X_vars]
 
     reservoirs = X.index.get_level_values(1).unique()
@@ -270,6 +280,10 @@ def pipeline():
     # predict and forecast from the sub_tree model
 
     preds, pgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model)
+    resers = X.index.get_level_values(1).unique()
+    idx = pd.IndexSlice
+    X_test.loc[idx[datetime(2010, 1, 1), resers],"Storage_pre_act"] = df.loc[idx[datetime(2010, 1, 1), resers],"Storage_pre"]
+    
     forecasted, fgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model, 
                                             #  forecast=True, means=test_means, std=test_sd,
                                             forecast=True, means=means,std=std,
@@ -343,7 +357,7 @@ def pipeline():
         prepend = ""
     else:
         prepend = f"{timelevel}_"
-    foldername = f"{prepend}upstream_basic_td{max_depth:d}_roll7_new"
+    foldername = f"{prepend}upstream_basic_td{max_depth:d}_roll7"
     folderpath = pathlib.Path("..", "results", "treed_ml_model", foldername)
     
     # check if the directory exists and handle it
