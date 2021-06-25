@@ -56,6 +56,14 @@ format_dict = {
     "Release_7": {"marker": "s", "label": r"$R_{t-7}$"}
 }
 
+CASCADE = np.array(['Watauga', 'Wilbur', 'SHolston', 'Boone',
+             'FtPatrick', 'Cherokee', 'Douglas', 'FtLoudoun',
+             'Fontana', 'Norris', 'MeltonH', 'WattsBar',
+             'Chatuge', 'Nottely', 'Hiwassee', 'Apalachia',
+             'BlueRidge', 'Ocoee3', 'Ocoee1', 'Chikamauga',
+             'Nikajack', 'Guntersville', 'TimsFord',
+             'Wheeler', 'Wilson', 'Pickwick', 'Kentucky'])
+
 def load_results(args):
     """Loads pickled results from modeled runs
 
@@ -71,6 +79,10 @@ def load_results(args):
                  "NaturalOnly-RunOfRiver_filter_NaturalFlow.pickle"]
         files = [multi_level_dir/args.model_path/i for i in files]
         data = combine_filtered_data(files)
+        return data
+    elif args.model_path == "merged":
+        from merge_results import merge_results
+        data = merge_results()
         return data
     else:
         file = query_file(args)
@@ -213,6 +225,7 @@ def select_correct_data(data, args):
     :return: Modeled DataFrame, Actual DataFrame, array of groupnames
     :rtype: [pandas.DataFrame, pandas.DataFrame, numpy.Array]
     """
+    merged = args.model_path == "merged"
     if args.storage:
         key = "Storage_act"
     else:
@@ -223,14 +236,22 @@ def select_correct_data(data, args):
             actual = data[f"{key}_obs"].unstack()
             groupnames = data["compositegroup"]
         else:
-            modeled = data["data"]["forecasted"][f"{key}"].unstack()
+            if merged:
+                modeled = data["data"]["forecasted"][key.split("_")[0]]
+            else:
+                modeled = data["data"]["forecasted"][f"{key}"].unstack()
             if key == "Storage_act":
                 df = read_tva_data()
                 actual = df["Storage"].loc[modeled.index].unstack()
             else:
-                actual = data["data"]["y_test_act"].unstack()
+                if merged:
+                    actual = data["data"]["y_test_act"]
+                else:
+                    actual = data["data"]["y_test_act"].unstack()
             parent_dir = pathlib.Path(args.model_path).parent.as_posix()
-            if parent_dir == "treed_ml_model":
+            if merged:
+                groupnames = data["groups"]
+            elif parent_dir == "treed_ml_model":
                 groupnames = data["data"]["groups"]
             else:
                 groupnames = data["data"]["X_test"]["compositegroup"]
@@ -440,9 +461,9 @@ def plot_std(data, args):
 
 
 def plot_versus(data, args):
-    from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
     modeled, actual, groupnames = select_correct_data(data, args)
-    groupnames = groupnames.unstack().values[0, :]
+    # groupnames = groupnames.unstack().values[0, :]
+
     if args.res_names:
         res_names = get_res_names(args.res_names)
     else:
@@ -459,9 +480,10 @@ def plot_versus(data, args):
     fig, axes = plt.subplots(*grid_size)
     fig.patch.set_alpha(0.0)
     axes = axes.flatten()
-
+    res_names = CASCADE
     for ax, col in zip(axes, res_names):
         ax.scatter(actual[col], modeled[col])
+        abline(0,1,ax=ax, c="b")
         ax.set_title(col)
 
     left_over = axes.size - res_names.size
@@ -1331,10 +1353,10 @@ def load_graps_results(args):
 
     if args.storage:
         file = "storage.out"
-        obs = obs["Storage"].unstack() / 43560 / 1000
+        obs = obs["Storage"].unstack() #/ 43560 / 1000
     else:
         file = "release.out"
-        obs = obs["Release"].unstack() / 43560 / 1000
+        obs = obs["Release"].unstack() #/ 43560 / 1000
         # obs = obs["Net Inflow"].unstack() / 43560 / 1000
 
       
@@ -2006,7 +2028,7 @@ def plot_graps_error_prop(data, args):
     ds_fc[us_fc.columns] = us_fc
     ds_fc = ds_fc / 43560 / 1000
 
-    ds_fc = pd.read_pickle("../results/all_res_output/post_storage.pickle")
+    # ds_fc = pd.read_pickle("../results/all_res_output/post_storage.pickle")
     obs = data["obs"]
     mod = data["mod"]
     simp_mod = ds_fc.loc[mod.index,:]
@@ -2027,6 +2049,9 @@ def plot_graps_error_prop(data, args):
             sscore = sscore / obs[index].mean() * 100
         scores.loc[index, "Graps"] = gscore
         scores.loc[index, "Simple"] = sscore
+    
+    II()
+    sys.exit()
 
     if args.storage:
         units = "1000 acre-ft"
