@@ -3,8 +3,8 @@ import pickle
 import sys
 from IPython import embed as II
 
-US_PATH = "../results/treed_ml_model/upstream_basic_td3_roll7/results.pickle"
-DS_PATH = "../results/multi-level-results/for_graps/NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7.pickle"
+US_PATH = "../results/treed_ml_model_dual_fit/upstream_basic_td3_roll7/results.pickle"
+DS_PATH = "../results/multi-level-results/for_graps_dual_fit/NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7.pickle"
 
 def merge_results(ds_path=None, us_path=None):
     if ds_path:
@@ -27,14 +27,25 @@ def merge_results(ds_path=None, us_path=None):
     output["groups"]["us"] = us_res_data["data"]["groups"]
     output["groups"]["ds"] = ds_res_data["data"]["X_test"]["compositegroup"]
 
-    output["data"]["y_train_act"] = ds_res_data["data"]["y_train_act"].unstack().join(
-        us_res_data["data"]["y_train_act"].unstack())
+   
+    output["data"]["y_train_rel_act"] = ds_res_data["data"]["y_train_rel_act"].unstack().join(
+        us_res_data["data"]["y_train_rel_act"].unstack())
 
-    output["data"]["y_test_act"] = ds_res_data["data"]["y_test_act"].unstack().join(
-        us_res_data["data"]["y_test_act"].unstack())
+    output["data"]["y_test_rel_act"] = ds_res_data["data"]["y_test_rel_act"].unstack().join(
+        us_res_data["data"]["y_test_rel_act"].unstack())
 
-    output["data"]["predicted_act"] = ds_res_data["data"]["predicted_act"].unstack().join(
-        us_res_data["data"]["predicted_act"].unstack())
+    output["data"]["predicted_act_rel"] = ds_res_data["data"]["predicted_act_rel"].unstack().join(
+        us_res_data["data"]["predicted_act_rel"].unstack())
+    
+    output["data"]["y_train_sto_act"] = ds_res_data["data"]["y_train_sto_act"].unstack().join(
+        us_res_data["data"]["y_train_sto_act"].unstack())
+
+    output["data"]["y_test_sto_act"] = ds_res_data["data"]["y_test_sto_act"].unstack().join(
+        us_res_data["data"]["y_test_sto_act"].unstack())
+
+    output["data"]["predicted_act_sto"] = ds_res_data["data"]["predicted_act_sto"].unstack().join(
+        us_res_data["data"]["predicted_act_sto"].unstack())
+    
 
     output["data"]["forecasted"] = {
         "Release":ds_res_data["data"]["forecasted"]["Release_act"].unstack().join(

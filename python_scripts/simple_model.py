@@ -233,7 +233,8 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     
     free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
                                          cov_re=np.eye(exog_re.shape[1]))
-    fit_results = fit_release_and_storage(y_train, y_train_sto, exog_re, groups, means, std)
+    # fit_results = fit_release_and_storage(y_train, y_train_sto, exog_re, groups, means, std)
+    fit_results = fit_release_storage_stepping(y_train, y_train_sto, exog_re, groups, means, std)
     # sys.exit()
 
     # md = sm.MixedLM(y_train, mexog, groups=groups, exog_re=exog_re)
@@ -346,6 +347,24 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     with open(f"../results/multi-level-results/for_graps_dual_fit/{filename}_SIx_pre_std_swapped_res_roll7.pickle", "wb") as f:
         pickle.dump(output, f, protocol=4)
 
+def mass_balance(sto_pre, rel, inf):
+        return sto_pre + inf - rel
+    
+def get_release(parms, exog):
+    return np.dot(exog, parms)
+
+def loss_function(parms, exog, y_rel, y_sto, means, std):
+    rel = get_release(parms, exog)
+    rel_act = rel * std[0] + means[0]
+    inf_act = exog["Net Inflow"] * std[2] + means[2]
+    sto_p_act = exog["Storage_pre"] * std[1] + means[1]
+    sto_act = mass_balance(sto_p_act, rel_act, inf_act)
+    sto = (sto_act - means[1])/std[1]
+    rel_error = rel - y_rel
+    sto_error = sto - y_sto
+    error = np.power(rel_error, 2).mean() + np.power(sto_error, 2).mean()
+    return error
+
 @time_function
 def fit_release_and_storage(y_rel, y_sto, exog, groups, means, std, init_values=None, niters=10):
     group_names = groups.unique()
@@ -362,24 +381,6 @@ def fit_release_and_storage(y_rel, y_sto, exog, groups, means, std, init_values=
             gparms = init_values[group]
         data[group]["init_params"] = gparms
         data[group]["params"] = gparms
-
-    def mass_balance(sto_pre, rel, inf):
-        return sto_pre + inf - rel
-
-    def get_release(parms, exog):
-        return np.dot(exog, parms)
-
-    def loss_function(parms, exog, y_rel, y_sto, means, std):
-        rel = get_release(parms, exog)
-        rel_act = rel * std[0] + means[0]
-        inf_act = exog["Net Inflow"] * std[2] + means[2]
-        sto_p_act = exog["Storage_pre"] * std[1] + means[1]
-        sto_act = mass_balance(sto_p_act, rel_act, inf_act)
-        sto = (sto_act - means[1])/std[1]
-        rel_error = rel - y_rel
-        sto_error = sto - y_sto
-        error = np.power(rel_error, 2).mean() + np.power(sto_error, 2).mean()
-        return error
     
     params = {g:[] for g in group_names}
     fitted_rel_values = {g:[] for g in group_names}
@@ -479,6 +480,122 @@ def predict_mixedLM(fe_coefs, re_coefs, exog_fe, exog_re, group_col):
     #     output_df[i] = value
     return output_df
 
+@time_function
+def fit_release_storage_stepping(y_rel, y_sto, exog, groups, means, std, init_values=None, niters=10):
+    # create output data frame
+    output_df = pd.DataFrame(index=exog.index, 
+                             columns=list(exog.columns) + ["Storage_act", "Release_act", "Storage_pre_act"],
+                             dtype="float64")
+    # get important indexers
+    group_names = groups.unique()
+    if not init_values:
+        init_values = [
+            [np.random.choice([1,-1])*np.random.rand() for i in range(group_names.size)]
+            for j in range(exog.columns.size)
+        ]
+
+    coefs = pd.DataFrame(init_values, columns=group_names, index=exog.columns)
+    keys = coefs[group_names[0]].keys()
+
+    start_date = exog.index.get_level_values(0)[0] + timedelta(days=8)
+    end_date = exog.index.get_level_values(0)[-1]
+    pre_dates = pd.date_range(start=exog.index.get_level_values(0)[0], end=start_date)
+    calc_columns = ["Release_pre", "Storage_pre", "Storage_pre_act", "Storage_Inflow_interaction",
+                    "Release_roll7", "Storage_roll7",
+                    "Storage_act", "Release_act"]
+    const_keys = [i for i in keys if i not in calc_columns]
+
+    idx = pd.IndexSlice
+    exog["Storage_pre_act"] = (exog["Storage_pre"].unstack() * std["Storage"] + means["Storage"]).stack()
+    exog.loc[idx[pre_dates,:],"Storage_act"] = (y_sto.loc[idx[pre_dates,:]].unstack() * std["Storage"] + means["Storage"]).stack()
+    exog.loc[idx[pre_dates,:],"Release_act"] = (y_rel.loc[idx[pre_dates,:]].unstack() * std["Release"] + means["Release"]).stack()
+
+    for col in output_df.columns:
+        if col in calc_columns:
+            output_df.loc[idx[pre_dates,:], col] = exog.loc[idx[pre_dates,:], col]
+        else:
+            output_df.loc[:,col] = exog.loc[:,col]
+
+
+    dates = pd.date_range(start=start_date, end=end_date)
+    date = dates[0]
+    output_df["group"] = groups
+    resers = exog.index.get_level_values(1).unique()
+    nres = resers.size
+
+    def get_release(exog, parms):
+        return np.dot(exog, parms)
+
+    def stepping_mass_balance(coefs, dates, exog_const, exog_updte, keys, gmeans, gstd):
+        idx = pd.IndexSlice
+        for date in dates:
+            dexog = exog_const.loc[idx[date,:]].join(exog_updte.loc[idx[date,:]])[keys]
+            rel = get_release(dexog, coefs)
+            rel_act = rel * gstd["Release"] + gmeans["Release"]
+            inf_act = exog_const.loc[idx[date,:],"Net Inflow"].values * gstd["Net Inflow"] + gmeans["Net Inflow"]
+            sto_pre_act = exog_updte.loc[idx[date,:],"Storage_pre_act"]
+            sto_act = sto_pre_act.values + inf_act - rel_act
+            sto = (sto_act - gmeans["Storage"])/gstd["Storage"]
+
+            # update values we have so far
+            exog_updte.loc[idx[date,:],"Release"] = rel
+            exog_updte.loc[idx[date,:],"Storage"] = sto.values
+            exog_updte.loc[idx[date,:],"Release_act"] = rel_act.values
+            exog_updte.loc[idx[date,:],"Storage_act"] = sto_act.values
+            
+            roll_keys = ["Storage_act", "Release_act"]
+            roll_dates = pd.date_range(date - timedelta(days=6), date)
+            roll_means = exog_updte.loc[idx[roll_dates,:], roll_keys].unstack().mean().unstack()
+
+            tmrw = date + timedelta(days=1)
+            if date != end_date:
+                # get the new interaction term
+                tmrw_inf_act = exog_const.loc[idx[tmrw,:],"Net Inflow"].values * gstd["Net Inflow"] + gmeans["Net Inflow"]
+                sto_x_inf_act = sto_act * tmrw_inf_act
+                sto_x_inf = (sto_x_inf_act - gmeans["Storage_Inflow_interaction"]) / gstd["Storage_Inflow_interaction"]
+                # update values for tomorrows model
+                exog_updte.loc[idx[tmrw,:],"Release_pre"] = rel
+                exog_updte.loc[idx[tmrw,:],"Storage_pre"] = sto.values
+                exog_updte.loc[idx[tmrw,:],"Storage_pre_act"] = sto_act.values
+                exog_updte.loc[idx[tmrw,:],"Storage_Inflow_interaction"] = sto_x_inf.values
+                exog_updte.loc[idx[tmrw,:],"Release_roll7"] = (
+                    (roll_means.loc["Release_act"] - gmeans["Release"]) / gstd["Release"]).values
+                exog_updte.loc[idx[tmrw,:],"Storage_roll7"] = (
+                    (roll_means.loc["Storage_act"] - gmeans["Storage"]) / gstd["Storage"]).values
+        return exog_updte
+
+    def loss_function(params, rel, sto, mb_args):
+        mb_out = stepping_mass_balance(params, **mb_args)
+        rel_error = mb_out["Release"] - rel
+        sto_error = mb_out["Storage"] - sto
+        return np.power(rel_error, 2).sum() + np.power(sto_error, 2).sum() 
+
+    g_results = {}
+    for group in group_names:
+        # try to setup as much data as possible to speed up comp
+        gindex = groups[groups == group].index
+        gmeans = means.loc[gindex.get_level_values(1).unique(),["Release", "Storage", "Net Inflow", "Storage_Inflow_interaction"]]
+        gstd = std.loc[gindex.get_level_values(1).unique(),["Release", "Storage", "Net Inflow", "Storage_Inflow_interaction"]]
+        gcoefs = coefs[group]
+
+        exog_const = exog.loc[gindex, const_keys]
+        exog_updte = output_df.loc[gindex,calc_columns]
+
+        g_y_rel = y_rel.loc[gindex]
+        g_y_sto = y_sto.loc[gindex]
+        
+        results = minimize(loss_function, gcoefs.values, args=(
+            g_y_rel, g_y_sto, {
+                "dates":dates, "exog_const":exog_const, 
+                "exog_updte":exog_updte, "keys":keys, 
+                "gmeans":gmeans, "gstd":gstd
+            })
+        )
+        g_results[group] = results
+    
+    II()
+    sys.exit()
+    return output_df
 
 @time_function
 def forecast_mixedLM_new(coefs, exog, means, std, group_col, actual_inflow, timelevel="all", tree=False):

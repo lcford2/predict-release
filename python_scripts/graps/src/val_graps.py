@@ -15,9 +15,9 @@ def abline(intercept, slope, ax=None, **kwargs):
     y_values = intercept + slope * x_values
     ax.plot(x_values, y_values, "--", **kwargs)
 
-mb = pd.read_csv("../forecast_period/forecast_period_output_oct/mass_balance_vars.out",
+mb = pd.read_csv("../forecast_period/forecast_period_output/mass_balance_vars.out",
                 delim_whitespace=True, header=None)
-inf = pd.read_csv("../forecast_period/forecast_period_output_oct/res_inflow_breakdown.out",
+inf = pd.read_csv("../forecast_period/forecast_period_output/res_inflow_breakdown.out",
                 delim_whitespace=True, header=None)
  
 mb = mb.drop(1, axis=1)
@@ -83,11 +83,9 @@ bad = ["Wilbur", "Boone", "Douglas", "FtLoudoun", "MeltonH", "WattsBar",
 upstream = ['BlueRidge', 'Chatuge', 'Fontana', 
                 'Norris', 'Nottely', 'SHolston', 'TimsFord', 'Watauga']
 
-II()
 
-"""
 for res in upstream:
-    fig, axes = plt.subplots(2,1,sharex=True,sharey=True,figsize=(20,8.7))
+    fig, axes = plt.subplots(2,1,sharex=True,sharey=False,figsize=(20,8.7))
     fig.patch.set_alpha(0.0)
     axes = axes.flatten()
     ax1, ax2 = axes
@@ -115,4 +113,3 @@ for res in upstream:
     ax2.set_ylabel("Storage [1000 acre-ft]")
 
     plt.show()
-"""

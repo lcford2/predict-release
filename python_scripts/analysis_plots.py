@@ -256,10 +256,17 @@ def select_correct_data(data, args):
             else:
                 groupnames = data["data"]["X_test"]["compositegroup"]
     else:
-        modeled = data["data"]["predicted_act"].unstack()
-        actual = data["data"]["y_test_act"].unstack()
+        if args.storage:
+            modeled = data["data"]["predicted_act_sto"]
+            actual = data["data"]["y_test_sto_act"]
+        else:
+            modeled = data["data"]["predicted_act_rel"]
+            actual = data["data"]["y_test_rel_act"]
+        
         parent_dir = pathlib.Path(args.model_path).parent.as_posix()
-        if parent_dir == "treed_ml_model":
+        if merged:
+            groupnames = data["groups"]
+        elif parent_dir == "treed_ml_model":
             groupnames = data["data"]["groups"]
         else:
             groupnames = data["data"]["X_test"]["compositegroup"]
@@ -307,7 +314,7 @@ def metric_title(metric_arg):
 
 def plot_score_bars(data, args):
     modeled, actual, groupnames = select_correct_data(data, args)
-    groupnames = groupnames.unstack().values[0, :]
+    # groupnames = groupnames.unstack().values[0, :]
     scores = pd.DataFrame(index=modeled.columns, columns=["Score", "GroupName"], dtype="float64")
     pct_scores = pd.DataFrame(index=modeled.columns, columns=["Score", "GroupName"], dtype="float64")
     
@@ -649,7 +656,7 @@ def plot_time_series(data, args):
                 actual.loc[:, res] = data_dict[actkey]
     else:
         modeled, actual, groupnames = select_correct_data(data, args)
-        groupnames = groupnames.unstack().values[0, :]
+        # groupnames = groupnames.unstack().values[0, :]
 
     if args.res_names:
         res_names = get_res_names(args.res_names)
@@ -670,6 +677,9 @@ def plot_time_series(data, args):
     axes = axes.flatten()
     error = args.error
     means = actual.mean()
+    index = actual.dropna().index
+    actual = actual.loc[index]
+    modeled = modeled.loc[index]
     for ax, col in zip(axes, res_names):
         if error:
             error_series = (modeled[col] - actual[col]) #/ means[col]
@@ -678,7 +688,7 @@ def plot_time_series(data, args):
             actual[col].plot(ax=ax, label="Observed")
             modeled[col].plot(ax=ax, label="Modeled")
         try:
-            score = r2_score(actual[col], modeled[col])
+            score = r2_score(actual[col].dropna(), modeled[col])
         except ValueError as e:
             II()
         xlim = ax.get_xlim()
@@ -720,7 +730,7 @@ def plot_time_series(data, args):
 def plot_resid_qqplot(data, args):
     from statsmodels.graphics.gofplots import qqplot
     modeled, actual, groupnames = select_correct_data(data, args)
-    groupnames = groupnames.unstack().values[0, :]
+    # groupnames = groupnames.unstack().values[0, :]
     if args.res_names:
         res_names = get_res_names(args.res_names)
     else:
@@ -783,7 +793,7 @@ def plot_acf(data, args):
         modeled = data["data"]["fitted"].unstack()
         actual = data["data"]["y_train_act"].unstack()
 
-    groupnames = groupnames.unstack().values[0, :]
+    # groupnames = groupnames.unstack().values[0, :]
     if args.res_names:
         res_names = get_res_names(args.res_names)
     else:
@@ -1046,7 +1056,7 @@ def plot_seasonal_error(data, args):
 
 def plot_monthly_metrics(data, args):
     modeled, actual, groupnames = select_correct_data(data, args)
-    groupnames = groupnames.unstack().values[0, :]
+    # groupnames = groupnames.unstack().values[0, :]
     columns = [i for i in calendar.month_abbr[1:]] + ["GroupName"]
     metrics = pd.DataFrame(index=modeled.columns, columns=columns, dtype="float64")
     metric_calc = metric_linker(args.metric)
@@ -1205,7 +1215,7 @@ def setup_map(ax, control_area=True, coords=None):
 
 def plot_score_map(data, args):
     modeled, actual, groupnames = select_correct_data(data, args)
-    groupnames = groupnames.unstack().values[0, :]
+    # groupnames = groupnames.unstack().values[0, :]
     fig = plt.figure()
     fig.patch.set_alpha(0.0)
     spec = GS.GridSpec(ncols=1, nrows=2, height_ratios=[20, 1])

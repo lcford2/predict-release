@@ -442,9 +442,9 @@ def pipeline():
         # cov_re=ml_model.cov_re,
         coefs=coefs,
         data=dict(
-            # X_test=X_test,
+            X_test=X_test,
             # y_test=y_test,
-            # X_train=X_train,
+            X_train=X_train,
             # y_train=y_train,
             fitted_rel=fitted_rel,
             fitted_sto=fitted_sto,
@@ -452,8 +452,8 @@ def pipeline():
             y_train_rel_act=y_train_rel_act,
             y_test_sto_act=y_test_sto_act,
             y_train_sto_act=y_train_sto_act,
-            predicted_act_rel=preds_rel,
-            predicted_act_sto=preds_sto,
+            predicted_act_rel=preds_rel.stack(),
+            predicted_act_sto=preds_sto.stack(),
             groups=test_groups,
             forecasted=forecasted[["Release", "Storage",
                                    "Release_act", "Storage_act"]]
@@ -472,5 +472,5 @@ if __name__ == "__main__":
     pipeline()
     # mem_usage = psutil.Process().memory_info().peak_wset
     # print(f"Max Memory Used: {mem_usage/1000/1000:.4f} MB")
-    from resource import getrusage, RUSAGE_SELF
-    print(getrusage(RUSAGE_SELF).ru_maxrss)
+    # from resource import getrusage, RUSAGE_SELF
+    # print(getrusage(RUSAGE_SELF).ru_maxrss)
