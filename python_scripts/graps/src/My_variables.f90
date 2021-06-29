@@ -24,7 +24,8 @@ TYPE (release_params) :: my_release_params ! new object for release parameters f
 character*40 type_details
 ! character*500 input_path, output_path
 
-integer itype,nres,nuser,nfnode,nsink,nwatershed,ndir_inflows,nret_inflows,ndiversion,nspill_flow,nnatural_flow,ninterbasin_flow,ndemand_release
+integer itype,nres,nuser,nfnode,nsink,nwatershed,ndir_inflows,nret_inflows,ndiversion
+integer nspill_flow,nnatural_flow,ninterbasin_flow,ndemand_release
 integer ntime,nensem, ncons,iblock,ntotal_vertices,isimul_block,nsimul_block,iflow_set,nres_level,lukes_ncons,opt_count
 double precision ben_net, constraint_tolerance
 integer, allocatable :: isimul_status(:)

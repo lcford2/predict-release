@@ -66,9 +66,11 @@ subroutine initialize(init_nparam, init_index_cons, init_dec_vars, num_res, num_
 
     ! reading input.dat 
     read(10,*)ntime,nensem
-    read(10,*)nwatershed,nnatural_flow,nres,nuser,nfnode,ndir_inflows,nret_inflows,ndiversion,nspill_flow,ninterbasin_flow,ndemand_release,nsink,ninterbasin
+    read(10,*)nwatershed,nnatural_flow,nres,nuser,nfnode,ndir_inflows,nret_inflows,ndiversion,nspill_flow,&
+                ninterbasin_flow,ndemand_release,nsink,ninterbasin
 
-    checksum = nwatershed+nnatural_flow+nres+nuser+nfnode+ndir_inflows+nret_inflows+ndiversion+nspill_flow+ninterbasin_flow+ndemand_release+nsink+ninterbasin
+    checksum = nwatershed+nnatural_flow+nres+nuser+nfnode+ndir_inflows+nret_inflows+ndiversion+nspill_flow+&
+                ninterbasin_flow+ndemand_release+nsink+ninterbasin
 
     ! ntime = number of time steps
     ! nres = number of reservoirs

@@ -303,8 +303,9 @@ subroutine fix_spill_deficit(nparam, ncons, decision_var)
 	call constr_res(nparam, index_cons, decision_var, gcons)	
 end subroutine fix_spill_deficit
 
-subroutine python_simulate(nparam,index_cons,decision_var,gcons,py_hydro_benefit,py_id_output,py_value_output,py_constraints,py_cons_id,py_cons_mag,&
-						   py_min_rel,py_max_rel,py_user_id,py_spill_values,py_deficit_values,py_res_ids_for_spdef,func_flag)
+subroutine python_simulate(nparam,index_cons,decision_var,gcons,py_hydro_benefit,py_id_output,py_value_output,&
+						   py_constraints,py_cons_id,py_cons_mag, py_min_rel,py_max_rel,py_user_id,&
+						   py_spill_values,py_deficit_values,py_res_ids_for_spdef,func_flag)
 	Use My_variables
 	double precision, dimension(nparam) :: decision_var
 	integer nparam, index_cons
@@ -339,8 +340,9 @@ subroutine python_simulate(nparam,index_cons,decision_var,gcons,py_hydro_benefit
 end subroutine python_simulate
 
 
-subroutine python_optimize(nparam,index_cons,decision_var,gcons,py_hydro_benefit,py_id_output,py_value_output,py_constraints,py_cons_id,py_cons_mag,&
-						   py_min_rel,py_max_rel,py_user_id,py_spill_values,py_deficit_values,py_res_ids_for_spdef,func_flag)
+subroutine python_optimize(nparam,index_cons,decision_var,gcons,py_hydro_benefit,py_id_output,py_value_output,&
+						   pp_constraints,py_cons_id,py_cons_mag,py_min_rel,py_max_rel,py_user_id,py_spill_values,&
+						   py_deficit_values,py_res_ids_for_spdef,func_flag)
 	Use My_variables
 	double precision, dimension(nparam) :: decision_var
 	integer nparam, index_cons, i
@@ -551,7 +553,7 @@ end if
 		
 		if (icurrent_id.eq.22) then
 			do j = 1, ntime
-				write(47, '(I,I,F)') iparent_type, iparent_id, my_flow_set(iflow_set)%controlled_flows(j)
+				write(47, '(I4,I4,F30.10)') iparent_type, iparent_id, my_flow_set(iflow_set)%controlled_flows(j)
 			end do
 		end if
 
@@ -610,7 +612,9 @@ do i = 1,nensem
 		q(j) = my_flow_set(iflow_set)%uncontrolled_flows(j,i) + &
 			   my_flow_set(iflow_set)%controlled_flows(j)
 		my_reservoir(icurrent_id)%inflow(j+6) = q(j)
-		if (ifinal.eq.1) write(108, '(A,F,F)') my_reservoir(icurrent_id)%name, my_flow_set(iflow_set)%uncontrolled_flows(j,i), my_flow_set(iflow_set)%controlled_flows(j)
+		if (ifinal.eq.1) write(108, '(A30,F30.10,F30.10)') my_reservoir(icurrent_id)%name, &
+											   my_flow_set(iflow_set)%uncontrolled_flows(j,i), &
+											   my_flow_set(iflow_set)%controlled_flows(j)
 	!'(A,F,F)'
 	end do
 
@@ -731,7 +735,8 @@ end
 
 
 ! Subroutine for hydropwer calculation
-subroutine hydropower(iblock_type,iblock_id,icurrent_id, icurrent_type,simul_stor,release, simul_spill, nensemble, hydro_tot, nparam)!id_output,value_output, nparam, hydro_tot)
+subroutine hydropower(iblock_type,iblock_id,icurrent_id, icurrent_type,simul_stor,release, simul_spill, &
+					  nensemble, hydro_tot, nparam)!id_output,value_output, nparam, hydro_tot)
 Use My_variables
 implicit doubleprecision(a-h,o-z)
 common /final_print/ifinal
@@ -1992,7 +1997,8 @@ target_storage = my_reservoir(icurrent_id)%target_storage
 	1072 format(A30, F10.2, F10.2, F10.2, F10.2, F10.2, F10.2, F10.2, F10.2, A10, A10, A10)	
 
 	if (abs(check1.gt.0.01)) print *, my_reservoir(icurrent_id)%name, "  Check 1  ", check1
-	if (ifinal.eq.1) write(107,1072) my_reservoir(icurrent_id)%name, current_flow, storage_pre, deficit, spill, current_release, evapo_current, storage_current, check1, st_flag, lbound_type, ubound_type
+	if (ifinal.eq.1) write(107,1072) my_reservoir(icurrent_id)%name, current_flow, storage_pre, deficit, spill,&
+									 current_release, evapo_current, storage_current, check1, st_flag, lbound_type, ubound_type
 	
 	
 
