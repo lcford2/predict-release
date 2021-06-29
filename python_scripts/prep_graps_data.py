@@ -6,7 +6,8 @@ from IPython import embed as II
 
 
 DS_RES_PATH = "../results/multi-level-results/for_graps/NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7.pickle"
-US_RES_PATH = "../results/treed_ml_model/upstream_basic_td3_roll7/results.pickle"
+DS_RES_PATH = "../results/multi-level-results/for_graps_dual_fit/NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7.pickle"
+US_RES_PATH = "../results/treed_ml_model_dual_fit/upstream_basic_td3_roll7/results.pickle"
 
 def read_results():
     ds_res_data = pd.read_pickle(DS_RES_PATH)
@@ -101,7 +102,7 @@ def write_path_dat(start, path):
     
 
 def main():
-    start_date = "2010-10-01"
+    start_date = "2010-01-01"
     end_date = "2015-12-31"
 
     order = ['Watauga', 'Wilbur', 'SHolston', 'Boone',

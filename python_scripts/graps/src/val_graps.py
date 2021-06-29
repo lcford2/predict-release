@@ -15,9 +15,9 @@ def abline(intercept, slope, ax=None, **kwargs):
     y_values = intercept + slope * x_values
     ax.plot(x_values, y_values, "--", **kwargs)
 
-mb = pd.read_csv("../forecast_period/forecast_period_output/mass_balance_vars.out",
+mb = pd.read_csv("../forecast_period/forecast_period_output_oct/mass_balance_vars.out",
                 delim_whitespace=True, header=None)
-inf = pd.read_csv("../forecast_period/forecast_period_output/res_inflow_breakdown.out",
+inf = pd.read_csv("../forecast_period/forecast_period_output_oct/res_inflow_breakdown.out",
                 delim_whitespace=True, header=None)
  
 mb = mb.drop(1, axis=1)
@@ -41,10 +41,10 @@ tva["Net Inflow"] = tva["Net Inflow"] / 43560 / 1000 * 86400
 
 dates = pd.date_range("2010-01-01", "2015-12-31")
 
-with open("../../../results/treed_ml_model/upstream_basic_td3_roll7_new/results.pickle", "rb") as f:
+with open("../../../results/treed_ml_model_dual_fit/upstream_basic_td3_roll7/results.pickle", "rb") as f:
     us_results = pickle.load(f)
 
-with open("../../../results/multi-level-results/for_graps/NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7.pickle", "rb") as f:
+with open("../../../results/multi-level-results/for_graps_dual_fit/NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7.pickle", "rb") as f:
     ds_results = pickle.load(f)
 
 idx = pd.IndexSlice
@@ -83,6 +83,9 @@ bad = ["Wilbur", "Boone", "Douglas", "FtLoudoun", "MeltonH", "WattsBar",
 upstream = ['BlueRidge', 'Chatuge', 'Fontana', 
                 'Norris', 'Nottely', 'SHolston', 'TimsFord', 'Watauga']
 
+II()
+
+"""
 for res in upstream:
     fig, axes = plt.subplots(2,1,sharex=True,sharey=True,figsize=(20,8.7))
     fig.patch.set_alpha(0.0)
@@ -112,3 +115,4 @@ for res in upstream:
     ax2.set_ylabel("Storage [1000 acre-ft]")
 
     plt.show()
+"""
