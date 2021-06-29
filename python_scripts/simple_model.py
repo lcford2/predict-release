@@ -570,20 +570,27 @@ def fit_release_storage_stepping(y_rel, y_sto, exog, groups, means, std, init_va
         sto_error = mb_out["Storage"] - sto
         return np.power(rel_error, 2).sum() + np.power(sto_error, 2).sum() 
 
+    II()
+    sys.exit()
     g_results = {}
-    for group in group_names:
-        # try to setup as much data as possible to speed up comp
-        gindex = groups[groups == group].index
-        gmeans = means.loc[gindex.get_level_values(1).unique(),["Release", "Storage", "Net Inflow", "Storage_Inflow_interaction"]]
-        gstd = std.loc[gindex.get_level_values(1).unique(),["Release", "Storage", "Net Inflow", "Storage_Inflow_interaction"]]
-        gcoefs = coefs[group]
+    # for group in group_names[:1]:
+    # try to setup as much data as possible to speed up comp
+    group = "ComboFlow-StorageDam"
+    gindex = groups[groups == group].index
+    gmeans = means.loc[gindex.get_level_values(1).unique(),["Release", "Storage", "Net Inflow", "Storage_Inflow_interaction"]]
+    gstd = std.loc[gindex.get_level_values(1).unique(),["Release", "Storage", "Net Inflow", "Storage_Inflow_interaction"]]
+    gcoefs = coefs[group]
 
-        exog_const = exog.loc[gindex, const_keys]
-        exog_updte = output_df.loc[gindex,calc_columns]
+    exog_const = exog.loc[gindex, const_keys]
+    exog_updte = output_df.loc[gindex,calc_columns]
 
-        g_y_rel = y_rel.loc[gindex]
-        g_y_sto = y_sto.loc[gindex]
-        
+    g_y_rel = y_rel.loc[gindex]
+    g_y_sto = y_sto.loc[gindex]
+    methods = [
+        "Nelder-Mead","BFGS","trust-ncg","trust-krylov","Newton-GC"
+    ]
+    method_results = {}
+    for method in methods:
         results = minimize(loss_function, gcoefs.values, args=(
             g_y_rel, g_y_sto, {
                 "dates":dates, "exog_const":exog_const, 
@@ -591,10 +598,15 @@ def fit_release_storage_stepping(y_rel, y_sto, exog, groups, means, std, init_va
                 "gmeans":gmeans, "gstd":gstd
             })
         )
-        g_results[group] = results
+        # g_results[group] = results
+        method_results[method] = results
     
+    with open("./method_results.pickle", "wb") as f:
+        pickle.dump(method_results, f)
+        
     II()
     sys.exit()
+    
     return output_df
 
 @time_function
