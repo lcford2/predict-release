@@ -84,6 +84,10 @@ def load_results(args):
         from merge_results import merge_results
         data = merge_results()
         return data
+    elif args.model_path == "merged_dual":
+        from merge_results_dual import merge_results
+        data = merge_results()
+        return data
     else:
         file = query_file(args)
     with open(file, "rb") as f:
@@ -225,7 +229,7 @@ def select_correct_data(data, args):
     :return: Modeled DataFrame, Actual DataFrame, array of groupnames
     :rtype: [pandas.DataFrame, pandas.DataFrame, numpy.Array]
     """
-    merged = args.model_path == "merged"
+    merged = args.model_path[:6] == "merged"
     if args.storage:
         key = "Storage_act"
     else:
@@ -257,11 +261,19 @@ def select_correct_data(data, args):
                 groupnames = data["data"]["X_test"]["compositegroup"]
     else:
         if args.storage:
-            modeled = data["data"]["predicted_act_sto"]
-            actual = data["data"]["y_test_sto_act"]
+            if merged:
+                modeled = data["data"]["predicted_act_sto"]
+                actual = data["data"]["y_test_sto_act"]
+            else:
+                modeled = data["data"]["predicted_act_sto"]
+                actual = data["data"]["y_test_sto_act"]
         else:
-            modeled = data["data"]["predicted_act_rel"]
-            actual = data["data"]["y_test_rel_act"]
+            if merged:
+                modeled = data["data"]["predicted_act_rel"]
+                actual = data["data"]["y_test_rel_act"]
+            else:
+                modeled = data["data"]["predicted_act"]
+                actual = data["data"]["y_test_act"]
         
         parent_dir = pathlib.Path(args.model_path).parent.as_posix()
         if merged:
@@ -672,7 +684,7 @@ def plot_time_series(data, args):
     grid_size = determine_grid_size(res_names.size)
     if res_names.size > 4:
         sns.set_context("paper")
-    fig, axes = plt.subplots(*grid_size)
+    fig, axes = plt.subplots(*grid_size, sharex=True, figsize=(20,8.7))
     fig.patch.set_alpha(0.0)
     axes = axes.flatten()
     error = args.error
@@ -680,6 +692,8 @@ def plot_time_series(data, args):
     index = actual.dropna().index
     actual = actual.loc[index]
     modeled = modeled.loc[index]
+
+    # order = ["Watauga", "Wilbur", "SHolston", "Boone", "FtPatr"]
     for ax, col in zip(axes, res_names):
         if error:
             error_series = (modeled[col] - actual[col]) #/ means[col]
@@ -698,32 +712,42 @@ def plot_time_series(data, args):
         ax.text(x,y,f"NSE={score:.3f}", ha="center",
                 backgroundcolor="white")
         ax.set_title(col)
+
     handles, labels = axes[0].get_legend_handles_labels()
-    if res_names.size <= 6:
-        labels = ["Observed", "Modeled"]
-        axes[0].legend(handles, labels, loc="best")
+    # if res_names.size <= 6:
+    #     labels = ["Observed", "Modeled"]
+    #     axes[0].legend(handles, labels, loc="best")
     # else:
     #     axes[-1].legend(handles, labels, loc="center", prop={"size":18})
     #     axes[-1].set_axis_off()
-
+    axes[-1].legend(handles, labels, loc="center", prop={"size":14})
     left_over = axes.size - res_names.size
     if left_over > 0:
         for ax in axes[-left_over:]:
             ax.set_axis_off()
     
     if args.storage:
-        label = "Storage [$ft^3$]"
+        label = "Storage [1000 acre-ft]"
     else:
-        label = "Release [$ft^3/day$]"
-    fig.text(0.02, 0.5, label, va="center", rotation=90, fontsize=20)
+        label = "Release [1000 acre-ft/day]"
+    fig.text(0.02, 0.5, label, va="center", rotation=90, fontsize=14)
+    # plt.subplots_adjust(
+    #     top=0.966,
+    #     bottom=0.04,
+    #     left=0.07,
+    #     right=0.985,
+    #     hspace=0.22,
+    #     wspace=0.125
+    # )
     plt.subplots_adjust(
-        top=0.966,
-        bottom=0.04,
-        left=0.07,
-        right=0.985,
-        hspace=0.22,
-        wspace=0.125
+        top=0.951,
+        bottom=0.09,
+        left=0.046,
+        right=0.975,
+        hspace=0.217,
+        wspace=0.241
     )
+    
     plt.show()
 
 
@@ -1719,8 +1743,20 @@ def plot_graps_metric_map(data, args):
     plt.show()
 
 def make_metric_table(data,args):
-    obs = data["obs"]
-    mod = data["mod"]
+    # II()
+    if args.graps:
+        obs = data["obs"]
+        mod = data["mod"]
+    else:
+        if args.storage:
+            obs = data["data"]["y_test_sto_act"]
+            mod = data["data"]["forecasted"]["Storage"]
+        else:
+            obs = data["data"]["y_test_rel_act"]
+            mod = data["data"]["forecasted"]["Release"]
+    
+    obs = obs.loc[mod.index]
+
     metrics = ["nse", "rmse", "bias", "corr"]
 
     scores = pd.DataFrame(index=mod.columns, 
@@ -2034,9 +2070,9 @@ def plot_graps_error_prop(data, args):
     else:
         selector = "Release_act"
     ds_fc = ds_res_data["data"]["forecasted"][selector].unstack()
-    us_fc = us_res_data["data"]["forecasted"][selector].unstack()
+    us_fc = us_res_data["data"]["forecasted"][selector].unstack() / 43560 / 1000
     ds_fc[us_fc.columns] = us_fc
-    ds_fc = ds_fc / 43560 / 1000
+    # ds_fc = ds_fc / 43560 / 1000
 
     # ds_fc = pd.read_pickle("../results/all_res_output/post_storage.pickle")
     obs = data["obs"]
@@ -2060,8 +2096,8 @@ def plot_graps_error_prop(data, args):
         scores.loc[index, "Graps"] = gscore
         scores.loc[index, "Simple"] = sscore
     
-    II()
-    sys.exit()
+    # II()
+    # sys.exit()
 
     if args.storage:
         units = "1000 acre-ft"
@@ -2091,6 +2127,8 @@ def plot_graps_error_prop(data, args):
     fig.patch.set_alpha(0.0)
     axes = axes.flatten()
 
+    # II()
+
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     m_title = metric_title(args.metric)
     for res, ax in zip(res_names, axes):
@@ -2098,11 +2136,11 @@ def plot_graps_error_prop(data, args):
             tcolor = colors[0]
         else:
             tcolor = colors[1]
-        ax.scatter(obs[res], mod[res], label="GRAPS Storage")
-        ax.scatter(obs[res], simp_mod[res], label="Simple Storage")
+        # ax.scatter(obs[res], mod[res], label="GRAPS Storage")
+        # ax.scatter(obs[res], simp_mod[res], label="Simple Storage")
         # (mod[res] - simp_mod[res]).plot(ax=ax)
-        # mod[res].plot(ax=ax)
-        # simp_mod[res].plot(ax=ax)
+        mod[res].plot(ax=ax)
+        simp_mod[res].plot(ax=ax)
         ax.set_title(res,color=tcolor)
 
     handles = [

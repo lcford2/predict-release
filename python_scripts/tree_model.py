@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 from statsmodels.regression.mixed_linear_model import MixedLMParams
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.tree import (DecisionTreeRegressor,
                           plot_tree, export_graphviz)
 from sklearn.ensemble import RandomForestRegressor
@@ -93,6 +93,11 @@ def split_train_test_dt(index, date, level=None, keep=0):
     else:
         test = index[index >= date]
         train = index[index < date]
+    return train, test
+
+def split_train_test_res(index, test_res):
+    train = index[~index.get_level_values(1).isin(test_res)]
+    test = index[index.get_level_values(1).isin(test_res)]
     return train, test
 
 @time_function
@@ -203,124 +208,164 @@ def pipeline():
     # note: if no scaler is provided, means and std will be 0 and 1 respectively.
     timelevel="all"
     X,y,means,std = prep_data(df, groups, filter_groups, scaler="mine", timelevel=timelevel)
-    train_index, test_index = split_train_test_dt(y.index, date=datetime(2010, 1, 1), level=0, keep=8)
-    # train_sto = df.loc[train_index,"Storage"]
-    # test_sto = df.loc[test_index,"Storage"]
-    # train_sto_scaled, train_sto_mean, train_sto_sd = scale_multi_level_df(train_sto)
-    # test_sto_scaled, test_sto_mean, test_sto_sd = scale_multi_level_df(test_sto)
-
-    
-    actual_inflow_train = df["Net Inflow"].loc[train_index]
-    actual_inflow_test = df["Net Inflow"].loc[test_index]
-    # II()
-    # sys.exit()
-    # set exogenous variables
-    X_vars = ["Storage_pre", "Release_pre", "Net Inflow",
-              "Storage_Inflow_interaction",
-              "Inflow_roll7", "Release_roll7", #"Storage_roll7",
-              #"Storage_7", "Release_7",
-            #   "NaturalOnly", "RunOfRiver"
-              ]
-
-    # Reverse Standardization
-    # X = df.loc[X.index, X.columns]
-    # y = df.loc[y.index, y.name]
-    # means = pd.DataFrame(0,index=means.index,columns=means.columns)
-    # std = pd.DataFrame(1,index=std.index,columns=std.columns)
-
-    # X = X.loc[:, X_vars]
-
+    # train_index, test_index = split_train_test_dt(y.index, date=datetime(2010, 1, 1), level=0, keep=8)
     reservoirs = X.index.get_level_values(1).unique()
-    print("These reservoirs are being modeled:")
-    print("\n".join(reservoirs))
-    # response = input("Is this what you want? [Y/n] ") or "y"
-    # if response.lower() != "y":
-    #     sys.exit()
-
-  
-    # split into training and testing sets
-    X_train = X.loc[train_index,X_vars]
-    X_test = X.loc[test_index,X_vars]
-    y_train_rel = y.loc[train_index]
-    y_test_rel = y.loc[test_index]
-    y_train_sto = X.loc[train_index, "Storage"]
-    y_test_sto = X.loc[test_index, "Storage"]
-
-    actual_inflow_train = df["Net Inflow"].loc[train_index]
-    actual_inflow_test = df["Net Inflow"].loc[test_index]
-
-  
-    # X_train_scaled, X_train_means, X_train_sd = scale_multi_level_df(X_train)
-    # X_test_scaled, X_test_means, X_test_sd = scale_multi_level_df(X_test)
-    # y_train_scaled, y_train_means, y_train_sd = scale_multi_level_df(y_train)
-    # y_test_scaled, y_test_means, y_test_sd = scale_multi_level_df(y_test)
     
-    # train_means = X_train_means.join(y_train_means)
-    # train_sd = X_train_sd.join(y_train_sd)
-    # test_means = X_test_means.join(y_test_means)
-    # test_sd = X_test_sd.join(y_test_sd)
-    # test_means = test_means.join(test_sto_mean)
-    # train_means = train_means.join(train_sto_mean)
-    # test_sd = test_sd.join(test_sto_sd)
-    # train_sd = train_sd.join(train_sto_sd)
-    # II()
-    # sys.exit()
+    #lvoneout_results = {}
+    lvout_rt_results = {}
 
-    # X_train = X_train_scaled
-    # X_test = X_test_scaled
-    # y_train = y_train_scaled
-    # y_test = y_test_scaled
+    lvout_sets = [
+        [], # baseline
+        ["Douglas", "Hiwassee", "Cherokee"], # < 100 days
+        ["BlueRidge", "Fontana", "Nottely"], # 100 - 150 days
+        ["Norris", "Chatuge"], # 150 - 200 days
+        ["TimsFord", "SHolston", "Watauga"] # > 200 days
+    ]
 
-    # fit the decision tree model
-    max_depth=3
-    #, splitter="best" - for decision_tree
-    tree = tree_model(X_train, y_train_rel, tree_type="decision", max_depth=max_depth,
-                      random_state=37)
-    leaves, groups = get_leaves_and_groups(X_train, tree)
+    lvout_labels = [
+        "baseline",
+        "100",
+        "100-150",
+        "150-200",
+        "200"
+    ]
 
-    # fit the sub_tree ml model
-    # X_train = X_train.drop(["NaturalOnly", "RunOfRiver"], axis=1)
+    #for res in reservoirs:
+    for lvout_set, label in zip(lvout_sets, lvout_labels):
+        train_index, test_index = split_train_test_res(y.index, lvout_set)
+        print(f"Solving model run {label}")
 
-    # II()
-    # sys.exit()
+        # set exogenous variables
+        X_vars = ["Storage_pre", "Release_pre", "Net Inflow",
+                "Storage_Inflow_interaction",
+                "Inflow_roll7", "Release_roll7", #"Storage_roll7",
+                #"Storage_7", "Release_7",
+                #   "NaturalOnly", "RunOfRiver"
+                ]
+    
+        # split into training and testing sets
+        X_train = X.loc[train_index,X_vars]
+        X_test = X.loc[test_index,X_vars]
+        y_train_rel = y.loc[train_index]
+        y_test_rel = y.loc[test_index]
+        y_train_sto = X.loc[train_index, "Storage"]
+        y_test_sto = X.loc[test_index, "Storage"]
 
-    fit_results = fit_release_and_storage(y_train_rel, y_train_sto, X_train, groups, means, std)
-  
-    # ml_model = sub_tree_multi_level_model(X_train, y_train, tree)
+        train_res = X_train.index.get_level_values(1).unique()
+        test_res = X_test.index.get_level_values(1).unique()
 
-    # fitted = ml_model.fittedvalues
-    fitted_rel = pd.concat([i.unstack() for i in fit_results["f_rel_act"]])
-    fitted_sto = pd.concat([i.unstack() for i in fit_results["f_sto_act"]])
+        # fit the decision tree model
+        max_depth=3
+        #, splitter="best" - for decision_tree
+        tree = tree_model(X_train, y_train_rel, tree_type="decision", max_depth=max_depth,
+                        random_state=37)
+        leaves, groups = get_leaves_and_groups(X_train, tree)
 
-    fitted_rel = fitted_rel.groupby(fitted_rel.index).mean()
-    fitted_sto = fitted_sto.groupby(fitted_sto.index).mean()
+        # # fit the sub_tree ml model
+        # X_train = X_train.drop(["NaturalOnly", "RunOfRiver"], axis=1)
 
-    fitted_rel = fitted_rel.stack()
-    fitted_sto = fitted_sto.stack()
+        ml_model = sub_tree_multi_level_model(X_train, y_train_rel, tree)
+        
+        coefs = ml_model.random_effects
+        fitted = ml_model.fittedvalues
 
-    y_train_rel_act = (y_train_rel.unstack() *
-                       std["Release"] + means["Release"]).stack()
-    y_train_sto_act = (y_train_sto.unstack() *
-                       std["Storage"] + means["Storage"]).stack()
-    y_test_rel_act = (y_test_rel.unstack() *
-                      std["Release"] + means["Release"]).stack()
-    y_test_sto_act = (y_test_sto.unstack() *
-                      std["Storage"] + means["Storage"]).stack()
+        y_train_rel_act = (y_train_rel.unstack() *
+                        std.loc[train_res,"Release"] + means.loc[train_res,"Release"]).stack()
+        y_train_sto_act = (y_train_sto.unstack() *
+                        std.loc[train_res,"Storage"] + means.loc[train_res,"Storage"]).stack()
+        y_test_rel_act = (y_test_rel.unstack() *
+                        std.loc[test_res,"Release"] + means.loc[test_res,"Release"]).stack()
+        y_test_sto_act = (y_test_sto.unstack() *
+                        std.loc[test_res,"Storage"] + means.loc[test_res,"Storage"]).stack()
 
-    coefs = {g: np.mean(fit_results["params"][g], axis=0)
-             for g in groups.unique()}
-    coefs = pd.DataFrame(coefs, index=X_train.columns)
+        fitted_act = (fitted.unstack() *
+                          std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
 
-    test_leaves, test_groups = get_leaves_and_groups(X_test, tree)
+        f_act_score = r2_score(y_train_rel_act, fitted_act)
+        f_norm_score = r2_score(y_train_rel, fitted)
+        f_act_rmse = np.sqrt(mean_squared_error(y_train_rel_act, fitted_act))
+        f_norm_rmse = np.sqrt(mean_squared_error(y_train_rel, fitted))
+
+        if label == "baseline":
+            p_act_score = f_act_score
+            p_norm_score = f_norm_score
+            p_act_rmse = f_act_rmse
+            p_norm_rmse = f_norm_rmse
+        else:
+            preds, pgroups = predict_from_sub_tree_model(X_test, y_test_rel, tree, ml_model)
+
+            preds_act = (preds.unstack() *
+                         std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
+
+            p_act_score = r2_score(y_test_rel_act, preds_act)
+            p_norm_score = r2_score(y_test_rel, preds)
+            p_act_rmse = np.sqrt(mean_squared_error(y_test_rel_act, preds_act))
+            p_norm_rmse = np.sqrt(mean_squared_error(y_test_rel, preds))
+
+        lvout_rt_results[label] = {
+            "pred":{
+                "p_act_score": p_act_score,
+                "p_norm_score": p_norm_score,
+                "p_act_rmse": p_act_rmse,
+                "p_norm_rmse": p_norm_rmse
+            },
+            "fitted": {
+                "f_act_score": f_act_score,
+                "f_norm_score": f_norm_score,
+                "f_act_rmse": f_act_rmse,
+                "f_norm_rmse": f_norm_rmse
+            },
+            "coefs":coefs
+        }
+
+        if label != "baseline":
+            preds_act = preds_act.unstack()
+            y_test_act = y_test_rel_act.unstack()
+            fitted_act = fitted_act.unstack()
+            y_train_act = y_train_rel_act.unstack()
+
+            res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
+
+            for res in reservoirs:
+                try:
+                    ya = y_train_act[res]
+                    ym = fitted_act[res]
+                except KeyError as e:
+                    ya = y_test_act[res]
+                    ym = preds_act[res]
+                res_scores.loc[res, "NSE"] = r2_score(ya, ym)
+                res_scores.loc[res, "RMSE"] = np.sqrt(mean_squared_error(ya, ym))
+
+            lvout_rt_results[label]["res_scores"] = res_scores
+
+    try:
+        pred_df = pd.DataFrame({k:v["pred"] for k,v in lvout_rt_results.items()})
+        fitt_df = pd.DataFrame({k:v["fitted"] for k,v in lvout_rt_results.items()})
+
+        lvout_rt_results["pred"] = pred_df
+        lvout_rt_results["fitted"] = fitt_df
+
+        with open("../results/synthesis/treed_model/leave_some_out.pickle", "wb") as f:
+            pickle.dump(lvout_rt_results, f)
+
+        sys.exit()
+    except:
+        II()
+        sys.exit()
+
+    # coefs = {g: np.mean(fit_results["params"][g], axis=0)
+    #          for g in groups.unique()}
+    # coefs = pd.DataFrame(coefs, index=X_train.columns)
+
+    # test_leaves, test_groups = get_leaves_and_groups(X_test, tree)
 
     # predict and forecast from the sub_tree model
     # preds, pgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model)
-    pred_result = fit_release_and_storage(y_test_rel, y_test_sto, X_test, test_groups, means, std,
-                                          init_values=coefs, niters=0)
+    # pred_result = fit_release_and_storage(y_test_rel, y_test_sto, X_test, test_groups, means, std,
+                                        #   init_values=coefs, niters=0)
 
-    resers = X.index.get_level_values(1).unique()
-    idx = pd.IndexSlice
-    X_test.loc[idx[datetime(2010, 1, 1), resers],"Storage_pre_act"] = df.loc[idx[datetime(2010, 1, 1), resers],"Storage_pre"]
+    # idx = pd.IndexSlice
+    # X_test.loc[idx[datetime(2010, 1, 1), resers],"Storage_pre_act"] = df.loc[idx[datetime(2010, 1, 1), resers],"Storage_pre"]
     
     # forecasted, fgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model, 
     #                                         #  forecast=True, means=test_means, std=test_sd,

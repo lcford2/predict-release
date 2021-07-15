@@ -1,19 +1,19 @@
+import sys
+import pickle
+import calendar
+from time import perf_counter as timer
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 from statsmodels.regression.mixed_linear_model import MixedLMParams
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.preprocessing import StandardScaler
 from scipy.optimize import minimize
-import pickle
-from helper_functions import (read_tva_data, scale_multi_level_df, 
+from helper_functions import (read_tva_data, scale_multi_level_df,
                               read_all_res_data, find_max_date_range)
 from timing_function import time_function
-from time import perf_counter as timer
 from datetime import timedelta, datetime
 from IPython import embed as II
-import calendar
-import sys
 
 group_names = {
     "RunOfRiver": {0: "StorageDam", 1: "RunOfRiver"},
@@ -189,58 +189,176 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     for key, array in month_arrays.items():
         X_scaled[key] = array
     
-    split_date = datetime(2010,1,1)
-    X_test = X_scaled.loc[X_scaled.index.get_level_values(0) >= split_date - timedelta(days=8)]
-    X_train = X_scaled.loc[X_scaled.index.get_level_values(0) < split_date]
+    # split_date = datetime(2010,1,1)
+    reservoirs = X_scaled.index.get_level_values(1).unique()
+    # lvoneout_results = {}
+    lvout_rt_results = {}
 
-    y_test = y_scaled.loc[y_scaled.index.get_level_values(0) >= split_date - timedelta(days=8)]
-    y_train = y_scaled.loc[y_scaled.index.get_level_values(0) < split_date]
-    y_test_sto = y_scaled_sto.loc[y_scaled_sto.index.get_level_values(0) >= split_date - timedelta(days=8)]
-    y_train_sto = y_scaled_sto.loc[y_scaled_sto.index.get_level_values(0) < split_date]
-    
-    N_time_train = X_train.index.get_level_values(0).unique().shape[0]
-    N_time_test = X_test.index.get_level_values(0).unique().shape[0]
-
-    # train model
-    # Instead of adding a constant, I want to create dummy variable that accounts for season differences
-    exog = sm.add_constant(X_train)
-    
-    groups = exog["compositegroup"]
-    # Storage Release Interactions are near Useless
-    # Release Inflow Interaction does not provide a lot either
-    # Storage Inflow interaction seems to matter for ComboFlow-StorageDam reservoirs.
-    interaction_terms = ["Storage_Inflow_interaction"]
-    
-    # exog_terms = [
-    #     "Storage_pre", "Net Inflow", "Release_pre", 
-    #     ] + extra_lag_terms
-
-    exog_terms = [
-        "const", "Net Inflow", "Storage_pre", "Release_pre",
-        "Release_roll7", "Storage_roll7",  "Inflow_roll7"
+    lvout_sets = [
+        [], # baseline
+        ["Nikajack", "FtPatrick", "Wilson"], # 3-7 days
+        ["Pickwick", "Chikamauga", "Wheeler", "FtLoudoun", "MeltonH", "Guntersville", "Apalachia"], # 7 - 15 days
+        ["WattsBar", "Kentucky", "Ocoee1", "Boone"] # 15-30 days
     ]
+    lvout_labels = [
+        "baseline",
+        "3-7",
+        "7-15",
+        "15-30"
+    ]
+    #for res in reservoirs:
+    for lvout_res, label in zip(lvout_sets, lvout_labels):
+        test_index = X_scaled.index[X_scaled.index.get_level_values(1).isin(lvout_res)]
+        train_index = X_scaled.index[~X_scaled.index.get_level_values(1).isin(lvout_res)]
+        test_res = lvout_res
+        train_res = train_index.get_level_values(1).unique()
 
-    exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:]]
+        print(f"Solving model run {label}")
 
-    mexog = exog.loc[:,["const"]]
+        # X_test = X_scaled.loc[X_scaled.index.get_level_values(0) >= split_date - timedelta(days=8)]
+        # X_train = X_scaled.loc[X_scaled.index.get_level_values(0) < split_date]
 
-    actual_inflow_train = df["Net Inflow"].loc[df.index.get_level_values(
-        0) < split_date]
-    actual_inflow_test = df["Net Inflow"].loc[df.index.get_level_values(
-        0) >= split_date - timedelta(days=8)]
+        # y_test = y_scaled.loc[y_scaled.index.get_level_values(0) >= split_date - timedelta(days=8)]
+        # y_train = y_scaled.loc[y_scaled.index.get_level_values(0) < split_date]
+        # y_test_sto = y_scaled_sto.loc[y_scaled_sto.index.get_level_values(0) >= split_date - timedelta(days=8)]
+        # y_train_sto = y_scaled_sto.loc[y_scaled_sto.index.get_level_values(0) < split_date]
+
+        X_train = X_scaled.loc[train_index]
+        X_test = X_scaled.loc[test_index]
+        y_train = y_scaled.loc[train_index]
+        y_test = y_scaled.loc[test_index]
+
+        # N_time_train = X_train.index.get_level_values(0).unique().shape[0]
+        # N_time_test = X_test.index.get_level_values(0).unique().shape[0]
+
+        # train model
+        # Instead of adding a constant, I want to create dummy variable that accounts for season differences
+        exog = sm.add_constant(X_train)
+        
+        groups = exog["compositegroup"]
+        # Storage Release Interactions are near Useless
+        # Release Inflow Interaction does not provide a lot either
+        # Storage Inflow interaction seems to matter for ComboFlow-StorageDam reservoirs.
+        interaction_terms = ["Storage_Inflow_interaction"]
+        
+        # exog_terms = [
+        #     "Storage_pre", "Net Inflow", "Release_pre", 
+        #     ] + extra_lag_terms
 
 
-    
-    free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
-                                         cov_re=np.eye(exog_re.shape[1]))
-    # fit_results = fit_release_and_storage(y_train, y_train_sto, exog_re, groups, means, std)
-    fit_results = fit_release_storage_stepping(y_train, y_train_sto, exog_re, groups, means, std)
+        exog_terms = [
+            "const", "Net Inflow", "Storage_pre", "Release_pre",
+            "Release_roll7", "Storage_roll7",  "Inflow_roll7"
+        ]
+
+        exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:]]
+
+        mexog = exog.loc[:,["const"]]
+
+        # actual_inflow_train = df["Net Inflow"].loc[df.index.get_level_values(
+        #     0) < split_date]
+        # actual_inflow_test = df["Net Inflow"].loc[df.index.get_level_values(
+        #     0) >= split_date - timedelta(days=8)]
+        
+        free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
+                                            cov_re=np.eye(exog_re.shape[1]))
+        md = sm.MixedLM(y_train, mexog, groups=groups, exog_re=exog_re)
+        mdf = md.fit(free=free)
+
+        fitted = mdf.fittedvalues
+        fitted_act = (fitted.unstack() * 
+                    std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
+        y_train_act = (y_train.unstack() *
+                       std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
+
+
+        f_act_score = r2_score(y_train_act, fitted_act)
+        f_norm_score = r2_score(y_train, fitted)
+        f_act_rmse = np.sqrt(mean_squared_error(y_train_act, fitted_act))
+        f_norm_rmse = np.sqrt(mean_squared_error(y_train, fitted))
+
+        fe_coefs = mdf.params
+        re_coefs = mdf.random_effects
+
+        if label == "baseline":
+            p_act_score = f_act_score
+            p_norm_score = f_norm_score
+            p_act_rmse = f_act_rmse
+            p_norm_rmse = f_norm_rmse
+        else:
+            X_test["const"] = 1
+            exog = X_test
+            groups = exog["compositegroup"]
+            exog_re = exog.loc[:, exog_terms + interaction_terms +
+                               calendar.month_abbr[1:] + ["compositegroup"]]
+            mexog = exog[["const"]]
+
+            preds = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
+
+            preds_act = (preds.unstack() *
+                         std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
+            y_test_act = (y_test.unstack() *
+                          std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
+
+            p_act_score = r2_score(y_test_act, preds_act)
+            p_norm_score = r2_score(y_test, preds)
+            p_act_rmse = np.sqrt(mean_squared_error(y_test_act, preds_act))
+            p_norm_rmse = np.sqrt(mean_squared_error(y_test, preds))
+
+        lvout_rt_results[label] = {
+            "pred": {
+                "p_act_score": p_act_score,
+                "p_norm_score": p_norm_score,
+                "p_act_rmse": p_act_rmse,
+                "p_norm_rmse": p_norm_rmse
+            },
+            "fitted":{
+                "f_act_score": f_act_score,
+                "f_norm_score": f_norm_score,
+                "f_act_rmse": f_act_rmse,
+                "f_norm_rmse": f_norm_rmse
+            },
+            "coefs":re_coefs
+        }
+
+        if label != "baseline":
+            preds_act = preds_act.unstack()
+            y_test_act = y_test_act.unstack()
+            fitted_act = fitted_act.unstack()
+            y_train_act = y_train_act.unstack()
+
+            res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
+
+            for res in reservoirs:
+                try:
+                    y = y_train_act[res]
+                    ym = fitted_act[res]
+                except KeyError as e:
+                    y = y_test_act[res]
+                    ym = preds_act[res]
+                res_scores.loc[res, "NSE"] = r2_score(y, ym)
+                res_scores.loc[res, "RMSE"] = np.sqrt(mean_squared_error(y, ym))
+
+            lvout_rt_results[label]["res_scores"] = res_scores
+
+    try:
+        pred_df = pd.DataFrame({k:v["pred"] for k,v in lvout_rt_results.items()})
+        fitt_df = pd.DataFrame({k:v["fitted"] for k,v in lvout_rt_results.items()})
+
+        lvout_rt_results["pred"] = pred_df
+        lvout_rt_results["fitted"] = fitt_df
+
+        with open("../results/synthesis/simple_model/leave_some_out.pickle", "wb") as f:
+            pickle.dump(lvout_rt_results, f)
+
+        sys.exit()
+    except:
+        II()
+        sys.exit()
+
+        # fit_results = fit_release_and_storage(y_train, y_train_sto, exog_re, groups, means, std)
+        # fit_results = fit_release_storage_stepping(y_train, y_train_sto, exog_re, groups, means, std)
     # sys.exit()
-
-    # md = sm.MixedLM(y_train, mexog, groups=groups, exog_re=exog_re)
-    # fit_time_1 = timer()
-    # mdf = md.fit(free=free)
-    # fit_time_2 = timer()
 
     # actual_inflow_train = df["Net Inflow"].loc[df.index.get_level_values(0) < split_date]
     # actual_inflow_test = df["Net Inflow"].loc[df.index.get_level_values(0) >= split_date - timedelta(days=8)]
@@ -570,8 +688,6 @@ def fit_release_storage_stepping(y_rel, y_sto, exog, groups, means, std, init_va
         sto_error = mb_out["Storage"] - sto
         return np.power(rel_error, 2).sum() + np.power(sto_error, 2).sum() 
 
-    II()
-    sys.exit()
     g_results = {}
     # for group in group_names[:1]:
     # try to setup as much data as possible to speed up comp
@@ -591,7 +707,7 @@ def fit_release_storage_stepping(y_rel, y_sto, exog, groups, means, std, init_va
     ]
     method_results = {}
     for method in methods:
-        results = minimize(loss_function, gcoefs.values, args=(
+        results = minimize(loss_function, gcoefs.values, method=method, args=(
             g_y_rel, g_y_sto, {
                 "dates":dates, "exog_const":exog_const, 
                 "exog_updte":exog_updte, "keys":keys, 
