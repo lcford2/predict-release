@@ -231,7 +231,11 @@ def pipeline():
     ]
 
     #for res in reservoirs:
-    for lvout_set, label in zip(lvout_sets, lvout_labels):
+    #for lvout_set, label in zip(lvout_sets, lvout_labels):
+
+    for i, res in enumerate(reservoirs):
+        label = str(i)
+        lvout_set = reservoirs[:i]
         train_index, test_index = split_train_test_res(y.index, lvout_set)
         print(f"Solving model run {label}")
 
@@ -286,7 +290,7 @@ def pipeline():
         f_act_rmse = np.sqrt(mean_squared_error(y_train_rel_act, fitted_act))
         f_norm_rmse = np.sqrt(mean_squared_error(y_train_rel, fitted))
 
-        if label == "baseline":
+        if label == "0":
             p_act_score = f_act_score
             p_norm_score = f_norm_score
             p_act_rmse = f_act_rmse
@@ -318,25 +322,26 @@ def pipeline():
             "coefs":coefs
         }
 
-        if label != "baseline":
+        fitted_act = fitted_act.unstack()
+        y_train_act = y_train_rel_act.unstack()
+
+        res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
+
+        if label != "0":
             preds_act = preds_act.unstack()
             y_test_act = y_test_rel_act.unstack()
-            fitted_act = fitted_act.unstack()
-            y_train_act = y_train_rel_act.unstack()
 
-            res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
+        for res in reservoirs:
+            try:
+                ya = y_train_act[res]
+                ym = fitted_act[res]
+            except KeyError as e:
+                ya = y_test_act[res]
+                ym = preds_act[res]
+            res_scores.loc[res, "NSE"] = r2_score(ya, ym)
+            res_scores.loc[res, "RMSE"] = np.sqrt(mean_squared_error(ya, ym))
 
-            for res in reservoirs:
-                try:
-                    ya = y_train_act[res]
-                    ym = fitted_act[res]
-                except KeyError as e:
-                    ya = y_test_act[res]
-                    ym = preds_act[res]
-                res_scores.loc[res, "NSE"] = r2_score(ya, ym)
-                res_scores.loc[res, "RMSE"] = np.sqrt(mean_squared_error(ya, ym))
-
-            lvout_rt_results[label]["res_scores"] = res_scores
+        lvout_rt_results[label]["res_scores"] = res_scores
 
     try:
         pred_df = pd.DataFrame({k:v["pred"] for k,v in lvout_rt_results.items()})
@@ -345,9 +350,9 @@ def pipeline():
         lvout_rt_results["pred"] = pred_df
         lvout_rt_results["fitted"] = fitt_df
 
-        with open("../results/synthesis/treed_model/leave_some_out.pickle", "wb") as f:
-            pickle.dump(lvout_rt_results, f)
-
+        #with open("../results/synthesis/treed_model/leave_some_out.pickle", "wb") as f:
+        #    pickle.dump(lvout_rt_results, f)
+        II()
         sys.exit()
     except:
         II()

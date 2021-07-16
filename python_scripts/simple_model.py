@@ -207,7 +207,10 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         "15-30"
     ]
     #for res in reservoirs:
-    for lvout_res, label in zip(lvout_sets, lvout_labels):
+    #for lvout_res, label in zip(lvout_sets, lvout_labels):
+    for i, res in enumerate(reservoirs):
+        lvout_res = reservoirs[:i]
+        label = str(i)
         test_index = X_scaled.index[X_scaled.index.get_level_values(1).isin(lvout_res)]
         train_index = X_scaled.index[~X_scaled.index.get_level_values(1).isin(lvout_res)]
         test_res = lvout_res
@@ -263,7 +266,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
                                             cov_re=np.eye(exog_re.shape[1]))
         md = sm.MixedLM(y_train, mexog, groups=groups, exog_re=exog_re)
-        mdf = md.fit(free=free)
+        mdf = md.fit(free=free, method="BFGS")
 
         fitted = mdf.fittedvalues
         fitted_act = (fitted.unstack() * 
@@ -280,7 +283,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         fe_coefs = mdf.params
         re_coefs = mdf.random_effects
 
-        if label == "baseline":
+        if label == "0":
             p_act_score = f_act_score
             p_norm_score = f_norm_score
             p_act_rmse = f_act_rmse
@@ -321,25 +324,26 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
             "coefs":re_coefs
         }
 
-        if label != "baseline":
+        fitted_act = fitted_act.unstack()
+        y_train_act = y_train_act.unstack()
+        #y_test_act = y_test_act.unstack()
+
+        if label != "0":
             preds_act = preds_act.unstack()
             y_test_act = y_test_act.unstack()
-            fitted_act = fitted_act.unstack()
-            y_train_act = y_train_act.unstack()
 
-            res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
+        res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
+        for res in reservoirs:
+            try:
+                y = y_train_act[res]
+                ym = fitted_act[res]
+            except KeyError as e:
+                y = y_test_act[res]
+                ym = preds_act[res]
+            res_scores.loc[res, "NSE"] = r2_score(y, ym)
+            res_scores.loc[res, "RMSE"] = np.sqrt(mean_squared_error(y, ym))
 
-            for res in reservoirs:
-                try:
-                    y = y_train_act[res]
-                    ym = fitted_act[res]
-                except KeyError as e:
-                    y = y_test_act[res]
-                    ym = preds_act[res]
-                res_scores.loc[res, "NSE"] = r2_score(y, ym)
-                res_scores.loc[res, "RMSE"] = np.sqrt(mean_squared_error(y, ym))
-
-            lvout_rt_results[label]["res_scores"] = res_scores
+        lvout_rt_results[label]["res_scores"] = res_scores
 
     try:
         pred_df = pd.DataFrame({k:v["pred"] for k,v in lvout_rt_results.items()})
@@ -348,8 +352,9 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         lvout_rt_results["pred"] = pred_df
         lvout_rt_results["fitted"] = fitt_df
 
-        with open("../results/synthesis/simple_model/leave_some_out.pickle", "wb") as f:
-            pickle.dump(lvout_rt_results, f)
+        #with open("../results/synthesis/simple_model/leave_some_out.pickle", "wb") as f:
+        #    pickle.dump(lvout_rt_results, f)
+        II()
 
         sys.exit()
     except:
