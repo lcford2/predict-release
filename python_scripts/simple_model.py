@@ -208,7 +208,8 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     ]
     #for res in reservoirs:
     #for lvout_res, label in zip(lvout_sets, lvout_labels):
-    for i, res in enumerate(reservoirs):
+    combo_res = list(np.array(lvout_sets).flatten()) + ["Wilbur", "Ocoee3"]
+    for i, res in enumerate(reservoirs[:-1]):
         lvout_res = reservoirs[:i]
         label = str(i)
         test_index = X_scaled.index[X_scaled.index.get_level_values(1).isin(lvout_res)]
@@ -236,7 +237,8 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
         # train model
         # Instead of adding a constant, I want to create dummy variable that accounts for season differences
-        exog = sm.add_constant(X_train)
+        exog = X_train
+        exog["const"] = 1.0
         
         groups = exog["compositegroup"]
         # Storage Release Interactions are near Useless
@@ -295,8 +297,12 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
             exog_re = exog.loc[:, exog_terms + interaction_terms +
                                calendar.month_abbr[1:] + ["compositegroup"]]
             mexog = exog[["const"]]
-
-            preds = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
+            
+            try:
+                preds = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
+            except:
+                print("Error in predict")
+                II()
 
             preds_act = (preds.unstack() *
                          std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
@@ -351,9 +357,9 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
         lvout_rt_results["pred"] = pred_df
         lvout_rt_results["fitted"] = fitt_df
-
-        #with open("../results/synthesis/simple_model/leave_some_out.pickle", "wb") as f:
-        #    pickle.dump(lvout_rt_results, f)
+        
+        with open("../results/synthesis/simple_model/leave_incremental_out.pickle", "wb") as f:
+            pickle.dump(lvout_rt_results, f)
         II()
 
         sys.exit()
