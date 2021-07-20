@@ -232,7 +232,8 @@ def pipeline():
 
     #for res in reservoirs:
     #for lvout_set, label in zip(lvout_sets, lvout_labels):
-
+    print(reservoirs)
+    sys.exit()
     for i, res in enumerate(reservoirs):
         label = str(i)
         lvout_set = reservoirs[:i]

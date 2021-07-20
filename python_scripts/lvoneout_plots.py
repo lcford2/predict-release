@@ -49,6 +49,8 @@ def load_results(ftype="one"):
     """
     if ftype == "one":
         file = "leave_one_out.pickle"
+    elif ftype == "incr":
+        file = "leave_incremental_out.pickle"
     else:
         file = "leave_some_out.pickle"
     treed_path = RESULTS_DIR / "synthesis" / "treed_model" / file
@@ -91,11 +93,16 @@ def combine_data_scores_some(treed_data, simple_data):
     tree_groups = [k for k,v in treed_data.items() if "res_scores" in v]
     simp_groups = [k for k,v in simple_data.items() if "res_scores" in v]
 
-    tree_scores = pd.DataFrame(index=treed_data["baseline"]["res_scores"].index, columns=tree_groups)
-    tree_rmse = pd.DataFrame(index=treed_data["baseline"]["res_scores"].index, columns=tree_groups)
+    if "baseline" in treed_data.keys():
+        bl = "baseline"
+    else:
+        bl = "0"
 
-    simp_scores = pd.DataFrame(index=simple_data["baseline"]["res_scores"].index, columns=simp_groups)
-    simp_rmse = pd.DataFrame(index=simple_data["baseline"]["res_scores"].index, columns=simp_groups)
+    tree_scores = pd.DataFrame(index=treed_data[bl]["res_scores"].index, columns=tree_groups)
+    tree_rmse = pd.DataFrame(index=treed_data[bl]["res_scores"].index, columns=tree_groups)
+
+    simp_scores = pd.DataFrame(index=simple_data[bl]["res_scores"].index, columns=simp_groups)
+    simp_rmse = pd.DataFrame(index=simple_data[bl]["res_scores"].index, columns=simp_groups)
 
     for group in tree_groups:
         tree_scores.loc[:, group] = treed_data[group]["res_scores"]["NSE"]
@@ -243,12 +250,69 @@ def plot_res_scores_some(combined_data, metric="scores", sort_by="RT"):
 
 
     plt.show()
-    
+
+def plot_res_scores_incremental(combined_data, metric="scores", sort_by="RT"):
+    if sort_by == "CASCADE":
+        sort_by = CASCADE
+    elif sort_by == "RT":
+        rt = pd.read_pickle("../pickles/tva_res_times.pickle")
+        rt = rt.sort_values()
+        sort_by = rt.index
+    elif sort_by == "MStL":
+        msl = pd.read_pickle("../pickles/tva_mean_st_level.pickle")
+        msl = msl.sort_values()
+        sort_by = msl.index
+
+    tree = combined_data.get(f"tree_{metric}")
+    simp = combined_data.get(f"simp_{metric}")
+
+    if not isinstance(tree, pd.DataFrame):
+        print("Metric not available. Please choose either 'scores' or 'rmse'.")
+        sys.exit()
+
+    tree_order = ['BlueRidge', 'Chatuge', 'Cherokee', 'Douglas', 'Fontana', 'Hiwassee',
+                  'Norris', 'Nottely', 'SHolston', 'TimsFord', 'Watauga']
+    simp_order = ['Apalachia', 'Boone', 'Chikamauga', 'FtLoudoun', 'FtPatrick',
+                  'Guntersville', 'Kentucky', 'MeltonH', 'Nikajack', 'Ocoee1', 'Ocoee3',
+                  'Pickwick', 'WattsBar', 'Wheeler', 'Wilbur', 'Wilson']
+
+    tree_lvout = {str(i+1):j for i,j in enumerate(tree_order)}
+    tree = tree.rename(columns=tree_lvout)
+    tree = tree.astype(float)
+    sns.heatmap(tree)
+    plt.show()
+
+    simp_lvout = {str(i+1):j for i,j in enumerate(simp_order)}
+    simp = simp.rename(columns=simp_lvout)
+    simp = simp.astype(float)
+    sns.heatmap(simp)
+    plt.show()
+    sys.exit()
+
+    sns.set_context("paper")
+    df = tree.append(simp)
+    grid_size = determine_grid_size(df.index.size)
+
+    fig, axes = plt.subplots(*grid_size, sharex=True, sharey=True)
+    axes = axes.flatten()
+
+    for ax, res in zip(axes,df.index):
+        df.loc[res].plot(ax=ax)
+        try:
+            loc = tree_order.index(res) + 1
+        except ValueError:
+            loc = simp_order.index(res) + 1
+        ax.set_title(f"{res} {loc}")
+
+    axes[-1].set_axis_off()
+    plt.show()
+
+
 def main():
-    treed_data, simple_data = load_results(ftype="some")
+    treed_data, simple_data = load_results(ftype="incr")
     # preds, fitt = combine_data_scores(treed_data, simple_data)
     combined_data = combine_data_scores_some(treed_data, simple_data)
-    plot_res_scores_some(combined_data)
+    plot_res_scores_incremental(combined_data)
 #    plot_score_bars(preds, fitt, sort_by="RT")
     #explore_coefs(treed_data, simple_data)
 
