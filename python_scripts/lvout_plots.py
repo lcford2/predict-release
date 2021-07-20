@@ -156,7 +156,7 @@ def plot_score_bars(preds, fitt, sort_by="CASCADE"):
     axes[0].get_legend().remove()
 
     axes[1].set_xticklabels(sort_by, rotation=45, ha="right", rotation_mode="anchor")
-
+    plt.tight_layout()
     plt.show()
 
 
@@ -228,7 +228,8 @@ def plot_res_scores_some(args):
 
     style_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
-    fig, axes = plt.subplots(2,1)
+    fig, axes = plt.subplots(2,1, figsize=(20,8.7))
+    fig.patch.set_alpha(0.0)
     axes = axes.flatten()
 
 
@@ -255,7 +256,7 @@ def plot_res_scores_some(args):
         #handles, labels = ax.get_legend_handles_labels()
         ax.legend(loc="lower right", ncol=len(lvout["order"]) + 1)
 
-
+    plt.tight_layout()
     plt.show()
 
 def plot_res_scores_incremental(args):
@@ -285,6 +286,7 @@ def plot_res_scores_incremental(args):
     simp = simp.astype(float)
 
     fig = plt.figure(figsize=(20,8.7))
+    fig.patch.set_alpha(0.0)
     gs = GS.GridSpec(ncols=2, nrows=1, figure=fig, width_ratios=[20, 1])
     ax = fig.add_subplot(gs[0,0])
     cbar_ax = fig.add_subplot(gs[0,1])
@@ -292,6 +294,7 @@ def plot_res_scores_incremental(args):
     sns.heatmap(tree, ax=ax, cbar_ax=cbar_ax)
     ax.set_xticklabels(tree.columns, rotation=45, ha="right", rotation_mode="anchor")
     cbar_ax.set_ylabel("NSE")
+    plt.tight_layout()
     plt.show()
 
     fig = plt.figure(figsize=(20,8.7))
@@ -302,6 +305,7 @@ def plot_res_scores_incremental(args):
     sns.heatmap(simp, ax=ax, cbar_ax=cbar_ax)
     ax.set_xticklabels(simp.columns, rotation=45, ha="right", rotation_mode="anchor")
     cbar_ax.set_ylabel("NSE")
+    plt.tight_layout()
     plt.show()
 
 def parse_args(plot_functions):
@@ -312,6 +316,8 @@ def parse_args(plot_functions):
                         help="Specify what data set should be used for plots")
     parser.add_argument("-m", "--metric", choices=["scores", "rmse"], default="scores",
                         help="Specify what metric should be plotted")
+    parser.add_argument("-S", "--sort_by", choices=["CASCADE", "RT", "MStL"], default="RT",
+                        help="Specify how the reservoirs should be sorted.")
     args = parser.parse_args()
     return args
 
