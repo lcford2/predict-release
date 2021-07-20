@@ -2,6 +2,7 @@ import sys
 import calendar
 import pickle
 import pathlib
+import argparse
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as GS
 import matplotlib.lines as mlines
@@ -14,7 +15,8 @@ from IPython import embed as II
 
 # import my helper functions
 from helper_functions import read_tva_data
-from analysis_plots import (format_dict, CASCADE, determine_grid_size)
+from analysis_plots import (format_dict, CASCADE, determine_grid_size,
+                            find_plot_functions)
 
 # setup plotting environment
 plt.style.use("ggplot")
@@ -41,11 +43,12 @@ SIMP_LVOUT = {
 }
 
 def load_results(ftype="one"):
-    """TODO describe function
+    """Load results for plotting. 
 
-    :param ftype:
-    :returns:
-
+    :param ftype: what results to load [one, incr, some], defaults to "one"
+    :type ftype: str, optional
+    :return: Two dataframes, one with results from treed model and one from simple model
+    :rtype: pd.DataFrame, pd.DataFrame
     """
     if ftype == "one":
         file = "leave_one_out.pickle"
@@ -180,7 +183,11 @@ def explore_coefs(treed_data, simple_data):
 
     II()
 
-def plot_res_scores_some(combined_data, metric="scores", sort_by="RT"):
+def plot_res_scores_some(args):
+    sort_by = args.sort_by
+    metric = args.metric
+    treed_data, simple_data = load_results(ftype=args.data_set)
+    combined_data = combine_data_scores_some(treed_data, simple_data)
     if sort_by == "CASCADE":
         sort_by = CASCADE
     elif sort_by == "RT":
@@ -251,17 +258,10 @@ def plot_res_scores_some(combined_data, metric="scores", sort_by="RT"):
 
     plt.show()
 
-def plot_res_scores_incremental(combined_data, metric="scores", sort_by="RT"):
-    if sort_by == "CASCADE":
-        sort_by = CASCADE
-    elif sort_by == "RT":
-        rt = pd.read_pickle("../pickles/tva_res_times.pickle")
-        rt = rt.sort_values()
-        sort_by = rt.index
-    elif sort_by == "MStL":
-        msl = pd.read_pickle("../pickles/tva_mean_st_level.pickle")
-        msl = msl.sort_values()
-        sort_by = msl.index
+def plot_res_scores_incremental(args):
+    metric = args.metric
+    treed_data, simple_data = load_results(ftype=args.data_set)
+    combined_data = combine_data_scores_some(treed_data, simple_data)
 
     tree = combined_data.get(f"tree_{metric}")
     simp = combined_data.get(f"simp_{metric}")
@@ -276,45 +276,51 @@ def plot_res_scores_incremental(combined_data, metric="scores", sort_by="RT"):
                   'Guntersville', 'Kentucky', 'MeltonH', 'Nikajack', 'Ocoee1', 'Ocoee3',
                   'Pickwick', 'WattsBar', 'Wheeler', 'Wilbur', 'Wilson']
 
-    tree_lvout = {str(i+1):j for i,j in enumerate(tree_order)}
+    tree_lvout = {str(i):j for i, j in enumerate(["None"] + tree_order)}
     tree = tree.rename(columns=tree_lvout)
     tree = tree.astype(float)
-    sns.heatmap(tree)
-    plt.show()
 
-    simp_lvout = {str(i+1):j for i,j in enumerate(simp_order)}
+    simp_lvout = {str(i):j for i, j in enumerate(["None"] + simp_order)}
     simp = simp.rename(columns=simp_lvout)
     simp = simp.astype(float)
-    sns.heatmap(simp)
-    plt.show()
-    sys.exit()
 
-    sns.set_context("paper")
-    df = tree.append(simp)
-    grid_size = determine_grid_size(df.index.size)
+    fig = plt.figure(figsize=(20,8.7))
+    gs = GS.GridSpec(ncols=2, nrows=1, figure=fig, width_ratios=[20, 1])
+    ax = fig.add_subplot(gs[0,0])
+    cbar_ax = fig.add_subplot(gs[0,1])
 
-    fig, axes = plt.subplots(*grid_size, sharex=True, sharey=True)
-    axes = axes.flatten()
-
-    for ax, res in zip(axes,df.index):
-        df.loc[res].plot(ax=ax)
-        try:
-            loc = tree_order.index(res) + 1
-        except ValueError:
-            loc = simp_order.index(res) + 1
-        ax.set_title(f"{res} {loc}")
-
-    axes[-1].set_axis_off()
+    sns.heatmap(tree, ax=ax, cbar_ax=cbar_ax)
+    ax.set_xticklabels(tree.columns, rotation=45, ha="right", rotation_mode="anchor")
+    cbar_ax.set_ylabel("NSE")
     plt.show()
 
+    fig = plt.figure(figsize=(20,8.7))
+    gs = GS.GridSpec(ncols=2, nrows=1, figure=fig, width_ratios=[20, 1])
+    ax = fig.add_subplot(gs[0,0])
+    cbar_ax = fig.add_subplot(gs[0,1])
 
-def main():
-    treed_data, simple_data = load_results(ftype="incr")
-    # preds, fitt = combine_data_scores(treed_data, simple_data)
-    combined_data = combine_data_scores_some(treed_data, simple_data)
-    plot_res_scores_incremental(combined_data)
-#    plot_score_bars(preds, fitt, sort_by="RT")
-    #explore_coefs(treed_data, simple_data)
+    sns.heatmap(simp, ax=ax, cbar_ax=cbar_ax)
+    ax.set_xticklabels(simp.columns, rotation=45, ha="right", rotation_mode="anchor")
+    cbar_ax.set_ylabel("NSE")
+    plt.show()
+
+def parse_args(plot_functions):
+    parser = argparse.ArgumentParser(description="Plot results from leave out runs.")
+    parser.add_argument("-p", "--plot_func", help="What visualization to plot.", choices=plot_functions.keys(),
+                        default=None)
+    parser.add_argument("-d", "--data_set", choices=["one", "some", "incr"],
+                        help="Specify what data set should be used for plots")
+    parser.add_argument("-m", "--metric", choices=["scores", "rmse"], default="scores",
+                        help="Specify what metric should be plotted")
+    args = parser.parse_args()
+    return args
+
+
+def main(namespace):
+    plot_functions = find_plot_functions(namespace)
+    args = parse_args(plot_functions)
+    globals()[plot_functions[args.plot_func]](args)
 
 if __name__ == "__main__":
-    main()
+    namespace = dir()
+    main(namespace)
