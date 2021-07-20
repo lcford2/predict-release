@@ -209,6 +209,8 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     #for res in reservoirs:
     #for lvout_res, label in zip(lvout_sets, lvout_labels):
     combo_res = list(np.array(lvout_sets).flatten()) + ["Wilbur", "Ocoee3"]
+    print(reservoirs)
+    sys.exit()
     for i, res in enumerate(reservoirs[:-1]):
         lvout_res = reservoirs[:i]
         label = str(i)
