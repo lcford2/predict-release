@@ -42,6 +42,13 @@ SIMP_LVOUT = {
     "order":["3-7", "7-15", "15-30"]
 }
 
+LABEL_MAP = {
+    "scores":   dict(label="NSE", units=""),
+    "rmse_rel": dict(label="RMSE", units="[1000 acre-ft/day]"),
+    "rmse_sto": dict(label="RMSE", units="[1000 acre-ft/day]"),
+    "rmse_pct": dict(label="RMSE", units="[%]")
+}
+
 def load_results(ftype="one"):
     """Load results for plotting. 
 
@@ -84,6 +91,16 @@ def combine_data_scores(treed_data, simple_data):
     return preds, fitt
 
 def combine_data_scores_some(treed_data, simple_data):
+    """Combine data from two different models into a usable dictionary
+
+    :param treed_data: DataFrame with results from the treed model runs
+    :type treed_data: pd.DataFrame
+    :param simple_data: DataFrame with results from the simple model runs
+    :type simple_data: pd.DataFrame
+    :return: Dictionary with combined train and test data for the treed 
+    model and the simple model, along with scores and rmse for both models.
+    :rtype: dict
+    """
     tree_preds = treed_data["pred"]
     simp_preds = simple_data["pred"]
 
@@ -123,6 +140,13 @@ def combine_data_scores_some(treed_data, simple_data):
         "simp_rmse":simp_rmse
     }
     return output
+
+def normalize_rmse(df):
+    release_means = pd.read_pickle(
+        "../pickles/tva_dam_mean_daily_release_1000acftpermonth.pickle"
+    )
+    df = df.T.divide(release_means).dropna(axis=1).T * 100 
+    return df
 
 def plot_score_bars(preds, fitt, sort_by="CASCADE"):
     if sort_by == "CASCADE":
@@ -232,7 +256,15 @@ def plot_res_scores_some(args):
     fig.patch.set_alpha(0.0)
     axes = axes.flatten()
 
-
+    if metric == "rmse":
+        tree_plot = normalize_rmse(tree_plot)
+        simp_plot = normalize_rmse(simp_plot)
+        label_info = LABEL_MAP["rmse_pct"]
+    else:
+        label_info = LABEL_MAP["scores"]
+    
+    ylabel = " ".join([label_info["label"], label_info["units"]])
+    
     for ax, df, label, lvout in zip(axes, [tree_plot, simp_plot], ["Upstream", "Downstream"], [TREE_LVOUT, SIMP_LVOUT]):
         df.plot.bar(ax=ax, width=0.8)
         ax.set_title(label)
@@ -255,6 +287,7 @@ def plot_res_scores_some(args):
 
         #handles, labels = ax.get_legend_handles_labels()
         ax.legend(loc="lower right", ncol=len(lvout["order"]) + 1)
+        ax.set_ylabel(ylabel)
 
     plt.tight_layout()
     plt.show()
@@ -266,6 +299,16 @@ def plot_res_scores_incremental(args):
 
     tree = combined_data.get(f"tree_{metric}")
     simp = combined_data.get(f"simp_{metric}")
+
+    if metric == "rmse":
+        tree = normalize_rmse(tree)
+        simp = normalize_rmse(simp)
+        label_info = LABEL_MAP["rmse_pct"]
+    else:
+        label_info = LABEL_MAP["scores"]
+    
+    label = " ".join([label_info["label"], label_info["units"]])
+
 
     if not isinstance(tree, pd.DataFrame):
         print("Metric not available. Please choose either 'scores' or 'rmse'.")
@@ -293,18 +336,19 @@ def plot_res_scores_incremental(args):
 
     sns.heatmap(tree, ax=ax, cbar_ax=cbar_ax)
     ax.set_xticklabels(tree.columns, rotation=45, ha="right", rotation_mode="anchor")
-    cbar_ax.set_ylabel("NSE")
+    cbar_ax.set_ylabel(label)
     plt.tight_layout()
     plt.show()
 
     fig = plt.figure(figsize=(20,8.7))
+    fig.patch.set_alpha(0.0)
     gs = GS.GridSpec(ncols=2, nrows=1, figure=fig, width_ratios=[20, 1])
     ax = fig.add_subplot(gs[0,0])
     cbar_ax = fig.add_subplot(gs[0,1])
 
     sns.heatmap(simp, ax=ax, cbar_ax=cbar_ax)
     ax.set_xticklabels(simp.columns, rotation=45, ha="right", rotation_mode="anchor")
-    cbar_ax.set_ylabel("NSE")
+    cbar_ax.set_ylabel(label)
     plt.tight_layout()
     plt.show()
 
@@ -321,10 +365,31 @@ def parse_args(plot_functions):
     args = parser.parse_args()
     return args
 
+def infer_data_set(args):
+    pfunc = args.plot_func 
+    if not pfunc:
+        raise ValueError("Must provide at least one of the following command line \
+                          arguments: 'plot_func', 'data_set'.")
+    pfunc_split = pfunc.split("_")
+    poss_type = pfunc_split[-1]
+    if poss_type == "incremental":
+        args.data_set = "incr"
+    elif poss_type == "some":
+        args.data_set = "some"
+    else:
+        args.data_set = "one"
+    return args
+
 
 def main(namespace):
     plot_functions = find_plot_functions(namespace)
     args = parse_args(plot_functions)
+    if not args.data_set:
+        args = infer_data_set(args)
+
+    if not args.plot_func:
+        II()
+
     globals()[plot_functions[args.plot_func]](args)
 
 if __name__ == "__main__":
