@@ -13,6 +13,8 @@ from helper_functions import (read_tva_data, scale_multi_level_df,
                               read_all_res_data, find_max_date_range)
 from timing_function import time_function
 from datetime import timedelta, datetime
+from collections import defaultdict
+from itertools import combinations
 from IPython import embed as II
 
 group_names = {
@@ -96,6 +98,25 @@ def scaledOLS(df, scaler="mine"):
     print(f"Train Score : {r2_score(y_train, fitted):.4f}")
     print(f"Test Score  : {r2_score(y_test, preds):.4f}")
 
+
+def filter_on_corr(level, rgroup, corrs, rts):
+    combos = combinations(rgroup, 2)
+
+    leave_out = []
+
+    for res1, res2 in combos:
+        rrcorr = corrs.loc[res1, res2]
+        if rrcorr > level:
+            r1_rt = rts.loc[res1]
+            r2_rt = rts.loc[res2]
+            if r1_rt > r2_rt:
+                if res1 not in leave_out:
+                    leave_out.append(res1)
+            else:
+                if res2 not in leave_out:
+                    leave_out.append(res2)
+    return leave_out
+
 def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     filename = "-".join(groups)
     for_groups = df.loc[:,groups]
@@ -173,6 +194,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     y_scaled_sto = y_scaled_sto[~y_scaled_sto.index.get_level_values(1).isin(change_names)]
     means = means[~means.index.isin(change_names)]
     std = std[~std.index.isin(change_names)]
+    
     #* This lets me group by month 
     # X_scaled["compositegroup"] = [calendar.month_abbr[i.month]
     #                      for i in X_scaled.index.get_level_values(0)]
@@ -208,12 +230,21 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     ]
     #for res in reservoirs:
     #for lvout_res, label in zip(lvout_sets, lvout_labels):
-    combo_res = list(np.array(lvout_sets).flatten()) + ["Wilbur", "Ocoee3"]
-    print(reservoirs)
-    sys.exit()
-    for i, res in enumerate(reservoirs[:-1]):
-        lvout_res = reservoirs[:i]
-        label = str(i)
+    rts = pd.read_pickle("../pickles/tva_res_times.pickle")
+    corrs = pd.read_pickle("../pickles/tva_release_corrs.pickle")
+    
+    exclude = defaultdict(list)
+    for level in np.arange(0.6, 1.0, 0.1)[::-1]:
+        for lvout_res, label in zip(lvout_sets, lvout_labels):
+            leave_out = filter_on_corr(level, lvout_res, corrs, rts)
+            exclude[level].extend(leave_out)
+    
+    # for i, res in enumerate(reservoirs[:-1]):
+
+    for level, lvout_res in exclude.items():
+        # lvout_res = reservoirs[:i]
+        # label = str(i)
+        label = str(round(level,2))
         test_index = X_scaled.index[X_scaled.index.get_level_values(1).isin(lvout_res)]
         train_index = X_scaled.index[~X_scaled.index.get_level_values(1).isin(lvout_res)]
         test_res = lvout_res
@@ -270,13 +301,15 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
                                             cov_re=np.eye(exog_re.shape[1]))
         md = sm.MixedLM(y_train, mexog, groups=groups, exog_re=exog_re)
-        mdf = md.fit(free=free, method="BFGS")
+        mdf = md.fit(free=free)
 
         fitted = mdf.fittedvalues
         fitted_act = (fitted.unstack() * 
                     std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
         y_train_act = (y_train.unstack() *
                        std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
+        y_test_act = (y_test.unstack() *
+                       std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
 
 
         f_act_score = r2_score(y_train_act, fitted_act)
@@ -287,13 +320,30 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         fe_coefs = mdf.params
         re_coefs = mdf.random_effects
 
+
+        y_train_mean = y_train_act.groupby(
+            y_train_act.index.get_level_values(1)
+        ).mean()
+        y_test_mean = y_test_act.groupby(
+            y_test_act.index.get_level_values(1)
+        ).mean()
+        fmean = fitted_act.groupby(
+            fitted_act.index.get_level_values(1)
+        ).mean()
+
+        f_bias = fmean = y_train_mean
+
         if label == "0":
             p_act_score = f_act_score
             p_norm_score = f_norm_score
             p_act_rmse = f_act_rmse
             p_norm_rmse = f_norm_rmse
+            p_act_score_all = f_act_score
+            p_act_rmse_all = f_act_rmse
+            p_bias = f_bias
         else:
             X_test["const"] = 1
+            X_all = X_train.append(X_test).sort_index()
             exog = X_test
             groups = exog["compositegroup"]
             exog_re = exog.loc[:, exog_terms + interaction_terms +
@@ -306,11 +356,32 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
                 print("Error in predict")
                 II()
 
+            exog = X_all
+            groups = exog["compositegroup"] 
+            exog_re = exog.loc[:, exog_terms + interaction_terms +
+                            calendar.month_abbr[1:] + ["compositegroup"]]
+            mexog = exog[["const"]]
+            preds_all = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
+
             preds_act = (preds.unstack() *
                          std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
+            preds_act_all = (preds_all.unstack() *
+                         std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
             y_test_act = (y_test.unstack() *
                           std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
+            y_act = y_train_act.append(y_test_act).sort_index()
 
+            preds_mean = preds_act.groupby(
+                preds_act.index.get_level_values(1)
+            ).mean()
+
+            preds_mean_all = preds_act_all.groupby(
+                preds_act_all.index.get_level_values(1)
+            ).mean()
+
+            p_act_score_all = r2_score(y_act, preds_act_all)
+            p_act_rmse_all = np.sqrt(mean_squared_error(y_act, preds_act_all))
+            p_bias = preds_mean - y_test_mean 
             p_act_score = r2_score(y_test_act, preds_act)
             p_norm_score = r2_score(y_test, preds)
             p_act_rmse = np.sqrt(mean_squared_error(y_test_act, preds_act))
@@ -319,17 +390,19 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         lvout_rt_results[label] = {
             "pred": {
                 "p_act_score": p_act_score,
-                "p_norm_score": p_norm_score,
                 "p_act_rmse": p_act_rmse,
-                "p_norm_rmse": p_norm_rmse
+                "p_act_score_all":p_act_score_all,
+                "p_act_rmse_all":p_act_rmse_all,
+                "p_bias":p_bias
             },
             "fitted":{
                 "f_act_score": f_act_score,
-                "f_norm_score": f_norm_score,
                 "f_act_rmse": f_act_rmse,
-                "f_norm_rmse": f_norm_rmse
+                "f_bias": f_bias
             },
-            "coefs":re_coefs
+            "coefs":re_coefs,
+            "test_res":test_res,
+            "train_res":train_res
         }
 
         fitted_act = fitted_act.unstack()
@@ -360,7 +433,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         lvout_rt_results["pred"] = pred_df
         lvout_rt_results["fitted"] = fitt_df
         
-        with open("../results/synthesis/simple_model/leave_incremental_out.pickle", "wb") as f:
+        with open("../results/synthesis/simple_model/leave_corr_out.pickle", "wb") as f:
             pickle.dump(lvout_rt_results, f)
         II()
 

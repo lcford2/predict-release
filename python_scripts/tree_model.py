@@ -16,6 +16,8 @@ from timing_function import time_function
 from time import perf_counter as timer
 from copy import deepcopy
 from datetime import timedelta, datetime
+from collections import defaultdict
+from itertools import combinations
 from IPython import embed as II
 import calendar
 import sys
@@ -203,15 +205,19 @@ def pipeline():
     # filter groups {group to filter by: attribute of entries that should be included}
     filter_groups={"NaturalOnly":"NaturalFlow"}
     # filter_groups={"RunOfRiver":"StorageDam"}
-    # filter_groups = {}
+    filter_groups = {}
     # get the X matrix, and y vector along with means and std.
     # note: if no scaler is provided, means and std will be 0 and 1 respectively.
     timelevel="all"
+    
     X,y,means,std = prep_data(df, groups, filter_groups, scaler="mine", timelevel=timelevel)
     # train_index, test_index = split_train_test_dt(y.index, date=datetime(2010, 1, 1), level=0, keep=8)
     reservoirs = X.index.get_level_values(1).unique()
-    
+    rts = pd.read_pickle("../pickles/tva_res_times.pickle")
+    X["RT"] = [rts.loc[i] for i in X.index.get_level_values(1)]
     #lvoneout_results = {}
+    II()
+    sys.exit()    
     lvout_rt_results = {}
 
     lvout_sets = [
@@ -232,11 +238,21 @@ def pipeline():
 
     #for res in reservoirs:
     #for lvout_set, label in zip(lvout_sets, lvout_labels):
-    print(reservoirs)
-    sys.exit()
-    for i, res in enumerate(reservoirs):
-        label = str(i)
-        lvout_set = reservoirs[:i]
+    from simple_model import filter_on_corr
+    rts = pd.read_pickle("../pickles/tva_res_times.pickle")
+    corrs = pd.read_pickle("../pickles/tva_release_corrs.pickle")
+
+    exclude = defaultdict(list)
+    for level in np.arange(0.1, 0.7, 0.1)[::-1]:
+        for lvout_res, label in zip(lvout_sets, lvout_labels):
+            leave_out = filter_on_corr(level, lvout_res, corrs, rts)
+            exclude[level].extend(leave_out)
+    
+    # for i, res in enumerate(reservoirs):
+        # label = str(i)
+        # lvout_set = reservoirs[:i]
+    for level, lvout_set in exclude.items():
+        label = str(round(level,2))
         train_index, test_index = split_train_test_res(y.index, lvout_set)
         print(f"Solving model run {label}")
 
@@ -251,6 +267,7 @@ def pipeline():
         # split into training and testing sets
         X_train = X.loc[train_index,X_vars]
         X_test = X.loc[test_index,X_vars]
+        X_test_all = X.loc[:,X_vars]
         y_train_rel = y.loc[train_index]
         y_test_rel = y.loc[test_index]
         y_train_sto = X.loc[train_index, "Storage"]
@@ -290,37 +307,80 @@ def pipeline():
         f_norm_score = r2_score(y_train_rel, fitted)
         f_act_rmse = np.sqrt(mean_squared_error(y_train_rel_act, fitted_act))
         f_norm_rmse = np.sqrt(mean_squared_error(y_train_rel, fitted))
+        
+        y_train_mean = y_train_rel_act.groupby(
+            y_train_rel_act.index.get_level_values(1)
+        ).mean()
+        y_test_mean = y_test_rel_act.groupby(
+            y_test_rel_act.index.get_level_values(1)
+        ).mean()
+        fmean = fitted_act.groupby(
+            fitted_act.index.get_level_values(1)
+        ).mean()
+
+        f_bias = fmean = y_train_mean
+        # def calc_res_bias(y_act, y_mod):
 
         if label == "0":
             p_act_score = f_act_score
             p_norm_score = f_norm_score
             p_act_rmse = f_act_rmse
             p_norm_rmse = f_norm_rmse
+            p_act_score_all = f_act_score
+            p_act_rmse_all = f_act_rmse
+            p_bias = f_bias
         else:
             preds, pgroups = predict_from_sub_tree_model(X_test, y_test_rel, tree, ml_model)
+            preds_all, pgroups_all = predict_from_sub_tree_model(
+                X_test_all, y, tree, ml_model
+            )
 
             preds_act = (preds.unstack() *
                          std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
-
+            preds_act_all = (preds_all.unstack() *
+                         std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
+            
+            preds_mean = preds_act.groupby(
+                preds_act.index.get_level_values(1)
+            ).mean()
+            
+            preds_mean_all = preds_act_all.groupby(
+                preds_act_all.index.get_level_values(1)
+            ).mean()
+            
             p_act_score = r2_score(y_test_rel_act, preds_act)
             p_norm_score = r2_score(y_test_rel, preds)
             p_act_rmse = np.sqrt(mean_squared_error(y_test_rel_act, preds_act))
             p_norm_rmse = np.sqrt(mean_squared_error(y_test_rel, preds))
+            
+            y_act = (y.unstack() * std["Release"] + means["Release"]).stack()
+            p_act_score_all = r2_score(
+                (y.unstack() * std["Release"] + means["Release"]).stack(),
+                preds_act_all
+            )
+            p_act_rmse_all = np.sqrt(mean_squared_error(
+                (y.unstack() * std["Release"] + means["Release"]).stack(),
+                preds_act_all
+            ))
+            p_bias = preds_mean - y_test_mean
+
 
         lvout_rt_results[label] = {
             "pred":{
                 "p_act_score": p_act_score,
-                "p_norm_score": p_norm_score,
                 "p_act_rmse": p_act_rmse,
-                "p_norm_rmse": p_norm_rmse
+                "p_act_score_all":p_act_score_all,
+                "p_act_rmse_all":p_act_rmse_all,
+                "p_bias":p_bias
             },
             "fitted": {
                 "f_act_score": f_act_score,
-                "f_norm_score": f_norm_score,
                 "f_act_rmse": f_act_rmse,
-                "f_norm_rmse": f_norm_rmse
+                "f_bias": f_bias
             },
-            "coefs":coefs
+            "coefs":coefs,
+            "test_res":test_res,
+            "train_res":train_res
         }
 
         fitted_act = fitted_act.unstack()
@@ -351,8 +411,8 @@ def pipeline():
         lvout_rt_results["pred"] = pred_df
         lvout_rt_results["fitted"] = fitt_df
 
-        #with open("../results/synthesis/treed_model/leave_some_out.pickle", "wb") as f:
-        #    pickle.dump(lvout_rt_results, f)
+        with open("../results/synthesis/treed_model/leave_corr_out.pickle", "wb") as f:
+           pickle.dump(lvout_rt_results, f)
         II()
         sys.exit()
     except:
