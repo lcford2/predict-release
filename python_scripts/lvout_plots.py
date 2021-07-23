@@ -61,6 +61,8 @@ def load_results(ftype="one"):
         file = "leave_one_out.pickle"
     elif ftype == "incr":
         file = "leave_incremental_out.pickle"
+    elif ftype == "corr":
+        file = "leave_corr_out.pickle"
     else:
         file = "leave_some_out.pickle"
     treed_path = RESULTS_DIR / "synthesis" / "treed_model" / file
@@ -113,16 +115,49 @@ def combine_data_scores_some(treed_data, simple_data):
     tree_groups = [k for k,v in treed_data.items() if "res_scores" in v]
     simp_groups = [k for k,v in simple_data.items() if "res_scores" in v]
 
+    bias_keys = [i for i in tree.index if "bias" in i]
+    bias_flag = len(bias_keys) != 0
+
+    if bias_flag:
+        tree_bias = pd.DataFrame(index=treed_data[tree_groups[0]]["res_scores"].index, columns=tree_groups)
+        simp_bias = pd.DataFrame(index=simple_data[simp_groups[0]]["res_scores"].index, columns=simp_groups)
+        tree_bias_map = pd.DataFrame(index=treed_data[tree_groups[0]]["res_scores"].index, columns=tree_groups)
+        simp_bias_map = pd.DataFrame(index=simple_data[simp_groups[0]]["res_scores"].index, columns=simp_groups)
+
+        for group in tree_groups:
+            tree_p_bias = tree_preds.loc["p_bias", group]      
+            tree_bias.loc[tree_p_bias.index, group] = tree_p_bias
+            tree_bias_map.loc[tree_p_bias.index, group] = "p"
+            tree_f_bias = tree_fit.loc["f_bias", group]
+            tree_bias.loc[tree_f_bias.index, group] = tree_f_bias
+            tree_bias_map.loc[tree_f_bias.index, group] = "f"
+
+        for group in simp_groups:
+            simp_p_bias = simp_preds.loc["p_bias", group]      
+            simp_bias.loc[simp_p_bias.index, group] = simp_p_bias
+            simp_bias_map.loc[simp_p_bias.index, group] = "p"
+            simp_f_bias = simp_fit.loc["f_bias", group]
+            simp_bias.loc[simp_f_bias.index, group] = simp_f_bias
+            simp_bias_map.loc[simp_f_bias.index, group] = "f"
+
+        tree = tree.drop(bias_keys)
+        simp = simp.drop(bias_keys)
+    
     if "baseline" in treed_data.keys():
-        bl = "baseline"
+        blt = "baseline"
+        bls = blt
+    elif "0" in treed_data.keys():
+        blt = "0"
+        bls = blt
     else:
-        bl = "0"
+        blt = tree_groups[0]
+        bls = simp_groups[0]
 
-    tree_scores = pd.DataFrame(index=treed_data[bl]["res_scores"].index, columns=tree_groups)
-    tree_rmse = pd.DataFrame(index=treed_data[bl]["res_scores"].index, columns=tree_groups)
+    tree_scores = pd.DataFrame(index=treed_data[blt]["res_scores"].index, columns=tree_groups)
+    tree_rmse = pd.DataFrame(index=treed_data[blt]["res_scores"].index, columns=tree_groups)
 
-    simp_scores = pd.DataFrame(index=simple_data[bl]["res_scores"].index, columns=simp_groups)
-    simp_rmse = pd.DataFrame(index=simple_data[bl]["res_scores"].index, columns=simp_groups)
+    simp_scores = pd.DataFrame(index=simple_data[bls]["res_scores"].index, columns=simp_groups)
+    simp_rmse = pd.DataFrame(index=simple_data[bls]["res_scores"].index, columns=simp_groups)
 
     for group in tree_groups:
         tree_scores.loc[:, group] = treed_data[group]["res_scores"]["NSE"]
@@ -139,6 +174,13 @@ def combine_data_scores_some(treed_data, simple_data):
         "simp_scores": simp_scores,
         "simp_rmse":simp_rmse
     }
+    if bias_flag:
+        output["bias_data"] = {
+            "tree_bias":tree_bias,
+            "tree_map":tree_bias_map,
+            "simp_bias":simp_bias,
+            "simp_map":simp_bias_map
+        }
     return output
 
 def normalize_rmse(df):
@@ -304,8 +346,10 @@ def plot_res_scores_incremental(args):
         tree = normalize_rmse(tree)
         simp = normalize_rmse(simp)
         label_info = LABEL_MAP["rmse_pct"]
+        fmt = "0.0f"
     else:
         label_info = LABEL_MAP["scores"]
+        fmt = "0.2f"
     
     label = " ".join([label_info["label"], label_info["units"]])
 
@@ -328,13 +372,18 @@ def plot_res_scores_incremental(args):
     simp = simp.rename(columns=simp_lvout)
     simp = simp.astype(float)
 
+    tree_columns = {i: round(float(i), 2) for i in tree.columns}
+    simp_columns = {i: round(float(i), 2) for i in simp.columns}
+    tree = tree.rename(columns=tree_columns)
+    simp = simp.rename(columns=simp_columns)
+
     fig = plt.figure(figsize=(20,8.7))
     fig.patch.set_alpha(0.0)
     gs = GS.GridSpec(ncols=2, nrows=1, figure=fig, width_ratios=[20, 1])
     ax = fig.add_subplot(gs[0,0])
     cbar_ax = fig.add_subplot(gs[0,1])
 
-    sns.heatmap(tree, ax=ax, cbar_ax=cbar_ax)
+    sns.heatmap(tree, ax=ax, cbar_ax=cbar_ax, annot=True, fmt=fmt)
     ax.set_xticklabels(tree.columns, rotation=45, ha="right", rotation_mode="anchor")
     cbar_ax.set_ylabel(label)
     plt.tight_layout()
@@ -346,17 +395,68 @@ def plot_res_scores_incremental(args):
     ax = fig.add_subplot(gs[0,0])
     cbar_ax = fig.add_subplot(gs[0,1])
 
-    sns.heatmap(simp, ax=ax, cbar_ax=cbar_ax)
+    sns.heatmap(simp, ax=ax, cbar_ax=cbar_ax, annot=True, fmt=fmt)
     ax.set_xticklabels(simp.columns, rotation=45, ha="right", rotation_mode="anchor")
     cbar_ax.set_ylabel(label)
     plt.tight_layout()
     plt.show()
 
+def plot_results_corr(args):
+    metric = args.metric
+    treed_data, simple_data = load_results(ftype=args.data_set)
+    combined_data = combine_data_scores_some(treed_data, simple_data)
+    
+    tree_map = combined_data["bias_data"]["tree_map"]
+    simp_map = combined_data["bias_data"]["simp_map"]
+
+    tree_bias = combined_data["bias_data"]["tree_bias"]
+    simp_bias = combined_data["bias_data"]["simp_bias"]
+
+    tree_order = tree_map.applymap(lambda x: 1 if x == "p" else 0).sum(axis=1).sort_values().index
+    simp_order = simp_map.applymap(lambda x: 1 if x == "p" else 0).sum(axis=1).sort_values().index
+
+    tree_scores = combined_data["tree_scores"]
+    simp_scores = combined_data["simp_scores"]
+
+    tree_scores = tree_scores.astype(float)
+    simp_scores = simp_scores.astype(float)
+
+    tree_scores = tree_scores.loc[tree_order]
+    simp_scores = simp_scores.loc[simp_order]
+
+    def get_sign_string(x):
+        if abs(x) < 0.1:
+            return "  "
+        else:
+            return f" {np.sign(x):+.0f}"[:2]
+
+    # tree_bias_sign = np.sign(tree_bias).applymap(lambda x: f" {x:+d}"[:2])
+    # simp_bias_sign = np.sign(simp_bias).applymap(lambda x: f" {x:+d}"[:2])
+    tree_bias_sign = tree_bias.applymap(get_sign_string)
+    simp_bias_sign = simp_bias.applymap(get_sign_string)
+
+    tree_annot = tree_map.applymap(
+        lambda x: x.upper()) + tree_bias_sign + tree_scores.applymap(lambda x: f"{x:.3f}")
+    tree_annot = tree_annot.loc[tree_order]
+
+    
+    simp_annot = simp_map.applymap(
+        lambda x: x.upper()) + simp_bias_sign + simp_scores.applymap(lambda x: f"{x:.3f}")
+    simp_annot = simp_annot.loc[simp_order]
+    
+
+    sns.heatmap(tree_scores, annot=tree_annot, fmt="s")
+    plt.show()
+    sns.heatmap(simp_scores, annot=simp_annot, fmt="s")
+    plt.show()
+
+
+
 def parse_args(plot_functions):
     parser = argparse.ArgumentParser(description="Plot results from leave out runs.")
     parser.add_argument("-p", "--plot_func", help="What visualization to plot.", choices=plot_functions.keys(),
                         default=None)
-    parser.add_argument("-d", "--data_set", choices=["one", "some", "incr"],
+    parser.add_argument("-d", "--data_set", choices=["one", "some", "incr", "corr"],
                         help="Specify what data set should be used for plots")
     parser.add_argument("-m", "--metric", choices=["scores", "rmse"], default="scores",
                         help="Specify what metric should be plotted")
@@ -376,6 +476,8 @@ def infer_data_set(args):
         args.data_set = "incr"
     elif poss_type == "some":
         args.data_set = "some"
+    elif poss_type == "corr":
+        args.data_set = "corr"
     else:
         args.data_set = "one"
     return args
@@ -389,7 +491,7 @@ def main(namespace):
 
     if not args.plot_func:
         II()
-
+    
     globals()[plot_functions[args.plot_func]](args)
 
 if __name__ == "__main__":

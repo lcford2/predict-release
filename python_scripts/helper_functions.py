@@ -182,3 +182,6 @@ def read_all_res_data():
     df.loc[acf_indexer,"Storage"] = df[acf_indexer]["Storage"]* 86400  # acre-ft to ft3
     df.loc[acf_indexer,"Storage_pre"] = df[acf_indexer]["Storage_pre"]* 86400  # acre-ft to ft3
     return df
+
+def flatten_2d_list(lst):
+    return [item for sublist in lst for item in sublist]
