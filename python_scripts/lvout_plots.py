@@ -405,7 +405,7 @@ def plot_results_corr(args):
     metric = args.metric
     treed_data, simple_data = load_results(ftype=args.data_set)
     combined_data = combine_data_scores_some(treed_data, simple_data)
-    
+    II() 
     tree_map = combined_data["bias_data"]["tree_map"]
     simp_map = combined_data["bias_data"]["simp_map"]
 
@@ -444,10 +444,22 @@ def plot_results_corr(args):
         lambda x: x.upper()) + simp_bias_sign + simp_scores.applymap(lambda x: f"{x:.3f}")
     simp_annot = simp_annot.loc[simp_order]
     
-
-    sns.heatmap(tree_scores, annot=tree_annot, fmt="s")
+    fig = plt.figure(figsize=(20,8.7))
+    fig.patch.set_alpha(0.0)
+    gs = GS.GridSpec(ncols=2, nrows=1, figure=fig, width_ratios=[20, 1])
+    ax = fig.add_subplot(gs[0,0])
+    cbar_ax = fig.add_subplot(gs[0,1])
+    sns.heatmap(tree_scores, annot=tree_annot, fmt="s", ax=ax, cbar_ax=cbar_ax)
+    cbar_ax.set_ylabel("NSE")
     plt.show()
-    sns.heatmap(simp_scores, annot=simp_annot, fmt="s")
+
+    fig = plt.figure(figsize=(20,8.7))
+    fig.patch.set_alpha(0.0)
+    gs = GS.GridSpec(ncols=2, nrows=1, figure=fig, width_ratios=[20, 1])
+    ax = fig.add_subplot(gs[0,0])
+    cbar_ax = fig.add_subplot(gs[0,1])
+    sns.heatmap(simp_scores, annot=simp_annot, fmt="s", ax=ax, cbar_ax=cbar_ax)
+    cbar_ax.set_ylabel("NSE")
     plt.show()
 
 

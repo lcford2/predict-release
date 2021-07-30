@@ -234,13 +234,17 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     corrs = pd.read_pickle("../pickles/tva_release_corrs.pickle")
     
     exclude = defaultdict(list)
-    for level in np.arange(0.6, 1.0, 0.1)[::-1]:
+    # for level in np.arange(0.6, 1.0, 0.1)[::-1]:
+    for level in [0.6]:
         for lvout_res, label in zip(lvout_sets, lvout_labels):
             leave_out = filter_on_corr(level, lvout_res, corrs, rts)
             exclude[level].extend(leave_out)
     
     # for i, res in enumerate(reservoirs[:-1]):
-
+    X_scaled["rel_diff"] = X_scaled["Release_pre"] - X_scaled["Release_roll7"]
+    X_scaled["sto_diff"] = X_scaled["Storage_pre"] - X_scaled["Storage_roll7"]
+    X_scaled["inf_diff"] = X_scaled["Net Inflow"] - X_scaled["Inflow_roll7"]
+    
     for level, lvout_res in exclude.items():
         # lvout_res = reservoirs[:i]
         # label = str(i)
@@ -285,11 +289,16 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
 
         exog_terms = [
-            "const", "Net Inflow", "Storage_pre", "Release_pre",
-            "Release_roll7", "Storage_roll7",  "Inflow_roll7"
+            "const", "Net Inflow", "Storage_pre", #"Release_pre",
+            "Storage_roll7",  "Inflow_roll7", # "Release_roll7"
         ]
 
-        exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:]]
+        # exog_terms = [
+        #     "const", "Net Inflow", "sto_diff", "Release_pre",
+        #     "Release_roll7", "Inflow_roll7"
+        # ]
+
+        exog_re = exog.loc[:,exog_terms + interaction_terms] # + calendar.month_abbr[1:]]
 
         mexog = exog.loc[:,["const"]]
 
@@ -331,7 +340,11 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
             fitted_act.index.get_level_values(1)
         ).mean()
 
-        f_bias = fmean = y_train_mean
+        f_bias = fmean - y_train_mean
+        f_bias_month = fitted_act.groupby(
+            fitted_act.index.get_level_values(0).month
+            ).mean() - y_train_act.groupby(
+                y_train_act.index.get_level_values(0).month).mean()
 
         if label == "0":
             p_act_score = f_act_score
@@ -341,13 +354,14 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
             p_act_score_all = f_act_score
             p_act_rmse_all = f_act_rmse
             p_bias = f_bias
+            p_bias_month = f_bias_month
         else:
             X_test["const"] = 1
             X_all = X_train.append(X_test).sort_index()
             exog = X_test
             groups = exog["compositegroup"]
-            exog_re = exog.loc[:, exog_terms + interaction_terms +
-                               calendar.month_abbr[1:] + ["compositegroup"]]
+            exog_re = exog.loc[:, exog_terms + interaction_terms + ["compositegroup"]]
+                            #    calendar.month_abbr[1:] + ["compositegroup"]]
             mexog = exog[["const"]]
             
             try:
@@ -358,8 +372,9 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
             exog = X_all
             groups = exog["compositegroup"] 
-            exog_re = exog.loc[:, exog_terms + interaction_terms +
-                            calendar.month_abbr[1:] + ["compositegroup"]]
+            exog_re = exog.loc[:, exog_terms + interaction_terms + ["compositegroup"]]
+            # exog_re = exog.loc[:, exog_terms + interaction_terms +
+            #                 calendar.month_abbr[1:] + ["compositegroup"]]
             mexog = exog[["const"]]
             preds_all = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
 
@@ -387,18 +402,25 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
             p_act_rmse = np.sqrt(mean_squared_error(y_test_act, preds_act))
             p_norm_rmse = np.sqrt(mean_squared_error(y_test, preds))
 
+            p_bias_month = preds_act.groupby(
+                preds_act.index.get_level_values(0).month  
+                ).mean() - y_test_act.groupby(
+                    y_test_act.index.get_level_values(0).month).mean()
+
         lvout_rt_results[label] = {
             "pred": {
                 "p_act_score": p_act_score,
                 "p_act_rmse": p_act_rmse,
                 "p_act_score_all":p_act_score_all,
                 "p_act_rmse_all":p_act_rmse_all,
-                "p_bias":p_bias
+                "p_bias":p_bias,
+                "p_bias_month":p_bias_month
             },
             "fitted":{
                 "f_act_score": f_act_score,
                 "f_act_rmse": f_act_rmse,
-                "f_bias": f_bias
+                "f_bias": f_bias,
+                "f_bias_month":f_bias_month
             },
             "coefs":re_coefs,
             "test_res":test_res,
@@ -432,9 +454,9 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
         lvout_rt_results["pred"] = pred_df
         lvout_rt_results["fitted"] = fitt_df
-        
-        with open("../results/synthesis/simple_model/leave_corr_out.pickle", "wb") as f:
-            pickle.dump(lvout_rt_results, f)
+        coefs = pd.DataFrame(mdf.random_effects)
+        # with open("../results/synthesis/simple_model/leave_corr_out.pickle", "wb") as f:
+            # pickle.dump(lvout_rt_results, f)
         II()
 
         sys.exit()
