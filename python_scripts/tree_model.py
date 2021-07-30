@@ -205,19 +205,20 @@ def pipeline():
     # filter groups {group to filter by: attribute of entries that should be included}
     filter_groups={"NaturalOnly":"NaturalFlow"}
     # filter_groups={"RunOfRiver":"StorageDam"}
-    filter_groups = {}
+    # filter_groups = {}
     # get the X matrix, and y vector along with means and std.
     # note: if no scaler is provided, means and std will be 0 and 1 respectively.
     timelevel="all"
     
     X,y,means,std = prep_data(df, groups, filter_groups, scaler="mine", timelevel=timelevel)
+    X["rel_diff"] = X["Release_pre"] - X["Release_roll7"]
+    X["sto_diff"] = X["Storage_pre"] - X["Storage_roll7"]
+    X["inf_diff"] = X["Net Inflow"] - X["Inflow_roll7"]
     # train_index, test_index = split_train_test_dt(y.index, date=datetime(2010, 1, 1), level=0, keep=8)
     reservoirs = X.index.get_level_values(1).unique()
-    rts = pd.read_pickle("../pickles/tva_res_times.pickle")
-    X["RT"] = [rts.loc[i] for i in X.index.get_level_values(1)]
+    #rts = pd.read_pickle("../pickles/tva_res_times.pickle")
+    #X["RT"] = [rts.loc[i] for i in X.index.get_level_values(1)]
     #lvoneout_results = {}
-    II()
-    sys.exit()    
     lvout_rt_results = {}
 
     lvout_sets = [
@@ -243,7 +244,8 @@ def pipeline():
     corrs = pd.read_pickle("../pickles/tva_release_corrs.pickle")
 
     exclude = defaultdict(list)
-    for level in np.arange(0.1, 0.7, 0.1)[::-1]:
+    # for level in np.arange(0.1, 0.7, 0.1)[::-1]:
+    for level in [0.3]:
         for lvout_res, label in zip(lvout_sets, lvout_labels):
             leave_out = filter_on_corr(level, lvout_res, corrs, rts)
             exclude[level].extend(leave_out)
@@ -259,10 +261,14 @@ def pipeline():
         # set exogenous variables
         X_vars = ["Storage_pre", "Release_pre", "Net Inflow",
                 "Storage_Inflow_interaction",
-                "Inflow_roll7", "Release_roll7", #"Storage_roll7",
+                "Inflow_roll7", "Release_roll7", "Storage_roll7",
                 #"Storage_7", "Release_7",
                 #   "NaturalOnly", "RunOfRiver"
                 ]
+
+        X_vars = ["sto_diff", "Storage_Inflow_interaction",
+                "Release_pre", "Release_roll7",
+                "Net Inflow", "Inflow_roll7"]
     
         # split into training and testing sets
         X_train = X.loc[train_index,X_vars]
@@ -318,8 +324,11 @@ def pipeline():
             fitted_act.index.get_level_values(1)
         ).mean()
 
-        f_bias = fmean = y_train_mean
-        # def calc_res_bias(y_act, y_mod):
+        f_bias = fmean - y_train_mean
+        f_bias_month = fitted_act.groupby(
+            fitted_act.index.get_level_values(0).month
+            ).mean() - y_train_rel_act.groupby(
+                y_train_rel_act.index.get_level_values(0).month).mean()
 
         if label == "0":
             p_act_score = f_act_score
@@ -329,6 +338,7 @@ def pipeline():
             p_act_score_all = f_act_score
             p_act_rmse_all = f_act_rmse
             p_bias = f_bias
+            p_bias_month = f_bias_month
         else:
             preds, pgroups = predict_from_sub_tree_model(X_test, y_test_rel, tree, ml_model)
             preds_all, pgroups_all = predict_from_sub_tree_model(
@@ -363,6 +373,10 @@ def pipeline():
                 preds_act_all
             ))
             p_bias = preds_mean - y_test_mean
+            p_bias_month = preds_act.groupby(
+                preds_act.index.get_level_values(0).month  
+                ).mean() - y_test_rel_act.groupby(
+                    y_test_rel_act.index.get_level_values(0).month).mean()
 
 
         lvout_rt_results[label] = {
@@ -371,12 +385,14 @@ def pipeline():
                 "p_act_rmse": p_act_rmse,
                 "p_act_score_all":p_act_score_all,
                 "p_act_rmse_all":p_act_rmse_all,
-                "p_bias":p_bias
+                "p_bias":p_bias,
+                "p_bias_month":p_bias_month
             },
             "fitted": {
                 "f_act_score": f_act_score,
                 "f_act_rmse": f_act_rmse,
-                "f_bias": f_bias
+                "f_bias": f_bias,
+                "f_bias_month": f_bias_month
             },
             "coefs":coefs,
             "test_res":test_res,
@@ -410,9 +426,10 @@ def pipeline():
 
         lvout_rt_results["pred"] = pred_df
         lvout_rt_results["fitted"] = fitt_df
-
-        with open("../results/synthesis/treed_model/leave_corr_out.pickle", "wb") as f:
-           pickle.dump(lvout_rt_results, f)
+        train_data = pd.DataFrame(dict(actual=y_train_rel_act, model=fitted_act.stack()))
+        test_data = pd.DataFrame(dict(actual=y_test_rel_act, model=preds_act.stack()))
+        # with open("../results/synthesis/treed_model/leave_corr_out.pickle", "wb") as f:
+        #    pickle.dump(lvout_rt_results, f)
         II()
         sys.exit()
     except:
