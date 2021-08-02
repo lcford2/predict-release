@@ -486,7 +486,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     lvout_rt_results["test_bins"] = test_bins
 
     lvout_rt_results["quant_scores"] = quant_scores
-    with open("../results/synthesis/simple_model/fit9.pickle", "wb") as f:
+    with open("../results/synthesis/simple_model/fit9_results.pickle", "wb") as f:
         pickle.dump(lvout_rt_results, f)
     
     sys.exit()

@@ -63,6 +63,8 @@ def load_results(ftype="one"):
         file = "leave_incremental_out.pickle"
     elif ftype == "corr":
         file = "leave_corr_out.pickle"
+    elif ftype == "fit9":
+        file = "fit9_results.pickle"
     else:
         file = "leave_some_out.pickle"
     treed_path = RESULTS_DIR / "synthesis" / "treed_model" / file
@@ -405,7 +407,6 @@ def plot_results_corr(args):
     metric = args.metric
     treed_data, simple_data = load_results(ftype=args.data_set)
     combined_data = combine_data_scores_some(treed_data, simple_data)
-    II() 
     tree_map = combined_data["bias_data"]["tree_map"]
     simp_map = combined_data["bias_data"]["simp_map"]
 
@@ -468,7 +469,7 @@ def parse_args(plot_functions):
     parser = argparse.ArgumentParser(description="Plot results from leave out runs.")
     parser.add_argument("-p", "--plot_func", help="What visualization to plot.", choices=plot_functions.keys(),
                         default=None)
-    parser.add_argument("-d", "--data_set", choices=["one", "some", "incr", "corr"],
+    parser.add_argument("-d", "--data_set", choices=["one", "some", "incr", "corr", "fit9"],
                         help="Specify what data set should be used for plots")
     parser.add_argument("-m", "--metric", choices=["scores", "rmse"], default="scores",
                         help="Specify what metric should be plotted")
