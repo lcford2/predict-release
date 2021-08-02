@@ -420,21 +420,48 @@ def pipeline():
 
         lvout_rt_results[label]["res_scores"] = res_scores
 
-    try:
-        pred_df = pd.DataFrame({k:v["pred"] for k,v in lvout_rt_results.items()})
-        fitt_df = pd.DataFrame({k:v["fitted"] for k,v in lvout_rt_results.items()})
+    pred_df = pd.DataFrame({k:v["pred"] for k,v in lvout_rt_results.items()})
+    fitt_df = pd.DataFrame({k:v["fitted"] for k,v in lvout_rt_results.items()})
 
-        lvout_rt_results["pred"] = pred_df
-        lvout_rt_results["fitted"] = fitt_df
-        train_data = pd.DataFrame(dict(actual=y_train_rel_act, model=fitted_act.stack()))
-        test_data = pd.DataFrame(dict(actual=y_test_rel_act, model=preds_act.stack()))
-        # with open("../results/synthesis/treed_model/leave_corr_out.pickle", "wb") as f:
-        #    pickle.dump(lvout_rt_results, f)
-        II()
-        sys.exit()
-    except:
-        II()
-        sys.exit()
+    lvout_rt_results["pred"] = pred_df
+    lvout_rt_results["fitted"] = fitt_df
+    train_data = pd.DataFrame(dict(actual=y_train_rel_act, model=fitted_act.stack()))
+    test_data = pd.DataFrame(dict(actual=y_test_rel_act, model=preds_act.stack()))
+
+    train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
+    test_quant, test_bins = pd.qcut(test_data["actual"], 3, labels=False, retbins=True)
+
+    train_data["bin"] = train_quant
+    test_data["bin"] = test_quant
+
+    quant_scores = pd.DataFrame(index=[0,1,2], columns=["train", "test"])
+    
+    for q in [0,1,2]:
+        tr_score = r2_score(
+            train_data[train_data["bin"] == q]["actual"],
+            train_data[train_data["bin"] == q]["model"],
+        )
+        tst_score = r2_score(
+            test_data[test_data["bin"] == q]["actual"],
+            test_data[test_data["bin"] == q]["model"]
+        )
+        quant_scores.loc[q,"train"] = tr_score
+        quant_scores.loc[q,"test"] = tst_score
+    quant_table = quant_scores.to_markdown(tablefmt="github", floatfmt=".3f")
+    print(quant_table) 
+
+    lvout_rt_results["train_data"] = train_data
+    lvout_rt_results["train_bins"] = train_bins
+    
+    lvout_rt_results["test_data"] = test_data
+    lvout_rt_results["test_bins"] = test_bins
+
+    lvout_rt_results["quant_scores"] = quant_scores
+
+    with open("../results/synthesis/treed_model/fit9_results.pickle", "wb") as f:
+        pickle.dump(lvout_rt_results, f)
+
+    sys.exit()
 
     # coefs = {g: np.mean(fit_results["params"][g], axis=0)
     #          for g in groups.unique()}

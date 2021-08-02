@@ -49,5 +49,24 @@
     | Predicted|-1.3566 | -0.9886 | 0.1674 | 4.0158 | 1.1473 | 0.7174 | 0.3046 | -0.1344 | -0.3275 | -0.8217 | -1.0478 | -1.5437 |
 
 - High-Low flow analysis
-    - Can use pd.qcut(\<array>, 3) to get 3 quantiles (low, medium, high)
+    - Can use
+        ```python
+        <array>_quant, <array>_bins = pd.qcut(<array>, 3, labels=False, retbins=True)
+        ```
+        to get 3 quantiles (low, medium, high)
+    - Quantile Scores (Downstream)
+
+        |Bin |   Train |   Test |
+        |----|---------|--------|
+        |  0 |   0.012 | -0.015 |
+        |  1 |   0.768 |  0.567 |
+        |  2 |   0.961 |  0.901 |
+    
+    - Quantile Scores (Upstream)
+  
+        |Bin |   Train |   Test  |
+        |----|---------|---------|
+        |  0 |  -8.047 | -17.916 |
+        |  1 |  -2.545 |  -3.149 |
+        |  2 |   0.732 |   0.724 |
   

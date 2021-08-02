@@ -448,21 +448,48 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
         lvout_rt_results[label]["res_scores"] = res_scores
 
-    try:
-        pred_df = pd.DataFrame({k:v["pred"] for k,v in lvout_rt_results.items()})
-        fitt_df = pd.DataFrame({k:v["fitted"] for k,v in lvout_rt_results.items()})
+    pred_df = pd.DataFrame({k:v["pred"] for k,v in lvout_rt_results.items()})
+    fitt_df = pd.DataFrame({k:v["fitted"] for k,v in lvout_rt_results.items()})
 
-        lvout_rt_results["pred"] = pred_df
-        lvout_rt_results["fitted"] = fitt_df
-        coefs = pd.DataFrame(mdf.random_effects)
-        # with open("../results/synthesis/simple_model/leave_corr_out.pickle", "wb") as f:
-            # pickle.dump(lvout_rt_results, f)
-        II()
+    lvout_rt_results["pred"] = pred_df
+    lvout_rt_results["fitted"] = fitt_df
+    coefs = pd.DataFrame(mdf.random_effects)
+    train_data = pd.DataFrame(dict(actual=y_train_act.stack(), model=fitted_act.stack()))
+    test_data = pd.DataFrame(dict(actual=y_test_act.stack(), model=preds_act.stack()))
+    
+    train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
+    test_quant, test_bins = pd.qcut(test_data["actual"], 3, labels=False, retbins=True)
 
-        sys.exit()
-    except:
-        II()
-        sys.exit()
+    train_data["bin"] = train_quant
+    test_data["bin"] = test_quant
+
+    quant_scores = pd.DataFrame(index=[0,1,2], columns=["train", "test"])
+    
+    for q in [0,1,2]:
+        tr_score = r2_score(
+            train_data[train_data["bin"] == q]["actual"],
+            train_data[train_data["bin"] == q]["model"],
+        )
+        tst_score = r2_score(
+            test_data[test_data["bin"] == q]["actual"],
+            test_data[test_data["bin"] == q]["model"]
+        )
+        quant_scores.loc[q,"train"] = tr_score
+        quant_scores.loc[q,"test"] = tst_score
+    quant_table = quant_scores.to_markdown(tablefmt="github", floatfmt=".3f")
+    print(quant_table) 
+
+    lvout_rt_results["train_data"] = train_data
+    lvout_rt_results["train_bins"] = train_bins
+    
+    lvout_rt_results["test_data"] = test_data
+    lvout_rt_results["test_bins"] = test_bins
+
+    lvout_rt_results["quant_scores"] = quant_scores
+    with open("../results/synthesis/simple_model/fit9.pickle", "wb") as f:
+        pickle.dump(lvout_rt_results, f)
+    
+    sys.exit()
 
         # fit_results = fit_release_and_storage(y_train, y_train_sto, exog_re, groups, means, std)
         # fit_results = fit_release_storage_stepping(y_train, y_train_sto, exog_re, groups, means, std)
@@ -501,6 +528,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     # test on unseen data
     exog = sm.add_constant(X_test)
     groups = exog["compositegroup"]
+
 
     exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:] + ["compositegroup"]]
     mexog = exog[["const"]]
