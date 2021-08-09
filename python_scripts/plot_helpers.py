@@ -19,3 +19,33 @@ def abline(intercept, slope, ax=None, **kwargs):
     x_values = np.array(ax.get_xlim())
     y_values = intercept + slope * x_values
     ax.plot(x_values, y_values, "--", **kwargs)
+
+def combine_legends(*axes):
+    h, l = [], []
+    for ax in axes:
+        handles, labels = ax.get_legend_handles_labels()
+        h.extend(handles)
+        l.extend(labels)
+    return h, l
+
+def determine_grid_size(N):
+    if N <= 3:
+        return (N,1)
+    else:
+        poss_1 = [(i, N//i) for i in range(2, int(N**0.5) + 1) if N % i == 0]
+        poss_2 = [(i, (N+1) // i) for i in range(2, int((N+1)**0.5) + 1) if (N+1) % i == 0]
+        poss = poss_1 + poss_2
+        min_index = np.argmin([sum(i) for i in poss])
+        return poss[min_index]
+
+def find_plot_functions(namespace):
+    """Parses the namespace for functions that start with "plot"
+
+    :param namespace: list of items in the namespace, must be passed because it cannot be determined from within the function
+    :type namespace: list
+    :return: Dictionary of {simple name:function name} for available plotting functions. simple name is what will be provided by the user.
+    :rtype: dict
+    """
+    plot_functions = filter(lambda x: x[:4] == "plot", namespace)
+    plot_name_dict = {"_".join(i.split("_")[1:]):i for i in plot_functions}
+    return plot_name_dict
