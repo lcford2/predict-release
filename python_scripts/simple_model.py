@@ -298,7 +298,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         #     "Release_roll7", "Inflow_roll7"
         # ]
 
-        exog_re = exog.loc[:,exog_terms + interaction_terms] # + calendar.month_abbr[1:]]
+        exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:]]
 
         mexog = exog.loc[:,["const"]]
 
@@ -360,8 +360,8 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
             X_all = X_train.append(X_test).sort_index()
             exog = X_test
             groups = exog["compositegroup"]
-            exog_re = exog.loc[:, exog_terms + interaction_terms + ["compositegroup"]]
-                            #    calendar.month_abbr[1:] + ["compositegroup"]]
+            exog_re = exog.loc[:, exog_terms + interaction_terms + #["compositegroup"]]
+                               calendar.month_abbr[1:] + ["compositegroup"]]
             mexog = exog[["const"]]
             
             try:
@@ -372,9 +372,9 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
             exog = X_all
             groups = exog["compositegroup"] 
-            exog_re = exog.loc[:, exog_terms + interaction_terms + ["compositegroup"]]
-            # exog_re = exog.loc[:, exog_terms + interaction_terms +
-            #                 calendar.month_abbr[1:] + ["compositegroup"]]
+            # exog_re = exog.loc[:, exog_terms + interaction_terms + ["compositegroup"]]
+            exog_re = exog.loc[:, exog_terms + interaction_terms +
+                            calendar.month_abbr[1:] + ["compositegroup"]]
             mexog = exog[["const"]]
             preds_all = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
 
@@ -486,7 +486,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     lvout_rt_results["test_bins"] = test_bins
 
     lvout_rt_results["quant_scores"] = quant_scores
-    with open("../results/synthesis/simple_model/fit9_results.pickle", "wb") as f:
+    with open("../results/synthesis/simple_model/fit9_mi_results.pickle", "wb") as f:
         pickle.dump(lvout_rt_results, f)
     
     sys.exit()
