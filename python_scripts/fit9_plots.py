@@ -12,6 +12,7 @@ import numpy as np
 from datetime import timedelta, datetime
 from pandasgui import show
 from itertools import product
+from sklearn.metrics import mean_squared_error, r2_score
 from IPython import embed as II
 
 # import my helper functions
@@ -52,15 +53,21 @@ LABEL_MAP = {
     "rmse_pct": dict(label="RMSE", units="[%]")
 }
 
-def load_results():
+def load_results(args):
     """Load results for plotting. 
 
     :return: Two dataframes, one with results from treed model and one from simple model
     :rtype: pd.DataFrame, pd.DataFrame
     """
-    file = "fit9_results.pickle"
-    treed_path = RESULTS_DIR / "synthesis" / "treed_model" / file
-    simple_path = RESULTS_DIR / "synthesis" / "simple_model" / file
+    
+    if args.dmod:
+        sfile = "fit9_mi_results.pickle"
+    else:
+        sfile = "fit9_results.pickle"
+    
+    tfile = "fit9_results.pickle"
+    treed_path = RESULTS_DIR / "synthesis" / "treed_model" / tfile
+    simple_path = RESULTS_DIR / "synthesis" / "simple_model" / sfile
     with open(treed_path.as_posix(), "rb") as f:
         treed_data = pickle.load(f)
     with open(simple_path.as_posix(), "rb") as f:
@@ -222,8 +229,8 @@ def parse_args(plot_functions):
                         default=None)
     parser.add_argument("--pmod", choices=["hist", "1to1"], default="1to1",
                         help="Modifier for the specific plot type chosen. Alters the data visualization.")
-    # parser.add_argument("-d", "--data_set", choices=["one", "some", "incr", "corr", "fit9"],
-                        # help="Specify what data set should be used for plots")
+    parser.add_argument("--dmod", choices=["mi"],
+                        help="Modifier for data set selection. Choose from different model runs.")
     parser.add_argument("-m", "--metric", choices=["scores", "rmse"], default="scores",
                         help="Specify what metric should be plotted")
     parser.add_argument("--relative", action="store_true", default=False,
@@ -382,11 +389,68 @@ def plot_monthly_bias(tree, simp, args):
     )
     plt.show()
 
+def make_metrics(tree, simp, args):
+    train, test = get_model_data(tree, simp)
+    # tidy format ?
+    metric_values = []
+    idx = pd.IndexSlice
+    for qbin in range(3):
+        for dset in ["upstream", "downstream"]:
+            tr_df = train[(train["bin"] == qbin) & (train["res_group"] == dset)]
+            ts_df = test[(test["bin"] == qbin) & (test["res_group"] == dset)]
+            for res in tr_df.index.get_level_values(1).unique():
+                df = tr_df.loc[idx[:,res],["actual", "model"]]
+                mse = mean_squared_error(df["actual"], df["model"])
+                nse = r2_score(df["actual"], df["model"])
+                bias = df["model"].mean() - df["actual"].mean()
+                var_a = df["actual"].var()
+                var_m = df["model"].var()
+                corr = df.corr().loc["actual", "model"]
+                metric_values.append([
+                    res,qbin,dset,"train",
+                    mse,bias,var_a,
+                    var_m,corr,nse
+                ])
+            for res in ts_df.index.get_level_values(1).unique():
+                df = ts_df.loc[idx[:,res],["actual", "model"]]
+                mse = mean_squared_error(df["actual"], df["model"])
+                nse = r2_score(df["actual"], df["model"])
+                bias = df["model"].mean() - df["actual"].mean()
+                var_a = df["actual"].var()
+                var_m = df["model"].var()
+                corr = df.corr().loc["actual", "model"]
+                metric_values.append([
+                    res,qbin,dset,"test",
+                    mse,bias,var_a,
+                    var_m,corr,nse
+                ]) 
+    metrics = pd.DataFrame(metric_values,
+        columns=["res", "bin", "dset", "fgrp", "mse", "bias", "var_a", "var_m", "corr", "nse"])
+        
+    chk_grps = [
+        (0,"upstream","train"),
+        (0,"upstream","test"),
+        (1,"upstream","train"),
+        (1,"upstream","test"),
+        (0,"downstream","train"),
+        (0,"downstream","test")
+    ]
+
+    chk_metrics = pd.DataFrame(columns=metrics.columns)
+    for qbin, dset, fgrp in chk_grps:
+        df = metrics[
+                (metrics["bin"] == qbin) & (metrics["dset"] == dset) & (metrics["fgrp"] == fgrp)
+            ]
+        chk_metrics = pd.concat([chk_metrics, df])
+        
+    II()
+
+
 def main(namespace):
     plot_functions = find_plot_functions(namespace)
     args = parse_args(plot_functions)
 
-    tree, simp = load_results()
+    tree, simp = load_results(args)
 
     if not args.plot_func:
         II()
