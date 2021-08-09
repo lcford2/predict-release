@@ -109,7 +109,7 @@ def scaled_MixedEffects(df, groups, scaler="mine"):
     interaction_terms = ["Storage_Inflow_interaction"]
 
     exog_terms = [
-        "const", "Net Inflow", "Storage_pre", "Release_pre",
+        "Net Inflow", "Storage_pre", "Release_pre",
         "Storage_roll7",  "Inflow_roll7",  "Release_roll7"
     ]
 

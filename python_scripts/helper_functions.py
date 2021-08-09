@@ -185,3 +185,6 @@ def read_all_res_data():
 
 def flatten_2d_list(lst):
     return [item for sublist in lst for item in sublist]
+
+def calc_bias(y_a, y_m):
+    return np.mean(y_m) - np.mean(y_a)
