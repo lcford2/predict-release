@@ -93,7 +93,7 @@ def scaled_MixedEffects(df, groups, scaler="mine"):
     reservoirs = list(X_scaled.index.get_level_values(1).unique())
     rts = pd.read_pickle("../pickles/tva_res_times.pickle")
     corrs = pd.read_pickle("../pickles/tva_release_corrs.pickle")
-    
+ 
      
     X_scaled["sto_diff"] = X_scaled["Storage_pre"] - X_scaled["Storage_roll7"]
     
@@ -108,7 +108,7 @@ def scaled_MixedEffects(df, groups, scaler="mine"):
     groups = X_scaled.index.get_level_values(1)
     interaction_terms = ["Storage_Inflow_interaction"]
 
-    exog_terms = [
+    exog_terms = ["const",
         "Net Inflow", "Storage_pre", "Release_pre",
         "Storage_roll7",  "Inflow_roll7",  "Release_roll7"
     ]
