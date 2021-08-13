@@ -109,6 +109,7 @@ def plot_quants(results, args):
     plt.show()
 
 def plot_coefs(results, args):
+    sns.set_context("talk")
     coefs = results["coefs"]
     groups = coefs.columns
     xlabs = coefs.index
@@ -116,10 +117,35 @@ def plot_coefs(results, args):
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(20, 8.7))
     fig.patch.set_alpha(0.0)
 
-    coefs.plot.bar(ax=ax, width=0.8)
+    if groups.size > 3:
+        sns.boxplot(
+            data=coefs.T.melt(),
+            x="variable",
+            y="value",
+            ax=ax
+        )
+    else:
+        coefs.plot.bar(ax=ax, width=0.8)
+    label_coefs = [
+        "Net Inflow", "Storage_pre", "Release_pre", 
+        "Storage_roll7", "Inflow_roll7", "Release_roll7", 
+        "Storage_Inflow_interaction"
+    ]
+    for i, coef in enumerate(label_coefs):
+        rmin = coefs.loc[coef].idxmin()
+        rmax = coefs.loc[coef].idxmax()
+        vmin = coefs.loc[coef].min()
+        vmax = coefs.loc[coef].max()
+        x = i + 1
+        offset = 0.5
+        ymin = vmin - offset
+        ymax = vmax + offset
+        ax.text(x, ymin, rmin, ha="center", va="bottom")
+        ax.text(x, ymax, rmax, ha="center", va="top")
     ax.set_xticks(range(xlabs.size))
     ax.set_xticklabels(xlabs, rotation=45, ha="right")
-
+    ax.set_xlabel("")
+    ax.set_ylabel("Fitted Parameter Value")
     plt.tight_layout()
     plt.show()
     
