@@ -191,22 +191,43 @@ def get_quant_scores(tree, simp):
 
     return tree_scores.append(simp_scores)
 
-def get_monthly_bias(tree, simp):
+def get_monthly_bias(tree, simp, by_res=False):
     tree_key = tree["fitted"].keys()[0]
     simp_key = simp["fitted"].keys()[0]
-
-    tree_bias = pd.DataFrame(columns=["fitted", "preds"], index=range(1,13))
-    simp_bias = pd.DataFrame(columns=["fitted", "preds"], index=range(1,13))
-
-    f_bias = tree["fitted"][tree_key]["f_bias_month"]
-    p_bias = tree["pred"][tree_key]["p_bias_month"]
-    tree_bias["fitted"] = f_bias
-    tree_bias["preds"] = p_bias
     
-    f_bias = simp["fitted"][simp_key]["f_bias_month"]
-    p_bias = simp["pred"][simp_key]["p_bias_month"]
-    simp_bias["fitted"] = f_bias
-    simp_bias["preds"] = p_bias
+    if by_res:
+        tree_train = tree["train_data"]
+        tree_test = tree["test_data"]
+        simp_train = simp["train_data"]
+        simp_test = simp["test_data"]
+
+        tree_train_means = tree_train.groupby([tree_train.index.get_level_values(
+            0).month, tree_train.index.get_level_values(1)]).mean()
+        tree_test_means = tree_test.groupby([tree_test.index.get_level_values(
+            0).month, tree_test.index.get_level_values(1)]).mean()
+        simp_train_means = simp_train.groupby([simp_train.index.get_level_values(
+            0).month, simp_train.index.get_level_values(1)]).mean()
+        simp_test_means = simp_test.groupby([simp_test.index.get_level_values(
+            0).month, simp_test.index.get_level_values(1)]).mean()
+        tree_train_bias = (tree_train_means["model"] - tree_train_means["actual"]).unstack()
+        tree_test_bias = (tree_test_means["model"] - tree_test_means["actual"]).unstack()
+        simp_train_bias = (simp_train_means["model"] - simp_train_means["actual"]).unstack()
+        simp_test_bias = (simp_test_means["model"] - simp_test_means["actual"]).unstack()
+        tree_bias = tree_train_bias.join(tree_test_bias)
+        simp_bias = simp_train_bias.join(simp_test_bias)
+    else:
+        tree_bias = pd.DataFrame(columns=["fitted", "preds"], index=range(1,13))
+        simp_bias = pd.DataFrame(columns=["fitted", "preds"], index=range(1,13))
+
+        f_bias = tree["fitted"][tree_key]["f_bias_month"]
+        p_bias = tree["pred"][tree_key]["p_bias_month"]
+        tree_bias["fitted"] = f_bias
+        tree_bias["preds"] = p_bias
+        
+        f_bias = simp["fitted"][simp_key]["f_bias_month"]
+        p_bias = simp["pred"][simp_key]["p_bias_month"]
+        simp_bias["fitted"] = f_bias
+        simp_bias["preds"] = p_bias
 
     return tree_bias, simp_bias
 
@@ -237,6 +258,8 @@ def parse_args(plot_functions):
                         help="Plot values as percentages relative to means. Only works for physical quantities")
     parser.add_argument("-S", "--sort_by", choices=["CASCADE", "RT", "MStL"], default="RT",
                         help="Specify how the reservoirs should be sorted.")
+    parser.add_argument("--byres", default=False, action="store_true",
+                        help="Flag to plot some metrics reservoir by reservoir. Not implemented for all plots.")
     args = parser.parse_args()
     return args
 
@@ -324,16 +347,12 @@ def plot_quants(tree,simp,args):
     plt.show()
 
 def plot_monthly_bias(tree, simp, args):
-    tree_bias, simp_bias = get_monthly_bias(tree, simp)
+    tree_bias, simp_bias = get_monthly_bias(tree, simp, by_res=args.byres)
     
-    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(20, 8.7),
-                            sharex=True)
-    axes = axes.flatten()
-    fig.patch.set_alpha(0.0)
 
     rename = {"fitted":"Training","preds":"Testing"}
     tree_bias = tree_bias.rename(columns=rename)
-    simp_bias = simp_bias.rename(columns=rename) 
+    simp_bias = simp_bias.rename(columns=rename)
 
     if args.relative:
         tva = read_tva_data(just_load=True)
@@ -343,50 +362,99 @@ def plot_monthly_bias(tree, simp, args):
         train_tree_rel = rel[tree["0.3"]["train_res"]]
         test_simp_rel = rel[simp["0.6"]["test_res"]]
         train_simp_rel = rel[simp["0.6"]["train_res"]]
+        
+        test_tree_means = test_tree_rel.groupby(test_tree_rel.index.month).mean()
+        train_tree_means = train_tree_rel.groupby(train_tree_rel.index.month).mean()
+        test_simp_means = test_simp_rel.groupby(test_simp_rel.index.month).mean()
+        train_simp_means = train_simp_rel.groupby(train_simp_rel.index.month).mean()
+        
+        if args.byres:
+            tree_means = test_tree_means.join(train_tree_means)
+            simp_means = test_simp_means.join(train_simp_means)
 
-        test_tree_means = test_tree_rel.groupby(test_tree_rel.index.month).mean().mean(axis=1)
-        train_tree_means = train_tree_rel.groupby(train_tree_rel.index.month).mean().mean(axis=1)
-        test_simp_means = test_simp_rel.groupby(test_simp_rel.index.month).mean().mean(axis=1)
-        train_simp_means = train_simp_rel.groupby(train_simp_rel.index.month).mean().mean(axis=1)
+            tree_bias = tree_bias / tree_means * 100
+            simp_bias = simp_bias / simp_means * 100
 
-        tree_bias_norm = (tree_bias[["Training"]].T / train_tree_means * 100).T
-        tree_bias_norm["Testing"] = tree_bias["Testing"] /  test_tree_means * 100
-        simp_bias_norm = (simp_bias[["Training"]].T / train_simp_means * 100).T
-        simp_bias_norm["Testing"] = simp_bias["Testing"] /  test_simp_means * 100
+        else:
+            test_tree_means = test_tree_means.mean(axis=1) 
+            train_tree_means = train_tree_means.mean(axis=1) 
+            test_simp_means = test_simp_means.mean(axis=1) 
+            train_simp_means = train_simp_means.mean(axis=1) 
+            
+            tree_bias_norm = (tree_bias[["Training"]].T / train_tree_means * 100).T
+            tree_bias_norm["Testing"] = tree_bias["Testing"] /  test_tree_means * 100
+            simp_bias_norm = (simp_bias[["Training"]].T / train_simp_means * 100).T
+            simp_bias_norm["Testing"] = simp_bias["Testing"] /  test_simp_means * 100
 
-        tree_bias = tree_bias_norm
-        simp_bias = simp_bias_norm
-
-    tree_bias.plot.bar(ax=axes[0])
-    simp_bias.plot.bar(ax=axes[1])
-
-    axes[1].set_xticklabels(calendar.month_abbr[1:], rotation=0, ha="center")
-
-    axes[0].set_title("Upstream")
-    axes[1].set_title("Downstream")
-
-    axes[0].set_ylabel("")
-    axes[1].set_ylabel("")
-
-    axes[1].get_legend().remove()
+            tree_bias = tree_bias_norm
+            simp_bias = simp_bias_norm
 
     if args.relative:
         units = r"% of mean"
     else:
         units = "1000 acre-ft/day"
-    fig.text(
-        0.02, 0.5, f"Release Bias [{units}]",
-        ha="left", va="center", rotation=90
-    )
 
-    plt.subplots_adjust(
-        top=0.937,
-        bottom=0.078,
-        left=0.075,
-        right=0.987,
-        hspace=0.196,
-        wspace=0.2
-    )
+    # tree_axes = tree_bias.plot(ax=ax1, subplots=False)
+    # simp_axes = simp_bias.plot(ax=ax2, subplots=False)
+
+    if args.byres:
+        fig, axes = plt.subplots(2,1,figsize=(20,8.7), sharex=True)
+        # fig1.patch.set_alpha(0.0)
+        # fig2, ax2 = plt.subplots(1,1,figsize=(20,8.7))
+        # fig2.patch.set_alpha(0.0)
+        sns.lineplot(data=tree_bias, ax=axes[0])
+        sns.lineplot(data=simp_bias, ax=axes[1])
+        # fig1 = plt.figure(figsize=(20,8.7))
+        # fig1.patch.set_alpha(0.0) 
+        # gs1 = GS.GridSpec(1,2,width_ratios=[20,1])
+        # ax1 = fig1.add_subplot(gs1[0])
+        # cax1 = fig1.add_subplot(gs1[1])
+        # fig2 = plt.figure(figsize=(20,8.7)) 
+        # fig2.patch.set_alpha(0.0) 
+        # gs2 = GS.GridSpec(1,2,width_ratios=[20,1])
+        # ax2 = fig2.add_subplot(gs2[0])
+        # cax2 = fig2.add_subplot(gs2[1])
+        # ax1 = sns.heatmap(data=tree_bias.T.sort_values(by=4), ax=ax1, cbar_ax=cax1)
+        # ax2 = sns.heatmap(data=simp_bias.T.sort_values(by=4), ax=ax2, cbar_ax=cax2)
+        for ax, lab in zip(axes, ["Upstream", "Downstream"]):
+            ax.set_xticks([i for i in range(1,13)])
+            ax.set_xticklabels(calendar.month_abbr[1:], rotation=0, ha="center")
+            ax.set_title(lab)
+            ax.set_xlabel("")
+            ax.legend(loc="best", ncol=3, prop={"size":12})
+        # cax1.set_ylabel(f"Release Bias [{units}]")
+        # cax2.set_ylabel(f"Release Bias [{units}]")
+        axes[0].set_ylabel(f"Release Bias [{units}]")
+        axes[1].set_ylabel(f"Release Bias [{units}]")
+    else:
+        fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(20, 8.7),
+                                sharex=True)
+        axes = axes.flatten()
+        fig.patch.set_alpha(0.0)
+        ax1, ax2 = axes
+        axes[1].set_xticklabels(calendar.month_abbr[1:], rotation=0, ha="center")
+
+        axes[0].set_title("Upstream")
+        axes[1].set_title("Downstream")
+
+        axes[0].set_ylabel("")
+        axes[1].set_ylabel("")
+
+        axes[1].get_legend().remove()
+
+        fig.text(
+            0.02, 0.5, f"Release Bias [{units}]",
+            ha="left", va="center", rotation=90
+        )
+
+        plt.subplots_adjust(
+            top=0.937,
+            bottom=0.078,
+            left=0.075,
+            right=0.987,
+            hspace=0.196,
+            wspace=0.2
+        )
     plt.show()
 
 def make_metrics(tree, simp, args):
@@ -409,7 +477,8 @@ def make_metrics(tree, simp, args):
                 metric_values.append([
                     res,qbin,dset,"train",
                     mse,bias,var_a,
-                    var_m,corr,nse
+                    var_m,corr,nse,
+                    df["actual"].size
                 ])
             for res in ts_df.index.get_level_values(1).unique():
                 df = ts_df.loc[idx[:,res],["actual", "model"]]
@@ -422,10 +491,11 @@ def make_metrics(tree, simp, args):
                 metric_values.append([
                     res,qbin,dset,"test",
                     mse,bias,var_a,
-                    var_m,corr,nse
+                    var_m,corr,nse,
+                    df["actual"].size
                 ]) 
     metrics = pd.DataFrame(metric_values,
-        columns=["res", "bin", "dset", "fgrp", "mse", "bias", "var_a", "var_m", "corr", "nse"])
+        columns=["res", "bin", "dset", "fgrp", "mse", "bias", "var_a", "var_m", "corr", "nse", "n"])
         
     chk_grps = [
         (0,"upstream","train"),
