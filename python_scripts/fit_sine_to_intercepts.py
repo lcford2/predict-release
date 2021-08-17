@@ -6,6 +6,7 @@ import scipy.optimize as spo
 from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
 import seaborn as sns
+from IPython import embed as II
 
 plt.style.use("ggplot")
 sns.set_context("paper")
@@ -41,11 +42,15 @@ def main():
         score = r2_score(y, fitted)
         results.loc[res] = [popt[0], popt[1], popt[2], score]
 
+    results.to_pickle("../results/synthesis/spatial_model/sin_results.pickle")
+
+    results = results.sort_values(by="score")
+
     fig, axes = plt.subplots(nrows=4, ncols=7, figsize=(20, 8.7), sharex=True, sharey=True)
     axes = axes.flatten()
     # fig.patch.set_alpha(0.0)
 
-    for ax, res in zip(axes, coefs.columns):
+    for ax, res in zip(axes, results.index):
         y = coefs.loc[months, res] 
         fitted = sine(x, results.loc[res,"b0"], results.loc[res,"b1"], results.loc[res,"omega"])
         ax.plot(x, y, label="Actual Coefs")
@@ -61,7 +66,6 @@ def main():
     plt.tight_layout()
     plt.show() 
    
-    from IPython import embed as II
 
 
 if __name__ == "__main__":
