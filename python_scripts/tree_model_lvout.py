@@ -216,106 +216,252 @@ def pipeline():
     X["inf_diff"] = X["Net Inflow"] - X["Inflow_roll7"]
     # train_index, test_index = split_train_test_dt(y.index, date=datetime(2010, 1, 1), level=0, keep=8)
     reservoirs = X.index.get_level_values(1).unique()
+    #rts = pd.read_pickle("../pickles/tva_res_times.pickle")
+    #X["RT"] = [rts.loc[i] for i in X.index.get_level_values(1)]
+    #lvoneout_results = {}
+    lvout_rt_results = {}
 
+    lvout_sets = [
+        [], # baseline
+        ["Douglas", "Hiwassee", "Cherokee"], # < 100 days
+        ["BlueRidge", "Fontana", "Nottely"], # 100 - 150 days
+        ["Norris", "Chatuge"], # 150 - 200 days
+        ["TimsFord", "SHolston", "Watauga"] # > 200 days
+    ]
 
-    # set exogenous variables
-    X_vars = ["Storage_pre", "Release_pre", "Net Inflow",
-            "Storage_Inflow_interaction",
-            "Inflow_roll7", "Release_roll7", "Storage_roll7",
-            #"Storage_7", "Release_7",
-            #   "NaturalOnly", "RunOfRiver"
-            ]
+    lvout_labels = [
+        "baseline",
+        "100",
+        "100-150",
+        "150-200",
+        "200"
+    ]
 
-    X_vars = ["sto_diff", "Storage_Inflow_interaction",
-            "Release_pre", "Release_roll7",
-            "Net Inflow", "Inflow_roll7"]
+    #for res in reservoirs:
+    #for lvout_set, label in zip(lvout_sets, lvout_labels):
+    from simple_model import filter_on_corr
+    rts = pd.read_pickle("../pickles/tva_res_times.pickle")
+    corrs = pd.read_pickle("../pickles/tva_release_corrs.pickle")
 
-    # split into training and testing sets
-    train_index = X.index
-    X_train = X.loc[train_index,X_vars]
-    # X_test = X.loc[test_index,X_vars]
-    # X_test_all = X.loc[:,X_vars]
-    y_train_rel = y.loc[train_index]
-    # y_test_rel = y.loc[test_index]
-    y_train_sto = X.loc[train_index, "Storage"]
-    # y_test_sto = X.loc[test_index, "Storage"]
-
-    train_res = X_train.index.get_level_values(1).unique()
-    # test_res = X_test.index.get_level_values(1).unique()
-
-    # fit the decision tree model
-    max_depth=3
-    #, splitter="best" - for decision_tree
-    tree = tree_model(X_train, y_train_rel, tree_type="decision", max_depth=max_depth,
-                    random_state=37)
-    leaves, groups = get_leaves_and_groups(X_train, tree)
-
-    # # fit the sub_tree ml model
-    # X_train = X_train.drop(["NaturalOnly", "RunOfRiver"], axis=1)
-
-    ml_model = sub_tree_multi_level_model(X_train, y_train_rel, tree)
+    exclude = defaultdict(list)
+    # for level in np.arange(0.1, 0.7, 0.1)[::-1]:
+    for level in [0.3]:
+        for lvout_res, label in zip(lvout_sets, lvout_labels):
+            leave_out = filter_on_corr(level, lvout_res, corrs, rts)
+            exclude[level].extend(leave_out)
     
-    coefs = pd.DataFrame(ml_model.random_effects)
-    fitted = ml_model.fittedvalues
+    # for i, res in enumerate(reservoirs):
+        # label = str(i)
+        # lvout_set = reservoirs[:i]
+    for level, lvout_set in exclude.items():
+        label = str(round(level,2))
+        train_index, test_index = split_train_test_res(y.index, lvout_set)
+        print(f"Solving model run {label}")
 
-    y_train_rel_act = (y_train_rel.unstack() *
-                    std.loc[train_res,"Release"] + means.loc[train_res,"Release"]).stack()
-    y_train_sto_act = (y_train_sto.unstack() *
-                    std.loc[train_res,"Storage"] + means.loc[train_res,"Storage"]).stack()
-    # y_test_rel_act = (y_test_rel.unstack() *
-                    # std.loc[test_res,"Release"] + means.loc[test_res,"Release"]).stack()
-    # y_test_sto_act = (y_test_sto.unstack() *
-                    # std.loc[test_res,"Storage"] + means.loc[test_res,"Storage"]).stack()
+        # set exogenous variables
+        X_vars = ["Storage_pre", "Release_pre", "Net Inflow",
+                "Storage_Inflow_interaction",
+                "Inflow_roll7", "Release_roll7", "Storage_roll7",
+                #"Storage_7", "Release_7",
+                #   "NaturalOnly", "RunOfRiver"
+                ]
 
-    fitted_act = (fitted.unstack() *
-                      std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
-
-    f_act_score = r2_score(y_train_rel_act, fitted_act)
-    f_act_rmse = np.sqrt(mean_squared_error(y_train_rel_act, fitted_act))
+        X_vars = ["sto_diff", "Storage_Inflow_interaction",
+                "Release_pre", "Release_roll7",
+                "Net Inflow", "Inflow_roll7"]
     
-    y_train_mean = y_train_rel_act.groupby(
-        y_train_rel_act.index.get_level_values(1)
-    ).mean()
-    # y_test_mean = y_test_rel_act.groupby(
-        # y_test_rel_act.index.get_level_values(1)
-    # ).mean()
-    fmean = fitted_act.groupby(
-        fitted_act.index.get_level_values(1)
-    ).mean()
+        # split into training and testing sets
+        X_train = X.loc[train_index,X_vars]
+        X_test = X.loc[test_index,X_vars]
+        X_test_all = X.loc[:,X_vars]
+        y_train_rel = y.loc[train_index]
+        y_test_rel = y.loc[test_index]
+        y_train_sto = X.loc[train_index, "Storage"]
+        y_test_sto = X.loc[test_index, "Storage"]
 
-    f_bias = fmean - y_train_mean
-    f_bias_month = fitted_act.groupby(
-        fitted_act.index.get_level_values(0).month
-        ).mean() - y_train_rel_act.groupby(
-            y_train_rel_act.index.get_level_values(0).month).mean()
+        train_res = X_train.index.get_level_values(1).unique()
+        test_res = X_test.index.get_level_values(1).unique()
+
+        # fit the decision tree model
+        max_depth=3
+        #, splitter="best" - for decision_tree
+        tree = tree_model(X_train, y_train_rel, tree_type="decision", max_depth=max_depth,
+                        random_state=37)
+        leaves, groups = get_leaves_and_groups(X_train, tree)
+
+        # # fit the sub_tree ml model
+        # X_train = X_train.drop(["NaturalOnly", "RunOfRiver"], axis=1)
+
+        ml_model = sub_tree_multi_level_model(X_train, y_train_rel, tree)
+        
+        coefs = ml_model.random_effects
+        fitted = ml_model.fittedvalues
+
+        y_train_rel_act = (y_train_rel.unstack() *
+                        std.loc[train_res,"Release"] + means.loc[train_res,"Release"]).stack()
+        y_train_sto_act = (y_train_sto.unstack() *
+                        std.loc[train_res,"Storage"] + means.loc[train_res,"Storage"]).stack()
+        y_test_rel_act = (y_test_rel.unstack() *
+                        std.loc[test_res,"Release"] + means.loc[test_res,"Release"]).stack()
+        y_test_sto_act = (y_test_sto.unstack() *
+                        std.loc[test_res,"Storage"] + means.loc[test_res,"Storage"]).stack()
+
+        fitted_act = (fitted.unstack() *
+                          std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
+
+        f_act_score = r2_score(y_train_rel_act, fitted_act)
+        f_norm_score = r2_score(y_train_rel, fitted)
+        f_act_rmse = np.sqrt(mean_squared_error(y_train_rel_act, fitted_act))
+        f_norm_rmse = np.sqrt(mean_squared_error(y_train_rel, fitted))
+        
+        y_train_mean = y_train_rel_act.groupby(
+            y_train_rel_act.index.get_level_values(1)
+        ).mean()
+        y_test_mean = y_test_rel_act.groupby(
+            y_test_rel_act.index.get_level_values(1)
+        ).mean()
+        fmean = fitted_act.groupby(
+            fitted_act.index.get_level_values(1)
+        ).mean()
+
+        f_bias = fmean - y_train_mean
+        f_bias_month = fitted_act.groupby(
+            fitted_act.index.get_level_values(0).month
+            ).mean() - y_train_rel_act.groupby(
+                y_train_rel_act.index.get_level_values(0).month).mean()
+
+        if label == "0":
+            p_act_score = f_act_score
+            p_norm_score = f_norm_score
+            p_act_rmse = f_act_rmse
+            p_norm_rmse = f_norm_rmse
+            p_act_score_all = f_act_score
+            p_act_rmse_all = f_act_rmse
+            p_bias = f_bias
+            p_bias_month = f_bias_month
+        else:
+            preds, pgroups = predict_from_sub_tree_model(X_test, y_test_rel, tree, ml_model)
+            preds_all, pgroups_all = predict_from_sub_tree_model(
+                X_test_all, y, tree, ml_model
+            )
+
+            preds_act = (preds.unstack() *
+                         std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
+            preds_act_all = (preds_all.unstack() *
+                         std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
+            
+            preds_mean = preds_act.groupby(
+                preds_act.index.get_level_values(1)
+            ).mean()
+            
+            preds_mean_all = preds_act_all.groupby(
+                preds_act_all.index.get_level_values(1)
+            ).mean()
+            
+            p_act_score = r2_score(y_test_rel_act, preds_act)
+            p_norm_score = r2_score(y_test_rel, preds)
+            p_act_rmse = np.sqrt(mean_squared_error(y_test_rel_act, preds_act))
+            p_norm_rmse = np.sqrt(mean_squared_error(y_test_rel, preds))
+            
+            y_act = (y.unstack() * std["Release"] + means["Release"]).stack()
+            p_act_score_all = r2_score(
+                (y.unstack() * std["Release"] + means["Release"]).stack(),
+                preds_act_all
+            )
+            p_act_rmse_all = np.sqrt(mean_squared_error(
+                (y.unstack() * std["Release"] + means["Release"]).stack(),
+                preds_act_all
+            ))
+            p_bias = preds_mean - y_test_mean
+            p_bias_month = preds_act.groupby(
+                preds_act.index.get_level_values(0).month  
+                ).mean() - y_test_rel_act.groupby(
+                    y_test_rel_act.index.get_level_values(0).month).mean()
 
 
+        lvout_rt_results[label] = {
+            "pred":{
+                "p_act_score": p_act_score,
+                "p_act_rmse": p_act_rmse,
+                "p_act_score_all":p_act_score_all,
+                "p_act_rmse_all":p_act_rmse_all,
+                "p_bias":p_bias,
+                "p_bias_month":p_bias_month
+            },
+            "fitted": {
+                "f_act_score": f_act_score,
+                "f_act_rmse": f_act_rmse,
+                "f_bias": f_bias,
+                "f_bias_month": f_bias_month
+            },
+            "coefs":coefs,
+            "test_res":test_res,
+            "train_res":train_res
+        }
 
+        fitted_act = fitted_act.unstack()
+        y_train_act = y_train_rel_act.unstack()
 
-    results = {
-        "f_act_score": f_act_score,
-        "f_act_rmse": f_act_rmse,
-        "f_bias": f_bias,
-        "f_bias_month": f_bias_month,
-        "coefs":coefs,
-    }
+        res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
 
-    fitted_act = fitted_act.unstack()
-    y_train_act = y_train_rel_act.unstack()
+        if label != "0":
+            preds_act = preds_act.unstack()
+            y_test_act = y_test_rel_act.unstack()
 
-    res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
+        for res in reservoirs:
+            try:
+                ya = y_train_act[res]
+                ym = fitted_act[res]
+            except KeyError as e:
+                ya = y_test_act[res]
+                ym = preds_act[res]
+            res_scores.loc[res, "NSE"] = r2_score(ya, ym)
+            res_scores.loc[res, "RMSE"] = np.sqrt(mean_squared_error(ya, ym))
 
+        lvout_rt_results[label]["res_scores"] = res_scores
 
-    for res in reservoirs:
-        ya = y_train_act[res]
-        ym = fitted_act[res]
-        res_scores.loc[res, "NSE"] = r2_score(ya, ym)
-        res_scores.loc[res, "RMSE"] = np.sqrt(mean_squared_error(ya, ym))
+    pred_df = pd.DataFrame({k:v["pred"] for k,v in lvout_rt_results.items()})
+    fitt_df = pd.DataFrame({k:v["fitted"] for k,v in lvout_rt_results.items()})
 
-    results["res_scores"] = res_scores
-
+    lvout_rt_results["pred"] = pred_df
+    lvout_rt_results["fitted"] = fitt_df
     train_data = pd.DataFrame(dict(actual=y_train_rel_act, model=fitted_act.stack()))
+    test_data = pd.DataFrame(dict(actual=y_test_rel_act, model=preds_act.stack()))
 
+    train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
+    test_quant, test_bins = pd.qcut(test_data["actual"], 3, labels=False, retbins=True)
+
+    train_data["bin"] = train_quant
+    test_data["bin"] = test_quant
+
+    quant_scores = pd.DataFrame(index=[0,1,2], columns=["train", "test"])
+    
+    for q in [0,1,2]:
+        tr_score = r2_score(
+            train_data[train_data["bin"] == q]["actual"],
+            train_data[train_data["bin"] == q]["model"],
+        )
+        tst_score = r2_score(
+            test_data[test_data["bin"] == q]["actual"],
+            test_data[test_data["bin"] == q]["model"]
+        )
+        quant_scores.loc[q,"train"] = tr_score
+        quant_scores.loc[q,"test"] = tst_score
+    quant_table = quant_scores.to_markdown(tablefmt="github", floatfmt=".3f")
+    print(quant_table) 
+
+    lvout_rt_results["train_data"] = train_data
+    lvout_rt_results["train_bins"] = train_bins
+    
+    lvout_rt_results["test_data"] = test_data
+    lvout_rt_results["test_bins"] = test_bins
+
+    lvout_rt_results["quant_scores"] = quant_scores
+
+    with open("../results/synthesis/treed_model/fit9_results.pickle", "wb") as f:
+        pickle.dump(lvout_rt_results, f)
+
+    sys.exit()
 
     # coefs = {g: np.mean(fit_results["params"][g], axis=0)
     #          for g in groups.unique()}
@@ -335,16 +481,16 @@ def pipeline():
     #                                         #  forecast=True, means=test_means, std=test_sd,
     #                                         forecast=True, means=means,std=std,
     #                                         timelevel=timelevel, actual_inflow=actual_inflow_test)
-    # X_test["group"] = test_groups
-    # forecasted = forecast_mixedLM_new(coefs, X_test, means, std, "group", actual_inflow_test)
-    # forecasted = forecasted[forecasted.index.get_level_values(0).year >= 2010]
+    X_test["group"] = test_groups
+    forecasted = forecast_mixedLM_new(coefs, X_test, means, std, "group", actual_inflow_test)
+    forecasted = forecasted[forecasted.index.get_level_values(0).year >= 2010]
 
 
     # get all variables back to original space
-    # preds_rel = pred_result["f_rel_act"][0].unstack()
-    # preds_sto = pred_result["f_sto_act"][0].unstack()
-    # fc_rel = forecasted.loc[:, "Release_act"].unstack()
-    # fc_sto = forecasted.loc[:, "Storage_act"].unstack()
+    preds_rel = pred_result["f_rel_act"][0].unstack()
+    preds_sto = pred_result["f_sto_act"][0].unstack()
+    fc_rel = forecasted.loc[:, "Release_act"].unstack()
+    fc_sto = forecasted.loc[:, "Storage_act"].unstack()
     # fitted = fitted.unstack()
     # y_train = y_train.unstack()
     # y_test = y_test.unstack()
@@ -389,32 +535,32 @@ def pipeline():
 
 
     # report scores for the current model run
-    # try:
-    #     preds_score_rel = r2_score(y_test_rel_act, preds_rel.stack())
-    #     preds_score_sto = r2_score(y_test_sto_act, preds_sto.stack())
-    # except ValueError as e:
-    #     II()
-    # y_test_rel_act = y_test_rel_act.loc[fc_rel.index]
-    # y_test_sto_act = y_test_sto_act.loc[fc_sto.index]
+    try:
+        preds_score_rel = r2_score(y_test_rel_act, preds_rel.stack())
+        preds_score_sto = r2_score(y_test_sto_act, preds_sto.stack())
+    except ValueError as e:
+        II()
+    y_test_rel_act = y_test_rel_act.loc[fc_rel.index]
+    y_test_sto_act = y_test_sto_act.loc[fc_sto.index]
 
-    # fit_score_rel = r2_score(y_train_rel_act, fitted_rel)
-    # fit_score_sto = r2_score(y_train_sto_act, fitted_sto)
-    # try:
-    #     fc_score_rel = r2_score(y_test_rel_act, fc_rel.stack())
-    #     fc_score_sto = r2_score(y_test_sto_act, fc_sto.stack())
-    # except ValueError as e:
-    #     fc_score_rel = np.nan
-    #     fc_score_sto = np.nan
+    fit_score_rel = r2_score(y_train_rel_act, fitted_rel)
+    fit_score_sto = r2_score(y_train_sto_act, fitted_sto)
+    try:
+        fc_score_rel = r2_score(y_test_rel_act, fc_rel.stack())
+        fc_score_sto = r2_score(y_test_sto_act, fc_sto.stack())
+    except ValueError as e:
+        fc_score_rel = np.nan
+        fc_score_sto = np.nan
 
-    # score_strings = [f"{ftype:<12} = {score:.3f}" for ftype, score in zip(
-    #                 ["Fit", "Forecast", "Preds"], [fit_score_rel, fc_score_rel, preds_score_rel])]
-    # print("Release Scores:")
-    # print("\n".join(score_strings))
+    score_strings = [f"{ftype:<12} = {score:.3f}" for ftype, score in zip(
+                    ["Fit", "Forecast", "Preds"], [fit_score_rel, fc_score_rel, preds_score_rel])]
+    print("Release Scores:")
+    print("\n".join(score_strings))
 
-    # score_strings = [f"{ftype:<12} = {score:.3f}" for ftype, score in zip(
-    #                 ["Fit", "Forecast", "Preds"], [fit_score_sto, fc_score_sto, preds_score_sto])]
-    # print("Storage Scores:")
-    # print("\n".join(score_strings))
+    score_strings = [f"{ftype:<12} = {score:.3f}" for ftype, score in zip(
+                    ["Fit", "Forecast", "Preds"], [fit_score_sto, fc_score_sto, preds_score_sto])]
+    print("Storage Scores:")
+    print("\n".join(score_strings))
 
     # setup output parameters
     if timelevel == "all":
@@ -423,7 +569,7 @@ def pipeline():
         prepend = f"{timelevel}_"
     foldername = f"{prepend}upstream_basic_td{max_depth:d}_roll7"
     folderpath = pathlib.Path("..", "results", "treed_ml_model_dual_fit", foldername)
-    folderpath = pathlib.Path("..", "results", "synthesis", "treed_model", foldername)
+    
     # check if the directory exists and handle it
     if folderpath.is_dir():
         # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
@@ -449,25 +595,23 @@ def pipeline():
         # re_coefs=ml_model.random_effects,
         # fe_coefs=ml_model.params,
         # cov_re=ml_model.cov_re,
-        # coefs=coefs,
-        **results,
+        coefs=coefs,
         data=dict(
-            # X_test=X_test,
+            X_test=X_test,
             # y_test=y_test,
             X_train=X_train,
             # y_train=y_train,
-            fitted_rel=fitted_act,
-            # fitted_sto=fitted_sto,
-            # y_test_rel_act=y_test_rel_act,
+            fitted_rel=fitted_rel,
+            fitted_sto=fitted_sto,
+            y_test_rel_act=y_test_rel_act,
             y_train_rel_act=y_train_rel_act,
-            # y_test_sto_act=y_test_sto_act,
-            # y_train_sto_act=y_train_sto_act,
-            # predicted_act_rel=preds_rel.stack(),
-            # predicted_act_sto=preds_sto.stack(),
-            # groups=test_groups,
-            groups=groups,
-            # forecasted=forecasted[["Release", "Storage",
-                                #    "Release_act", "Storage_act"]]
+            y_test_sto_act=y_test_sto_act,
+            y_train_sto_act=y_train_sto_act,
+            predicted_act_rel=preds_rel.stack(),
+            predicted_act_sto=preds_sto.stack(),
+            groups=test_groups,
+            forecasted=forecasted[["Release", "Storage",
+                                   "Release_act", "Storage_act"]]
         )
     )
     # write the output dict to a pickle file
