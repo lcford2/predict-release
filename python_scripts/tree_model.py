@@ -136,9 +136,12 @@ def get_leaves_and_groups(X, tree):
 
 
 # @time_function
-def sub_tree_multi_level_model(X, y, tree=None, groups=None, my_id=None):
+def sub_tree_multi_level_model(X, y, tree=None, groups=None, my_id=None, drop_rel_roll: bool=False):
     if tree:
-        leaves, groups = get_leaves_and_groups(X, tree)
+        if drop_rel_roll and "Release_roll7" in X.columns:
+            leaves, groups = get_leaves_and_groups(X.drop("Release_roll7", axis=1), tree)
+        else:
+            leaves, groups = get_leaves_and_groups(X, tree)
     elif not groups:
         raise ValueError("Must provide either a tree or groups.")
     else:
@@ -229,10 +232,14 @@ def pipeline():
     X_vars = ["sto_diff", "Storage_Inflow_interaction",
             "Release_pre", "Release_roll7",
             "Net Inflow", "Inflow_roll7"]
+    X_vars_tree =["sto_diff", "Storage_Inflow_interaction",
+            "Release_pre",
+            "Net Inflow", "Inflow_roll7"] 
 
     # split into training and testing sets
     train_index = X.index
     X_train = X.loc[train_index,X_vars]
+    X_train_tree = X.loc[train_index, X_vars_tree]
     # X_test = X.loc[test_index,X_vars]
     # X_test_all = X.loc[:,X_vars]
     y_train_rel = y.loc[train_index]
@@ -246,14 +253,13 @@ def pipeline():
     # fit the decision tree model
     max_depth=3
     #, splitter="best" - for decision_tree
-    tree = tree_model(X_train, y_train_rel, tree_type="decision", max_depth=max_depth,
+    tree = tree_model(X_train_tree, y_train_rel, tree_type="decision", max_depth=max_depth,
                     random_state=37)
-    leaves, groups = get_leaves_and_groups(X_train, tree)
-
+    leaves, groups = get_leaves_and_groups(X_train_tree, tree)
     # # fit the sub_tree ml model
     # X_train = X_train.drop(["NaturalOnly", "RunOfRiver"], axis=1)
 
-    ml_model = sub_tree_multi_level_model(X_train, y_train_rel, tree)
+    ml_model = sub_tree_multi_level_model(X_train, y_train_rel, tree, drop_rel_roll=True)
     
     coefs = pd.DataFrame(ml_model.random_effects)
     fitted = ml_model.fittedvalues
@@ -305,7 +311,6 @@ def pipeline():
 
     res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
 
-
     for res in reservoirs:
         ya = y_train_act[res]
         ym = fitted_act[res]
@@ -315,7 +320,20 @@ def pipeline():
     results["res_scores"] = res_scores
 
     train_data = pd.DataFrame(dict(actual=y_train_rel_act, model=fitted_act.stack()))
+    train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
+    quant_scores = pd.DataFrame(index=[0,1,2], columns=["NSE", "RMSE"])
+    train_data["bin"] = train_quant
 
+    for q in [0,1,2]:
+        score = r2_score(
+            train_data[train_data["bin"] == q]["actual"],
+            train_data[train_data["bin"] == q]["model"]
+        )
+        rmse = np.sqrt(mean_squared_error(
+            train_data[train_data["bin"] == q]["actual"],
+            train_data[train_data["bin"] == q]["model"]
+        ))
+        quant_scores.loc[q] = [score, rmse]
 
     # coefs = {g: np.mean(fit_results["params"][g], axis=0)
     #          for g in groups.unique()}
@@ -421,7 +439,7 @@ def pipeline():
         prepend = ""
     else:
         prepend = f"{timelevel}_"
-    foldername = f"{prepend}upstream_basic_td{max_depth:d}_roll7"
+    foldername = f"{prepend}upstream_basic_td{max_depth:d}_roll7_simple_tree"
     folderpath = pathlib.Path("..", "results", "treed_ml_model_dual_fit", foldername)
     folderpath = pathlib.Path("..", "results", "synthesis", "treed_model", foldername)
     # check if the directory exists and handle it
@@ -441,10 +459,11 @@ def pipeline():
     # rotate_tree = True if max_depth > 3 else False
 
     export_graphviz(tree, out_file=(folderpath / "tree.dot").as_posix(),
-                    feature_names=X_vars, filled=True, proportion=True, rounded=True,
+                    feature_names=X_vars_tree, filled=True, proportion=True, rounded=True,
                     special_characters=True)
 
     # setup output container for modeling information
+    X_train["Storage_pre"] = X["Storage_pre"]
     output = dict(
         # re_coefs=ml_model.random_effects,
         # fe_coefs=ml_model.params,
@@ -466,6 +485,7 @@ def pipeline():
             # predicted_act_sto=preds_sto.stack(),
             # groups=test_groups,
             groups=groups,
+            quant_scores=quant_scores
             # forecasted=forecasted[["Release", "Storage",
                                 #    "Release_act", "Storage_act"]]
         )
