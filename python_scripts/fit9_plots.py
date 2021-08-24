@@ -21,13 +21,6 @@ from analysis_plots import (format_dict, CASCADE, determine_grid_size,
                             find_plot_functions)
 from plot_helpers import abline
 
-# setup plotting environment
-plt.style.use("ggplot")
-sns.set_context("talk")
-style_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-# paths
-RESULTS_DIR = pathlib.Path("../results")
 
 TREE_LVOUT = {
     "baseline":[], # baseline
@@ -60,17 +53,13 @@ def load_results(args):
     :rtype: pd.DataFrame, pd.DataFrame
     """
     
-    if args.dmod:
-        sfile = "fit9_mi_results.pickle"
-    else:
-        sfile = "fit9_results.pickle"
-    
+    sfile = "fit9_mi_results.pickle" if args.dmod else "fit9_results.pickle"
     tfile = "fit9_results.pickle"
     # treed_path = RESULTS_DIR / "synthesis" / "treed_model" / tfile
     # simple_path = RESULTS_DIR / "synthesis" / "simple_model" / sfile
     simple_path = RESULTS_DIR / "synthesis" / "simple_model" / "all_res_time_fit" / \
         "NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7.pickle"
-    treed_path = RESULTS_DIR / "synthesis" / "treed_model" / "upstream_basic_td3_roll7" / "results.pickle"
+    treed_path = RESULTS_DIR / "synthesis" / "treed_model" / "upstream_basic_td3_roll7_simple_tree" / "results.pickle"
     with open(treed_path.as_posix(), "rb") as f:
         treed_data = pickle.load(f)
     with open(simple_path.as_posix(), "rb") as f:
@@ -263,11 +252,10 @@ def parse_args(plot_functions):
                         help="Specify how the reservoirs should be sorted.")
     parser.add_argument("--byres", default=False, action="store_true",
                         help="Flag to plot some metrics reservoir by reservoir. Not implemented for all plots.")
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
-def plot_quants(tree,simp,args):
+def plot_quants(tree, simp, args):
     II()
     sys.exit()
     # test, train = get_model_data(tree, simp)
@@ -520,6 +508,21 @@ def make_metrics(tree, simp, args):
         
     II()
 
+def plot_percentiles(tree,simp,args):
+    plt.style.use("seaborn-paper")
+    sns.set_context("talk")
+    df = tree["data"]["X_train"].loc[:,["Storage_pre", "Release_pre", "Net Inflow"]]
+    df["groups"] = tree["data"]["groups"]
+    df = df.melt(id_vars=["groups"])
+    groups = df["groups"].sort_values().unique()
+    groups = {j:i+1 for i,j in enumerate(groups)}
+    df["Leaf"] = df["groups"].apply(groups.get)
+    df["Percentile"] = df.groupby("variable")["value"].rank(pct=True)
+    g = sns.displot(data=df, x="Percentile", col="variable", hue="Leaf",
+                    edgecolor="k", palette="Set1")
+    g.set_titles("{col_name}")
+    sns.despine()
+    plt.show()
 
 def main(namespace):
     plot_functions = find_plot_functions(namespace)
@@ -535,5 +538,12 @@ def main(namespace):
     globals()[plot_functions[args.plot_func]](tree,simp,args)
 
 if __name__ == "__main__":
+# setup plotting environment
+    # plt.style.use("ggplot")
+    # sns.set_context("talk")
+    # style_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+# paths
+    RESULTS_DIR = pathlib.Path("../results")
     namespace = dir()
     main(namespace)
