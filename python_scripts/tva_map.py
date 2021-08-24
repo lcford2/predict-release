@@ -151,8 +151,8 @@ def make_system_map():
             index = group.index("Chikamauga")
             group.pop(index)
             group.insert(index, "Chickamauga")
-    II()
-    for c, g, l in zip(colors, res_groups, ["Upstream", "Downstream", "Run of River"]):
+    # II()
+    for c, g, l in zip(colors, res_groups, ["High RT", "Low RT", "Run of River"]):
         ax.scatter(*zip(*[(row.geometry.x,row.geometry.y) for i, row in res_loc.iterrows() if row.Name in g]),
                 facecolor=c, marker="*", s=380, alpha=1, zorder=4, edgecolor="k", label=l)
         
