@@ -27,8 +27,8 @@ import sys
 from helper_functions import read_tva_data
 
 # setup plotting environment
-plt.style.use("ggplot")
-sns.set_context("talk")
+# plt.style.use("ggplot")
+# sns.set_context("talk")
 
 # indicate where certain data files are
 results_dir = pathlib.Path("../results")
