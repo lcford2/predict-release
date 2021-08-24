@@ -213,231 +213,283 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     
     # split_date = datetime(2010,1,1)
     reservoirs = X_scaled.index.get_level_values(1).unique()
+    # lvoneout_results = {}
+    lvout_rt_results = {}
 
-    # test_index = X_scaled.index[X_scaled.index.get_level_values(1).isin(lvout_res)]
-    train_index = X_scaled.index
-    # test_res = lvout_res
-    train_res = train_index.get_level_values(1).unique()
-
-
-    # X_test = X_scaled.loc[X_scaled.index.get_level_values(0) >= split_date - timedelta(days=8)]
-    # X_train = X_scaled.loc[X_scaled.index.get_level_values(0) < split_date]
-
-    # y_test = y_scaled.loc[y_scaled.index.get_level_values(0) >= split_date - timedelta(days=8)]
-    # y_train = y_scaled.loc[y_scaled.index.get_level_values(0) < split_date]
-    # y_test_sto = y_scaled_sto.loc[y_scaled_sto.index.get_level_values(0) >= split_date - timedelta(days=8)]
-    # y_train_sto = y_scaled_sto.loc[y_scaled_sto.index.get_level_values(0) < split_date]
-
-    X_train = X_scaled.loc[train_index]
-    # X_test = X_scaled.loc[test_index]
-    y_train = y_scaled.loc[train_index]
-    # y_test = y_scaled.loc[test_index]
-
-    # N_time_train = X_train.index.get_level_values(0).unique().shape[0]
-    # N_time_test = X_test.index.get_level_values(0).unique().shape[0]
-
-    # train model
-    # Instead of adding a constant, I want to create dummy variable that accounts for season differences
-    exog = X_train
-    exog["const"] = 1.0
+    lvout_sets = [
+        [], # baseline
+        ["Nikajack", "FtPatrick", "Wilson"], # 3-7 days
+        ["Pickwick", "Chikamauga", "Wheeler", "FtLoudoun", "MeltonH", "Guntersville", "Apalachia"], # 7 - 15 days
+        ["WattsBar", "Kentucky", "Ocoee1", "Boone"] # 15-30 days
+    ]
+    lvout_labels = [
+        "baseline",
+        "3-7",
+        "7-15",
+        "15-30"
+    ]
+    #for res in reservoirs:
+    #for lvout_res, label in zip(lvout_sets, lvout_labels):
+    rts = pd.read_pickle("../pickles/tva_res_times.pickle")
+    corrs = pd.read_pickle("../pickles/tva_release_corrs.pickle")
     
-    groups = exog["compositegroup"]
-    # Storage Release Interactions are near Useless
-    # Release Inflow Interaction does not provide a lot either
-    # Storage Inflow interaction seems to matter for ComboFlow-StorageDam reservoirs.
-    interaction_terms = ["Storage_Inflow_interaction"]
+    exclude = defaultdict(list)
+    # for level in np.arange(0.6, 1.0, 0.1)[::-1]:
+    for level in [0.6]:
+        for lvout_res, label in zip(lvout_sets, lvout_labels):
+            leave_out = filter_on_corr(level, lvout_res, corrs, rts)
+            exclude[level].extend(leave_out)
+    
+    # for i, res in enumerate(reservoirs[:-1]):
+    X_scaled["rel_diff"] = X_scaled["Release_pre"] - X_scaled["Release_roll7"]
+    X_scaled["sto_diff"] = X_scaled["Storage_pre"] - X_scaled["Storage_roll7"]
+    X_scaled["inf_diff"] = X_scaled["Net Inflow"] - X_scaled["Inflow_roll7"]
+    
+    for level, lvout_res in exclude.items():
+        # lvout_res = reservoirs[:i]
+        # label = str(i)
+        label = str(round(level,2))
+        test_index = X_scaled.index[X_scaled.index.get_level_values(1).isin(lvout_res)]
+        train_index = X_scaled.index[~X_scaled.index.get_level_values(1).isin(lvout_res)]
+        test_res = lvout_res
+        train_res = train_index.get_level_values(1).unique()
+
+        print(f"Solving model run {label}")
+
+        # X_test = X_scaled.loc[X_scaled.index.get_level_values(0) >= split_date - timedelta(days=8)]
+        # X_train = X_scaled.loc[X_scaled.index.get_level_values(0) < split_date]
+
+        # y_test = y_scaled.loc[y_scaled.index.get_level_values(0) >= split_date - timedelta(days=8)]
+        # y_train = y_scaled.loc[y_scaled.index.get_level_values(0) < split_date]
+        # y_test_sto = y_scaled_sto.loc[y_scaled_sto.index.get_level_values(0) >= split_date - timedelta(days=8)]
+        # y_train_sto = y_scaled_sto.loc[y_scaled_sto.index.get_level_values(0) < split_date]
+
+        X_train = X_scaled.loc[train_index]
+        X_test = X_scaled.loc[test_index]
+        y_train = y_scaled.loc[train_index]
+        y_test = y_scaled.loc[test_index]
+
+        # N_time_train = X_train.index.get_level_values(0).unique().shape[0]
+        # N_time_test = X_test.index.get_level_values(0).unique().shape[0]
+
+        # train model
+        # Instead of adding a constant, I want to create dummy variable that accounts for season differences
+        exog = X_train
+        exog["const"] = 1.0
+        
+        groups = exog["compositegroup"]
+        # Storage Release Interactions are near Useless
+        # Release Inflow Interaction does not provide a lot either
+        # Storage Inflow interaction seems to matter for ComboFlow-StorageDam reservoirs.
+        interaction_terms = ["Storage_Inflow_interaction"]
         
         # exog_terms = [
         #     "Storage_pre", "Net Inflow", "Release_pre", 
         #     ] + extra_lag_terms
 
 
-    exog_terms = [
-        "const", "Net Inflow", "Storage_pre", #"Release_pre",
-        "Storage_roll7",  "Inflow_roll7", # "Release_roll7"
-    ]
+        exog_terms = [
+            "const", "Net Inflow", "Storage_pre", #"Release_pre",
+            "Storage_roll7",  "Inflow_roll7", # "Release_roll7"
+        ]
 
         # exog_terms = [
         #     "const", "Net Inflow", "sto_diff", "Release_pre",
         #     "Release_roll7", "Inflow_roll7"
         # ]
 
-    exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:]]
+        exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:]]
 
-    mexog = exog.loc[:,["const"]]
+        mexog = exog.loc[:,["const"]]
 
         # actual_inflow_train = df["Net Inflow"].loc[df.index.get_level_values(
         #     0) < split_date]
         # actual_inflow_test = df["Net Inflow"].loc[df.index.get_level_values(
         #     0) >= split_date - timedelta(days=8)]
         
-    free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
-                                        cov_re=np.eye(exog_re.shape[1]))
-    md = sm.MixedLM(y_train, mexog, groups=groups, exog_re=exog_re)
-    mdf = md.fit(free=free)
+        free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
+                                            cov_re=np.eye(exog_re.shape[1]))
+        md = sm.MixedLM(y_train, mexog, groups=groups, exog_re=exog_re)
+        mdf = md.fit(free=free)
 
-    fitted = mdf.fittedvalues
-    fitted_act = (fitted.unstack() * 
-                std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
-    y_train_act = (y_train.unstack() *
-                   std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
-    # y_test_act = (y_test.unstack() *
-                #    std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
-
-
-    f_act_score = r2_score(y_train_act, fitted_act)
-    f_act_rmse = np.sqrt(mean_squared_error(y_train_act, fitted_act))
-
-    fe_coefs = mdf.params
-    re_coefs = mdf.random_effects
+        fitted = mdf.fittedvalues
+        fitted_act = (fitted.unstack() * 
+                    std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
+        y_train_act = (y_train.unstack() *
+                       std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
+        y_test_act = (y_test.unstack() *
+                       std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
 
 
-    y_train_mean = y_train_act.groupby(
-        y_train_act.index.get_level_values(1)
-    ).mean()
-    # y_test_mean = y_test_act.groupby(
-    #     y_test_act.index.get_level_values(1)
-    # ).mean()
-    fmean = fitted_act.groupby(
-        fitted_act.index.get_level_values(1)
-    ).mean()
+        f_act_score = r2_score(y_train_act, fitted_act)
+        f_norm_score = r2_score(y_train, fitted)
+        f_act_rmse = np.sqrt(mean_squared_error(y_train_act, fitted_act))
+        f_norm_rmse = np.sqrt(mean_squared_error(y_train, fitted))
 
-    f_bias = fmean - y_train_mean
-    f_bias_month = fitted_act.groupby(
-        fitted_act.index.get_level_values(0).month
-        ).mean() - y_train_act.groupby(
-            y_train_act.index.get_level_values(0).month).mean()
-
-    # if label == "0":
-    #     p_act_score = f_act_score
-    #     p_norm_score = f_norm_score
-    #     p_act_rmse = f_act_rmse
-    #     p_norm_rmse = f_norm_rmse
-    #     p_act_score_all = f_act_score
-    #     p_act_rmse_all = f_act_rmse
-    #     p_bias = f_bias
-    #     p_bias_month = f_bias_month
-    # else:
-    #     X_test["const"] = 1
-    #     X_all = X_train.append(X_test).sort_index()
-    #     exog = X_test
-    #     groups = exog["compositegroup"]
-    #     exog_re = exog.loc[:, exog_terms + interaction_terms + #["compositegroup"]]
-    #                        calendar.month_abbr[1:] + ["compositegroup"]]
-    #     mexog = exog[["const"]]
-        
-    #     try:
-    #         preds = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
-    #     except:
-    #         print("Error in predict")
-    #         II()
-
-    #     exog = X_all
-    #     groups = exog["compositegroup"] 
-    #     # exog_re = exog.loc[:, exog_terms + interaction_terms + ["compositegroup"]]
-    #     exog_re = exog.loc[:, exog_terms + interaction_terms +
-    #                     calendar.month_abbr[1:] + ["compositegroup"]]
-    #     mexog = exog[["const"]]
-    #     preds_all = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
-
-    #     preds_act = (preds.unstack() *
-    #                  std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
-    #     preds_act_all = (preds_all.unstack() *
-    #                  std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
-    #     y_test_act = (y_test.unstack() *
-    #                   std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
-    #     y_act = y_train_act.append(y_test_act).sort_index()
-
-    #     preds_mean = preds_act.groupby(
-    #         preds_act.index.get_level_values(1)
-    #     ).mean()
-
-    #     preds_mean_all = preds_act_all.groupby(
-    #         preds_act_all.index.get_level_values(1)
-    #     ).mean()
-
-    #     p_act_score_all = r2_score(y_act, preds_act_all)
-    #     p_act_rmse_all = np.sqrt(mean_squared_error(y_act, preds_act_all))
-    #     p_bias = preds_mean - y_test_mean 
-    #     p_act_score = r2_score(y_test_act, preds_act)
-    #     p_norm_score = r2_score(y_test, preds)
-    #     p_act_rmse = np.sqrt(mean_squared_error(y_test_act, preds_act))
-    #     p_norm_rmse = np.sqrt(mean_squared_error(y_test, preds))
-
-    #     p_bias_month = preds_act.groupby(
-    #         preds_act.index.get_level_values(0).month  
-    #         ).mean() - y_test_act.groupby(
-    #             y_test_act.index.get_level_values(0).month).mean()
-
-    # lvout_rt_results[label] = {
-    #     "pred": {
-    #         "p_act_score": p_act_score,
-    #         "p_act_rmse": p_act_rmse,
-    #         "p_act_score_all":p_act_score_all,
-    #         "p_act_rmse_all":p_act_rmse_all,
-    #         "p_bias":p_bias,
-    #         "p_bias_month":p_bias_month
-    #     },
-    #     "fitted":{
-    #         "f_act_score": f_act_score,
-    #         "f_act_rmse": f_act_rmse,
-    #         "f_bias": f_bias,
-    #         "f_bias_month":f_bias_month
-    #     },
-    #     "coefs":re_coefs,
-    #     "test_res":test_res,
-    #     "train_res":train_res
-    # }
-
-    fitted_act = fitted_act.unstack()
-    y_train_act = y_train_act.unstack()
-    #y_test_act = y_test_act.unstack()
-
-    # if label != "0":
-    # preds_act = preds_act.unstack()
-    # y_test_act = y_test_act.unstack()
-
-    res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
-    for res in reservoirs:
-        try:
-            y = y_train_act[res]
-            ym = fitted_act[res]
-        except KeyError as e:
-            y = y_test_act[res]
-            ym = preds_act[res]
-        res_scores.loc[res, "NSE"] = r2_score(y, ym)
-        res_scores.loc[res, "RMSE"] = np.sqrt(mean_squared_error(y, ym))
+        fe_coefs = mdf.params
+        re_coefs = mdf.random_effects
 
 
-    # pred_df = pd.DataFrame({k:v["pred"] for k,v in lvout_rt_results.items()})
-    # fitt_df = pd.DataFrame({k:v["fitted"] for k,v in lvout_rt_results.items()})
+        y_train_mean = y_train_act.groupby(
+            y_train_act.index.get_level_values(1)
+        ).mean()
+        y_test_mean = y_test_act.groupby(
+            y_test_act.index.get_level_values(1)
+        ).mean()
+        fmean = fitted_act.groupby(
+            fitted_act.index.get_level_values(1)
+        ).mean()
 
+        f_bias = fmean - y_train_mean
+        f_bias_month = fitted_act.groupby(
+            fitted_act.index.get_level_values(0).month
+            ).mean() - y_train_act.groupby(
+                y_train_act.index.get_level_values(0).month).mean()
+
+        if label == "0":
+            p_act_score = f_act_score
+            p_norm_score = f_norm_score
+            p_act_rmse = f_act_rmse
+            p_norm_rmse = f_norm_rmse
+            p_act_score_all = f_act_score
+            p_act_rmse_all = f_act_rmse
+            p_bias = f_bias
+            p_bias_month = f_bias_month
+        else:
+            X_test["const"] = 1
+            X_all = X_train.append(X_test).sort_index()
+            exog = X_test
+            groups = exog["compositegroup"]
+            exog_re = exog.loc[:, exog_terms + interaction_terms + #["compositegroup"]]
+                               calendar.month_abbr[1:] + ["compositegroup"]]
+            mexog = exog[["const"]]
+            
+            try:
+                preds = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
+            except:
+                print("Error in predict")
+                II()
+
+            exog = X_all
+            groups = exog["compositegroup"] 
+            # exog_re = exog.loc[:, exog_terms + interaction_terms + ["compositegroup"]]
+            exog_re = exog.loc[:, exog_terms + interaction_terms +
+                            calendar.month_abbr[1:] + ["compositegroup"]]
+            mexog = exog[["const"]]
+            preds_all = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
+
+            preds_act = (preds.unstack() *
+                         std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
+            preds_act_all = (preds_all.unstack() *
+                         std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
+            y_test_act = (y_test.unstack() *
+                          std.loc[test_res, "Release"] + means.loc[test_res, "Release"]).stack()
+            y_act = y_train_act.append(y_test_act).sort_index()
+
+            preds_mean = preds_act.groupby(
+                preds_act.index.get_level_values(1)
+            ).mean()
+
+            preds_mean_all = preds_act_all.groupby(
+                preds_act_all.index.get_level_values(1)
+            ).mean()
+
+            p_act_score_all = r2_score(y_act, preds_act_all)
+            p_act_rmse_all = np.sqrt(mean_squared_error(y_act, preds_act_all))
+            p_bias = preds_mean - y_test_mean 
+            p_act_score = r2_score(y_test_act, preds_act)
+            p_norm_score = r2_score(y_test, preds)
+            p_act_rmse = np.sqrt(mean_squared_error(y_test_act, preds_act))
+            p_norm_rmse = np.sqrt(mean_squared_error(y_test, preds))
+
+            p_bias_month = preds_act.groupby(
+                preds_act.index.get_level_values(0).month  
+                ).mean() - y_test_act.groupby(
+                    y_test_act.index.get_level_values(0).month).mean()
+
+        lvout_rt_results[label] = {
+            "pred": {
+                "p_act_score": p_act_score,
+                "p_act_rmse": p_act_rmse,
+                "p_act_score_all":p_act_score_all,
+                "p_act_rmse_all":p_act_rmse_all,
+                "p_bias":p_bias,
+                "p_bias_month":p_bias_month
+            },
+            "fitted":{
+                "f_act_score": f_act_score,
+                "f_act_rmse": f_act_rmse,
+                "f_bias": f_bias,
+                "f_bias_month":f_bias_month
+            },
+            "coefs":re_coefs,
+            "test_res":test_res,
+            "train_res":train_res
+        }
+
+        fitted_act = fitted_act.unstack()
+        y_train_act = y_train_act.unstack()
+        #y_test_act = y_test_act.unstack()
+
+        if label != "0":
+            preds_act = preds_act.unstack()
+            y_test_act = y_test_act.unstack()
+
+        res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
+        for res in reservoirs:
+            try:
+                y = y_train_act[res]
+                ym = fitted_act[res]
+            except KeyError as e:
+                y = y_test_act[res]
+                ym = preds_act[res]
+            res_scores.loc[res, "NSE"] = r2_score(y, ym)
+            res_scores.loc[res, "RMSE"] = np.sqrt(mean_squared_error(y, ym))
+
+        lvout_rt_results[label]["res_scores"] = res_scores
+
+    pred_df = pd.DataFrame({k:v["pred"] for k,v in lvout_rt_results.items()})
+    fitt_df = pd.DataFrame({k:v["fitted"] for k,v in lvout_rt_results.items()})
+
+    lvout_rt_results["pred"] = pred_df
+    lvout_rt_results["fitted"] = fitt_df
     coefs = pd.DataFrame(mdf.random_effects)
     train_data = pd.DataFrame(dict(actual=y_train_act.stack(), model=fitted_act.stack()))
-    # test_data = pd.DataFrame(dict(actual=y_test_act.stack(), model=preds_act.stack()))
+    test_data = pd.DataFrame(dict(actual=y_test_act.stack(), model=preds_act.stack()))
     
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
-    # test_quant, test_bins = pd.qcut(test_data["actual"], 3, labels=False, retbins=True)
+    test_quant, test_bins = pd.qcut(test_data["actual"], 3, labels=False, retbins=True)
 
     train_data["bin"] = train_quant
-    # test_data["bin"] = test_quant
+    test_data["bin"] = test_quant
 
-    quant_scores = pd.DataFrame(index=[0,1,2], columns=["NSE", "RMSE"])
+    quant_scores = pd.DataFrame(index=[0,1,2], columns=["train", "test"])
     
     for q in [0,1,2]:
-        score = r2_score(
+        tr_score = r2_score(
             train_data[train_data["bin"] == q]["actual"],
             train_data[train_data["bin"] == q]["model"],
         )
-        rmse = np.sqrt(mean_squared_error(
-            train_data[train_data["bin"] == q]["actual"],
-            train_data[train_data["bin"] == q]["model"],
-        ))
-        quant_scores.loc[q] = [score, rmse]
-
+        tst_score = r2_score(
+            test_data[test_data["bin"] == q]["actual"],
+            test_data[test_data["bin"] == q]["model"]
+        )
+        quant_scores.loc[q,"train"] = tr_score
+        quant_scores.loc[q,"test"] = tst_score
     quant_table = quant_scores.to_markdown(tablefmt="github", floatfmt=".3f")
     print(quant_table) 
 
+    lvout_rt_results["train_data"] = train_data
+    lvout_rt_results["train_bins"] = train_bins
+    
+    lvout_rt_results["test_data"] = test_data
+    lvout_rt_results["test_bins"] = test_bins
+
+    lvout_rt_results["quant_scores"] = quant_scores
+    with open("../results/synthesis/simple_model/fit9_mi_results.pickle", "wb") as f:
+        pickle.dump(lvout_rt_results, f)
+    
+    sys.exit()
 
         # fit_results = fit_release_and_storage(y_train, y_train_sto, exog_re, groups, means, std)
         # fit_results = fit_release_storage_stepping(y_train, y_train_sto, exog_re, groups, means, std)
@@ -447,109 +499,106 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     # actual_inflow_test = df["Net Inflow"].loc[df.index.get_level_values(0) >= split_date - timedelta(days=8)]
 
     
-    # trans_time_1 = timer()
-    # fitted_rel = pd.concat([i.unstack() for i in fit_results["f_rel_act"]])
+    trans_time_1 = timer()
+    fitted_rel = pd.concat([i.unstack() for i in fit_results["f_rel_act"]])
+    fitted_sto = pd.concat([i.unstack() for i in fit_results["f_sto_act"]])
     
-    # fitted_rel = fitted_rel.groupby(fitted_rel.index).mean()
+    fitted_rel = fitted_rel.groupby(fitted_rel.index).mean()
+    fitted_sto = fitted_sto.groupby(fitted_sto.index).mean()
 
-    # fitted_rel = fitted_rel.stack()
-    # # fitted = (mdf.fittedvalues.unstack() * std["Release"] + means["Release"]).stack()
-    # y_train_rel_act = (y_train.unstack() * std["Release"] + means["Release"]).stack()
-    # y_train_sto_act = (y_train_sto.unstack() * std["Storage"] + means["Storage"]).stack()
-    # y_test_rel_act = (y_test.unstack() * std["Release"] + means["Release"]).stack()
-    # y_test_sto_act = (y_test_sto.unstack() * std["Storage"] + means["Storage"]).stack()
-    # trans_time_2 = timer()
+    fitted_rel = fitted_rel.stack()
+    fitted_sto = fitted_sto.stack()
+    # fitted = (mdf.fittedvalues.unstack() * std["Release"] + means["Release"]).stack()
+    y_train_rel_act = (y_train.unstack() * std["Release"] + means["Release"]).stack()
+    y_train_sto_act = (y_train_sto.unstack() * std["Storage"] + means["Storage"]).stack()
+    y_test_rel_act = (y_test.unstack() * std["Release"] + means["Release"]).stack()
+    y_test_sto_act = (y_test_sto.unstack() * std["Storage"] + means["Storage"]).stack()
+    trans_time_2 = timer()
     
-    # train_score_rel = r2_score(y_train_rel_act, fitted_rel)
-    # train_score_sto = r2_score(y_train_sto_act, fitted_sto)
+    train_score_rel = r2_score(y_train_rel_act, fitted_rel)
+    train_score_sto = r2_score(y_train_sto_act, fitted_sto)
 
-    # # fe_coefs = mdf.params
-    # # re_coefs = mdf.random_effects
-    # coefs = {g:np.mean(fit_results["params"][g], axis=0) for g in groups.unique()}
-    # coefs = pd.DataFrame(coefs, index=exog_re.columns)
+    # fe_coefs = mdf.params
+    # re_coefs = mdf.random_effects
+    coefs = {g:np.mean(fit_results["params"][g], axis=0) for g in groups.unique()}
+    coefs = pd.DataFrame(coefs, index=exog_re.columns)
 
-    # print(pd.DataFrame(coefs))
+    print(pd.DataFrame(coefs))
     
-    # # test on unseen data
-    # exog = sm.add_constant(X_test)
-    # groups = exog["compositegroup"]
+    # test on unseen data
+    exog = sm.add_constant(X_test)
+    groups = exog["compositegroup"]
 
 
-    # exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:] + ["compositegroup"]]
-    # mexog = exog[["const"]]
-    # resers = exog_re.index.get_level_values(1).unique()
-    # idx = pd.IndexSlice
-    # exog_re.loc[idx[datetime(2010,1,1),resers], "Storage_pre_act"] = df.loc[idx[datetime(2010,1,1),resers], "Storage_pre"]
+    exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:] + ["compositegroup"]]
+    mexog = exog[["const"]]
+    resers = exog_re.index.get_level_values(1).unique()
+    idx = pd.IndexSlice
+    exog_re.loc[idx[datetime(2010,1,1),resers], "Storage_pre_act"] = df.loc[idx[datetime(2010,1,1),resers], "Storage_pre"]
   
-    # pred_result = fit_release_and_storage(y_test, y_test_sto, exog_re.drop(
-    #     ["compositegroup", "Storage_pre_act"], axis=1), groups, means, std, init_values=coefs, niters=0)
-    # predicted_rel = pred_result["f_rel_act"][0]
-    # predicted_sto = pred_result["f_sto_act"][0]
+    pred_result = fit_release_and_storage(y_test, y_test_sto, exog_re.drop(
+        ["compositegroup", "Storage_pre_act"], axis=1), groups, means, std, init_values=coefs, niters=0)
+    predicted_rel = pred_result["f_rel_act"][0]
+    predicted_sto = pred_result["f_sto_act"][0]
     
-    # # predicted = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
+    # predicted = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
 
   
-    # # forecasted = forecast_mixedLM(fe_coefs, re_coefs, mexog, exog_re, means, std, "compositegroup", actual_inflow_test)
-    # forecasted = forecast_mixedLM_new(coefs, exog_re, means, std, "compositegroup", actual_inflow_test)
-    # # predicted_act = (predicted.unstack() * std["Release"] + means["Release"]).stack()
-    # test_score_rel = r2_score(y_test_rel_act, predicted_rel)
-    # test_score_sto = r2_score(y_test_sto_act, predicted_sto)
+    # forecasted = forecast_mixedLM(fe_coefs, re_coefs, mexog, exog_re, means, std, "compositegroup", actual_inflow_test)
+    forecasted = forecast_mixedLM_new(coefs, exog_re, means, std, "compositegroup", actual_inflow_test)
+    # predicted_act = (predicted.unstack() * std["Release"] + means["Release"]).stack()
+    test_score_rel = r2_score(y_test_rel_act, predicted_rel)
+    test_score_sto = r2_score(y_test_sto_act, predicted_sto)
 
     
-    # forecasted = forecasted[forecasted.index.get_level_values(0).year >= 2010]
-    # forecast_score_rel = r2_score(y_test_rel_act.loc[forecasted["Release_act"].index], 
-    #                           forecasted["Release_act"])
-    # forecast_score_sto = r2_score(y_test_sto_act.loc[forecasted["Storage_act"].index], 
-    #                           forecasted["Storage_act"])
-    # # if forecast_score < 0:
-    # #     II()
-    # # print(mdf.summary())
-    # # print(f"N Time Train: {N_time_train}")
-    # # print(f"N Time Test : {N_time_test}")
-    # print("Release Scores")
-    # print(f"Train Score : {train_score_rel:.4f}")
-    # print(f"Test Score  : {test_score_rel:.4f}")
-    # print(f"Forecast Score  : {forecast_score_rel:.4f}")
-    # print("Storage Scores")
-    # print(f"Train Score : {train_score_sto:.4f}")
-    # print(f"Test Score  : {test_score_sto:.4f}")
-    # print(f"Forecast Score  : {forecast_score_sto:.4f}")
-    # # print("\nGroup Sizes:")
-    # # for (label, array) in zip(md.group_labels, md.exog_re_li):
-    # #     length = array.shape[0]
-    # #     nres = int(length/N_time_train)
-    # #     print(f"\t{label}: Length = {length}, # Res = {nres}")
-    # # print("\nGroup Coefficients:")
-    # # print_coef_table(re_coefs)
-    # # II()
+    forecasted = forecasted[forecasted.index.get_level_values(0).year >= 2010]
+    forecast_score_rel = r2_score(y_test_rel_act.loc[forecasted["Release_act"].index], 
+                              forecasted["Release_act"])
+    forecast_score_sto = r2_score(y_test_sto_act.loc[forecasted["Storage_act"].index], 
+                              forecasted["Storage_act"])
+    # if forecast_score < 0:
+    #     II()
+    # print(mdf.summary())
+    # print(f"N Time Train: {N_time_train}")
+    # print(f"N Time Test : {N_time_test}")
+    print("Release Scores")
+    print(f"Train Score : {train_score_rel:.4f}")
+    print(f"Test Score  : {test_score_rel:.4f}")
+    print(f"Forecast Score  : {forecast_score_rel:.4f}")
+    print("Storage Scores")
+    print(f"Train Score : {train_score_sto:.4f}")
+    print(f"Test Score  : {test_score_sto:.4f}")
+    print(f"Forecast Score  : {forecast_score_sto:.4f}")
+    # print("\nGroup Sizes:")
+    # for (label, array) in zip(md.group_labels, md.exog_re_li):
+    #     length = array.shape[0]
+    #     nres = int(length/N_time_train)
+    #     print(f"\t{label}: Length = {length}, # Res = {nres}")
+    # print("\nGroup Coefficients:")
+    # print_coef_table(re_coefs)
+    # II()
     
     output = dict(
-        coefs=coefs,
+        re_coefs=coefs,
         # fe_coefs=fe_coefs,
-        f_act_score=f_act_score,
-        f_act_rmse=f_act_rmse,
-        f_bias=f_bias,
-        f_bias_month=f_bias_month,
         data=dict(
-            # X_test=X_test,
-            # y_test=y_test,
+            X_test=X_test,
+            y_test=y_test,
             X_train=X_train,
             y_train=y_train,
-            y_results=train_data,
-            # fitted_rel=fitted_act,
-            # fitted_sto=fitted_sto,
-            # y_test_rel_act=y_test_rel_act,
-            # y_train_rel_act=y_train_rel_act,
-            # y_test_sto_act=y_test_sto_act,
-            # y_train_sto_act=y_train_sto_act,
-            # predicted_act_rel=predicted_rel,
-            # predicted_act_sto=predicted_sto,
-            quant_scores=quant_scores
-            # forecasted=forecasted[["Release", "Storage", "Release_act", "Storage_act"]]
+            fitted_rel=fitted_rel,
+            fitted_sto=fitted_sto,
+            y_test_rel_act=y_test_rel_act,
+            y_train_rel_act=y_train_rel_act,
+            y_test_sto_act=y_test_sto_act,
+            y_train_sto_act=y_train_sto_act,
+            predicted_act_rel=predicted_rel,
+            predicted_act_sto=predicted_sto,
+            forecasted=forecasted[["Release", "Storage", "Release_act", "Storage_act"]]
         )
     )
 
-    with open(f"../results/synthesis/simple_model/all_res_time_fit/{filename}_SIx_pre_std_swapped_res_roll7.pickle", "wb") as f:
+    with open(f"../results/multi-level-results/for_graps_dual_fit/{filename}_SIx_pre_std_swapped_res_roll7.pickle", "wb") as f:
         pickle.dump(output, f, protocol=4)
 
 def mass_balance(sto_pre, rel, inf):
