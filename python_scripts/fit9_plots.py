@@ -66,8 +66,11 @@ def load_results(args):
         sfile = "fit9_results.pickle"
     
     tfile = "fit9_results.pickle"
-    treed_path = RESULTS_DIR / "synthesis" / "treed_model" / tfile
-    simple_path = RESULTS_DIR / "synthesis" / "simple_model" / sfile
+    # treed_path = RESULTS_DIR / "synthesis" / "treed_model" / tfile
+    # simple_path = RESULTS_DIR / "synthesis" / "simple_model" / sfile
+    simple_path = RESULTS_DIR / "synthesis" / "simple_model" / "all_res_time_fit" / \
+        "NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7.pickle"
+    treed_path = RESULTS_DIR / "synthesis" / "treed_model" / "upstream_basic_td3_roll7" / "results.pickle"
     with open(treed_path.as_posix(), "rb") as f:
         treed_data = pickle.load(f)
     with open(simple_path.as_posix(), "rb") as f:
@@ -265,8 +268,10 @@ def parse_args(plot_functions):
 
 
 def plot_quants(tree,simp,args):
-    test, train = get_model_data(tree, simp)
-    quant_scores = get_quant_scores(tree, simp)
+    II()
+    sys.exit()
+    # test, train = get_model_data(tree, simp)
+    # quant_scores = get_quant_scores(tree, simp)
     sns.set_context("notebook")
     fig, axes = plt.subplots(4, 3, figsize=(20,8.7))
     flat_axes = axes.flatten()
