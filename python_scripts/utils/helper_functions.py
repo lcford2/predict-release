@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pathlib
 from datetime import datetime
-from timing_function import time_function
+from utils.timing_function import time_function
 from IPython import embed as II
 
 tva_res = ['BlueRidge', 'Chikamauga', 'Guntersville', 'Hiwassee', 
