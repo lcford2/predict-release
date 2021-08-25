@@ -22,7 +22,9 @@ if ($null -eq $md_file) {
     Write-Host "Converting" $md_file, "to", $pdf_file
     # luafilter here parses the md file and replaces 
     # {{}} fields with proper text.
+    $lua_file="$PSScriptRoot/currentdate.lua"
+
     pandoc $md_file -o $pdf_file --from markdown --template eisvogel `
-        --listing --lua-filter=currentdate.lua
+        --listing --lua-filter=$lua_file -V papersize:letter
     return
 }
