@@ -6,11 +6,11 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import StandardScaler
 import pickle
-from helper_functions import (read_tva_data, scale_multi_level_df, 
+from utils.helper_functions import (read_tva_data, scale_multi_level_df, 
                               read_all_res_data, find_max_date_range)
 from simple_model import (change_group_names, combine_columns,
                           predict_mixedLM, forecast_mixedLM, print_coef_table)
-from timing_function import time_function
+from utils.timing_function import time_function
 from time import perf_counter as timer
 from datetime import timedelta
 from IPython import embed as II

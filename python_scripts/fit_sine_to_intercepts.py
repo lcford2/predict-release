@@ -1,5 +1,6 @@
 import pickle
 import calendar
+import pathlib
 import pandas as pd
 import numpy as np
 import scipy.optimize as spo
@@ -10,10 +11,10 @@ from IPython import embed as II
 
 plt.style.use("ggplot")
 sns.set_context("paper")
-
+RESULTS_DIR = pathlib.Path("G:/My Drive/PHD/SRY_curves/data/results") 
 
 def read_data():
-    with open("../results/synthesis/spatial_model/res_slopes.pickle", "rb") as f:
+    with open((RESULTS_DIR / "synthesis" / "spatial_model" / "res_slopes.pickle").as_posix(), "rb") as f:
         data = pickle.load(f)
     
     return data["coefs"]
@@ -42,7 +43,7 @@ def main():
         score = r2_score(y, fitted)
         results.loc[res] = [popt[0], popt[1], popt[2], score]
 
-    results.to_pickle("../results/synthesis/spatial_model/sin_results.pickle")
+    results.to_pickle(RESULTS_DIR / "results" / "synthesis" / "spatial_model" / "sin_results.pickle")
 
     results = results.sort_values(by="score")
 
