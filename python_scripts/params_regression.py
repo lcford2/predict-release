@@ -5,13 +5,16 @@ import statsmodels.formula.api as smf
 import numpy as np
 from IPython import embed as II
 
-from helper_functions import read_tva_data
+from utils.helper_functions import read_tva_data
 
 tva = read_tva_data(just_load=True)
-rts = pd.read_pickle("../pickles/tva_res_times.pickle")
-mstl = pd.read_pickle("../pickles/tva_mean_st_level.pickle")
+PICKLE_DIR = pathlib.Path("G:/My Drive/PHD/SRY_curves/data/pickles")
+RESULTS_DIR = pathlib.Path("G:/My Drive/PHD/SRY_curves/data/results")
 
-with open("../results/synthesis/spatial_model/res_slopes.pickle", "rb") as f:
+rts = pd.read_pickle(PICKLE_DIR / "tva_res_times.pickle")
+mstl = pd.read_pickle(PICKLE_DIR / "tva_mean_st_level.pickle")
+
+with open(RESULTS_DIR / "results" / "synthesis" / "spatial_model" / "res_slopes.pickle", "rb") as f:
     sp_results = pickle.load(f)
 
 res_cats = tva[["RunOfRiver", "NaturalOnly", "PrimaryType"]].groupby(tva.index.get_level_values(1)).mean()

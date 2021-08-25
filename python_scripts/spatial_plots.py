@@ -17,7 +17,7 @@ from scipy.stats import pearsonr
 from IPython import embed as II
 
 # import my functions
-from helper_functions import read_tva_data, calc_bias
+from utils.helper_functions import read_tva_data, calc_bias
 from analysis_plots import format_dict, CASCADE
 from plot_helpers import (abline, combine_legends, determine_grid_size, 
                           find_plot_functions)

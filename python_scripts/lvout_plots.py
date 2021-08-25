@@ -14,7 +14,7 @@ from pandasgui import show
 from IPython import embed as II
 
 # import my helper functions
-from helper_functions import read_tva_data
+from utils.helper_functions import read_tva_data
 from analysis_plots import (format_dict, CASCADE, determine_grid_size,
                             find_plot_functions)
 

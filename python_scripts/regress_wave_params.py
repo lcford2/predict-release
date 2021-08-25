@@ -4,17 +4,20 @@ import numpy as np
 import statsmodels.formula.api as smf
 from IPython import embed as II
 
+PICKLE_DIR = pathlib.Path("G:/My Drive/PHD/SRY_curves/data/pickles")
+RESULTS_DIR = pathlib.Path("G:/My Drive/PHD/SRY_curves/data/results")
+
 def load_rts():
-    return pd.read_pickle("../pickles/tva_res_times.pickle")
+    return pd.read_pickle(PICKLE_DIR / "tva_res_times.pickle")
 
 def load_mstl():
-    return pd.read_pickle("../pickles/tva_mean_st_level.pickle")
+    return pd.read_pickle(PICKLE_DIR / "tva_mean_st_level.pickle")
 
 def load_mrel():
-    return pd.read_pickle("../pickles/release_longterm_means.pickle") * 86400 / 43560 / 1000
+    return pd.read_pickle(PICKLE_DIR / "release_longterm_means.pickle") * 86400 / 43560 / 1000
 
 def load_wave_results():
-    return pd.read_pickle("../results/synthesis/spatial_model/sin_results.pickle")
+    return pd.read_pickle(RESULTS_DIR / "synthesis" / "spatial_model" / "sin_results.pickle")
 
 def fit_wave_params(x_var = "RT"):
     func_map = {
@@ -23,14 +26,14 @@ def fit_wave_params(x_var = "RT"):
         "MRel": load_mrel
     }
 
-    data_loader = func_map.get(x_var, None)
+    data_loader = func_map.get(x_var)
 
     if data_loader:
         X = data_loader().astype(float)
     else:
         print(f"Provided `x_var` ({x_var}) is not valid. Please choose from RT, MStL, or MRel.")
         sys.exit()
-    
+
     wave_params = load_wave_results().astype(float)
     print(wave_params.describe())
     params = ["b0", "b1", "omega"]
