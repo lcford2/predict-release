@@ -236,24 +236,6 @@ def normalize_values(df, divtype="res"):
         II()
     return df
 
-def parse_args(plot_functions):
-    parser = argparse.ArgumentParser(description="Plot results from leave out runs.")
-    parser.add_argument("-p", "--plot_func", help="What visualization to plot.", choices=plot_functions.keys(),
-                        default=None)
-    parser.add_argument("--pmod", choices=["hist", "1to1"], default="1to1",
-                        help="Modifier for the specific plot type chosen. Alters the data visualization.")
-    parser.add_argument("--dmod", choices=["mi"],
-                        help="Modifier for data set selection. Choose from different model runs.")
-    parser.add_argument("-m", "--metric", choices=["scores", "rmse"], default="scores",
-                        help="Specify what metric should be plotted")
-    parser.add_argument("--relative", action="store_true", default=False,
-                        help="Plot values as percentages relative to means. Only works for physical quantities")
-    parser.add_argument("-S", "--sort_by", choices=["CASCADE", "RT", "MStL"], default="RT",
-                        help="Specify how the reservoirs should be sorted.")
-    parser.add_argument("--byres", default=False, action="store_true",
-                        help="Flag to plot some metrics reservoir by reservoir. Not implemented for all plots.")
-    return parser.parse_args()
-
 
 def plot_quants(tree, simp, args):
     II()
@@ -518,10 +500,21 @@ def plot_percentiles(tree,simp,args):
     groups = {j:i+1 for i,j in enumerate(groups)}
     df["Leaf"] = df["groups"].apply(groups.get)
     df["Percentile"] = df.groupby("variable")["value"].rank(pct=True)
-    g = sns.displot(data=df, x="Percentile", col="variable", hue="Leaf",
-                    edgecolor="k", palette="Set1")
+    if args.pmod == "hue":
+        g = sns.displot(data=df, x="Percentile", col="variable", hue="Leaf",
+                        edgecolor="k", palette="Set1")
+    else:
+        sns.set_context("paper")        
+        g = sns.displot(data=df, x="Percentile", col="variable", row="Leaf",
+                        edgecolor="k", palette="Set1")
     g.set_titles("{col_name}")
     sns.despine()
+
+    min_leaf_p = df[df["variable"] == "Release_pre"].groupby("Leaf").min()["Percentile"]
+    max_leaf_p = df[df["variable"] == "Release_pre"].groupby("Leaf").max()["Percentile"]
+    rel_rules = pd.DataFrame({"Min":min_leaf_p, "Max":max_leaf_p})
+    print(rel_rules.to_markdown(tablefmt="github", floatfmt=".3f"))
+
     plt.show()
 
 def main(namespace):
@@ -536,6 +529,24 @@ def main(namespace):
 
     
     globals()[plot_functions[args.plot_func]](tree,simp,args)
+
+def parse_args(plot_functions):
+    parser = argparse.ArgumentParser(description="Plot results from leave out runs.")
+    parser.add_argument("-p", "--plot_func", help="What visualization to plot.", choices=plot_functions.keys(),
+                        default=None)
+    parser.add_argument("--pmod", choices=["hist", "1to1", "hue", "row"], default=None,
+                        help="Modifier for the specific plot type chosen. Alters the data visualization.")
+    parser.add_argument("--dmod", choices=["mi"],
+                        help="Modifier for data set selection. Choose from different model runs.")
+    parser.add_argument("-m", "--metric", choices=["scores", "rmse"], default="scores",
+                        help="Specify what metric should be plotted")
+    parser.add_argument("--relative", action="store_true", default=False,
+                        help="Plot values as percentages relative to means. Only works for physical quantities")
+    parser.add_argument("-S", "--sort_by", choices=["CASCADE", "RT", "MStL"], default="RT",
+                        help="Specify how the reservoirs should be sorted.")
+    parser.add_argument("--byres", default=False, action="store_true",
+                        help="Flag to plot some metrics reservoir by reservoir. Not implemented for all plots.")
+    return parser.parse_args()
 
 if __name__ == "__main__":
 # setup plotting environment
