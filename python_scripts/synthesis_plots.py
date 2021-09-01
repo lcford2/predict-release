@@ -517,6 +517,213 @@ def plot_percentiles(tree,simp,args):
 
     plt.show()
 
+def plot_transition_probs(tree, simp, args):
+    sns.set_context("talk")
+    groups = tree["data"]["groups"]
+    group_levels = groups.unique()
+    group_levels.sort()
+    leafs = {j:i+1 for i,j in enumerate(group_levels)}
+    groups = groups.apply(leafs.get)
+    groups = pd.DataFrame(groups, columns=["Leaf"])
+    groups["Next Leaf"] = groups.groupby(groups.index.get_level_values(1)).shift(-1)
+    groups = groups.dropna()
+    groups["Count"] = 1
+    counts = groups.groupby(["Leaf", "Next Leaf"]).sum().unstack()
+    counts.columns = counts.columns.get_level_values(1).astype(int)
+    N = counts.sum(axis=1)
+    probs = counts.T / N
+    fig = plt.figure(figsize=(16,9))
+    gs = GS.GridSpec(1,2,width_ratios=[20,1])
+    ax = fig.add_subplot(gs[0])
+    cax = fig.add_subplot(gs[1])
+
+    sns.heatmap(probs * 100 , annot=True, fmt=".2f",
+                ax=ax, cbar_ax=cax)
+    cax.set_ylabel("Transisition Probability [%]")
+    plt.show()
+
+def plot_subleaf_tprobs(tree,simp,args):
+    df = pd.DataFrame({
+            "Leaf":tree["data"]["groups"],
+            "Release_pre":tree["data"]["X_train"].loc[:,"Release_pre"]
+        }
+    )
+    group_levels = df["Leaf"].unique()
+    group_levels.sort()
+    leafs = {j:i+1 for i,j in enumerate(group_levels)}
+    df["Leaf"] = df["Leaf"].apply(leafs.get)
+    df["Percentile"] = df["Release_pre"].rank(pct=True)
+    min_lp = df.groupby("Leaf")["Percentile"].min()
+    max_lp = df.groupby("Leaf")["Percentile"].max()
+    lps = pd.DataFrame({"Min":min_lp, "Max":max_lp})
+    lps["Diff"] = lps["Max"] - lps["Min"]
+    output = {}
+    for leaf, row in lps.iterrows():
+        max_p = row["Max"]
+        min_p = row["Min"]
+        if row["Diff"] > 0.15:
+            upper = max_p - 0.05
+            lower = min_p + 0.05
+        else:
+            # I may just do this the entire time, not sure yet
+            delta = row["Diff"] / 3
+            upper = max_p - delta
+            lower = min_p + delta
+        
+        upper_vals = df[(df["Percentile"] <= max_p) & (df["Percentile"] > upper)]
+        middle_vals = df[(df["Percentile"] <= upper) & (df["Percentile"] > lower)]
+        lower_vals = df[(df["Percentile"] <= lower) & (df["Percentile"] > min_p)]
+        upper_vals = upper_vals[upper_vals.index.get_level_values(
+            0) != datetime(2015, 12, 31)]
+        middle_vals = middle_vals[middle_vals.index.get_level_values(
+            0) != datetime(2015, 12, 31)]
+        lower_vals = lower_vals[lower_vals.index.get_level_values(
+            0) != datetime(2015, 12, 31)]
+        
+        upper_next = pd.MultiIndex.from_tuples(
+            zip(
+                upper_vals.index.get_level_values(0).shift(1, "D"),
+                upper_vals.index.get_level_values(1)
+            )
+        )
+        upper_counts = df.loc[upper_next, "Leaf"].value_counts()
+        upper_probs = upper_counts / upper_vals.shape[0]
+
+        middle_next = pd.MultiIndex.from_tuples(
+            zip(
+                middle_vals.index.get_level_values(0).shift(1, "D"),
+                middle_vals.index.get_level_values(1)
+            )
+        )
+        middle_counts = df.loc[middle_next, "Leaf"].value_counts()
+        middle_probs = middle_counts / middle_vals.shape[0]
+
+        lower_next = pd.MultiIndex.from_tuples(
+            zip(
+                lower_vals.index.get_level_values(0).shift(1, "D"),
+                lower_vals.index.get_level_values(1)
+            )
+        )
+        lower_counts = df.loc[lower_next, "Leaf"].value_counts()
+        lower_probs = lower_counts / lower_vals.shape[0]
+
+        output[leaf] = {"Lower":lower_probs, "Middle":middle_probs, "Upper":upper_probs}
+    
+    output_df = pd.DataFrame()
+    for leaf, value in output.items():
+        df = pd.DataFrame(value)
+        df["Start Leaf"] = leaf
+        df = df.sort_index()
+        df = df.reset_index()
+        df = df.rename(columns={"index": "Next Leaf"})
+        if output_df.empty:
+            output_df = df
+        else:
+            output_df = pd.concat([output_df, df])
+    
+    output_df = output_df[["Start Leaf", "Next Leaf", "Lower", "Middle", "Upper"]].fillna(0.0)
+    output_df = output_df.melt(
+        id_vars=["Start Leaf", "Next Leaf"], 
+        var_name="Leaf Range", 
+        value_name="Transition Probability"
+    )
+    if args.pmod == "all":
+        sns.set_context("paper")
+        g = sns.FacetGrid(output_df, row="Next Leaf", col="Start Leaf")
+        g.map_dataframe(
+            sns.barplot, x="Leaf Range", y = "Transition Probability"
+        )
+        # g.despine()
+        g.set_ylabels("")
+        g.set_xlabels("")
+        fig = g.figure
+        fig.text(0.5, 0.01, "Start Leaf", ha="center", fontsize=11)
+        fig.text(0.01, 0.5, "Next Leaf", va="center", rotation=90, fontsize=11)
+        fig.set_size_inches(19,10)
+        plt.subplots_adjust(
+            top=0.967,
+            bottom=0.062,
+            left=0.039,
+            right=0.992,
+            hspace=0.523,
+            wspace=0.103
+        ) 
+    else:
+        # fig, axes = plt.subplots(8, 2, sharex=True, sharey=True)
+        # axes = axes.flatten()
+        # for leaf in range(1,9):
+        #     df = output_df[output_df["Start Leaf"] == leaf]
+        #     lower_ax = axes[(leaf - 1) * 2]
+        #     upper_ax = axes[(leaf - 1) * 2 + 1]
+        #     if leaf == 1:
+        #         lower_ax.set_axis_off()
+        #     else:
+        #         lower_leaf = leaf - 1
+        #         lower_df = df[df["Next Leaf"] == lower_leaf]
+        #         sns.barplot(data=lower_df, x="Leaf Range", y="Transition Probability",
+        #                     ax=lower_ax)
+        #         lower_ax.set_xlabel("")
+        #         lower_ax.set_ylabel("")
+        #     if leaf == 8:
+        #         upper_ax.set_axis_off()
+        #     else:            
+        #         upper_leaf = leaf + 1
+        #         upper_df = df[df["Next Leaf"] == upper_leaf]
+        #         sns.barplot(data=upper_df, x="Leaf Range", y="Transition Probability",
+        #                     ax=upper_ax)
+        #         upper_ax.set_xlabel("")
+        #         upper_ax.set_ylabel("")
+
+        fig, axes = plt.subplots(2,1, sharex=False, sharey=True)
+        axes = axes.flatten()
+        mv_up_ps = [output_df.loc[
+            (output_df["Start Leaf"] == i) & (output_df["Next Leaf"] == i+1) & (output_df["Leaf Range"] == "Upper"),
+            "Transition Probability"
+            ].values[0] * 100  for i in range(1,8)
+        ]
+        mv_dn_ps = [output_df.loc[
+            (output_df["Start Leaf"] == i) & (output_df["Next Leaf"] == i-1) & (output_df["Leaf Range"] == "Lower"),
+            "Transition Probability"
+            ].values[0] * 100 for i in range(2,9)
+        ]
+        mv_up_psl = [output_df.loc[
+            (output_df["Start Leaf"] == i) & (output_df["Next Leaf"] == i+1) & (output_df["Leaf Range"] == "Lower"),
+            "Transition Probability"
+            ].values[0] * 100  for i in range(1,8)
+        ]
+        mv_dn_psu = [output_df.loc[
+            (output_df["Start Leaf"] == i) & (output_df["Next Leaf"] == i-1) & (output_df["Leaf Range"] == "Upper"),
+            "Transition Probability"
+            ].values[0] * 100 for i in range(2,9)
+        ]
+
+        width = 0.4
+
+        lx = [i - width/2 for i in range(7)]
+        rx = [i + width/2 for i in range(7)]
+        axes[0].bar(rx, mv_up_ps, width=width, label="Upper 1/3")
+        axes[1].bar(rx, mv_dn_psu, width=width, label="Upper 1/3")
+        axes[1].bar(lx, mv_dn_ps, width=width, label="Lower 1/3")
+        axes[0].bar(lx, mv_up_psl, width=width, label="Lower 1/3")
+
+        axes[0].legend(loc="best")
+
+        axes[0].set_ylabel("Transistion Probability [%]")
+        axes[1].set_ylabel("Transistion Probability [%]")
+
+        axes[0].set_title("Moving to next leaf (i.e. 3 to 4)")
+        axes[1].set_title("Moving to prev. leaf (i.e. 4 to 3)")
+
+        axes[1].set_xlabel("Current Leaf")
+
+        axes[0].set_xticks(range(7))
+        axes[0].set_xticklabels([r"$ \rightarrow $".join([str(i), str(i+1)]) for i in range(1,8)])
+        axes[1].set_xticks(range(7))
+        axes[1].set_xticklabels([r"$ \rightarrow $".join([str(i), str(i-1)]) for i in range(2,9)])
+
+    plt.show()
+
+
 def main(namespace):
     plot_functions = find_plot_functions(namespace)
     args = parse_args(plot_functions)
@@ -534,7 +741,7 @@ def parse_args(plot_functions):
     parser = argparse.ArgumentParser(description="Plot results from leave out runs.")
     parser.add_argument("-p", "--plot_func", help="What visualization to plot.", choices=plot_functions.keys(),
                         default=None)
-    parser.add_argument("--pmod", choices=["hist", "1to1", "hue", "row"], default=None,
+    parser.add_argument("--pmod", choices=["hist", "1to1", "hue", "row", "all"], default=None,
                         help="Modifier for the specific plot type chosen. Alters the data visualization.")
     parser.add_argument("--dmod", choices=["mi"],
                         help="Modifier for data set selection. Choose from different model runs.")
@@ -550,9 +757,9 @@ def parse_args(plot_functions):
 
 if __name__ == "__main__":
 # setup plotting environment
-    # plt.style.use("ggplot")
-    # sns.set_context("talk")
-    # style_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    plt.style.use("ggplot")
+    sns.set_context("talk")
+    style_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 # paths
     RESULTS_DIR = pathlib.Path("../results")
