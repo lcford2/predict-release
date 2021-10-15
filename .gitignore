@@ -1,4 +1,5 @@
 */**/*.sh
+!lower_col_data/get_raw_data_files.sh
 data_from_dol/hess_formatted_data
 **/__pycache__/**
 python_scripts/graps/bin/*
