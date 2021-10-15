@@ -1,0 +1,130 @@
+{
+    "BON":{
+        "name":"Bonneville Dam", 
+        "river":"Columbia"
+    },
+    "CHJ":{
+        "name":"Chief Joseph Dam",
+        "river":"Columbia"
+    },
+    "GCL":{
+        "name":"Grand Coulee Dam",
+        "river":"Columbia"
+    },
+    "ISL":{
+        "name":"Island Park Dam",
+        "river":"St. Louis"
+    },
+    "RRH":{
+        "name":"Rocky Reach Dam",
+        "river":"Columbia"
+    },
+    "THF":{
+        "name":"Thief Valley Dam",
+        "river":"Snake"
+    },
+    "WAN":{
+        "name":"Wanapum Dam",
+        "river":"Columbia"
+    },
+    "PRD":{
+        "name":"Priest Rapids Dam",
+        "river":"Columbia"
+    },
+    "WEL":{
+        "name":"Wells Dam",
+        "river":"Columbia"
+    },
+    "RIS":{
+        "name":"Rock Island Dam",
+        "river":"Columbia"
+    },
+    "DWR":{
+        "name":"Dworshak Dam",
+        "river":"Columbia"
+    },
+    "IHR":{
+        "name":"Ice Harbor Dam",
+        "river":"Columbia"
+    },
+    "LWG":{
+        "name":"Lower Granite Dam",
+        "river":"Columbia"
+    },
+    "AGA":{
+        "name":"Agate Dam",
+        "river":"Rogue"
+    },
+    "AMF":{
+        "name":"American Falls",
+        "river":"Snake"
+    },
+    "ARK":{
+        "name":"Arrowrock Dam",
+        "river":"Snake"
+    },
+    "BUL":{
+        "name":"Bully Creek Dam",
+        "river":"Snake"
+    },
+    "CSC":{
+        "name":"Cascade Dam",
+        "river":"Snake"
+    },
+    "EMI":{
+        "name":"Emigrant Dam",
+        "river":"Rogue"
+    },
+    "EMM":{
+        "name":"Black Canyon Dam",
+        "river":"Snake"
+    },
+    "HAY":{
+        "name":"Haystack Reservoir",
+        "river":"Unnamed"
+    },
+    "HPD":{
+        "name":"Howard Prairie Lake",
+        "river":"Klamath"
+    },
+    "HYA":{
+        "name":"Hyatt Dam",
+        "river":"Klamath"
+    },
+    "JCK":{
+        "name":"Jackson Lake",
+        "river":"Snake"
+    },
+    "MIL":{
+        "name":"Milner Dam",
+        "river":"Snake"
+    },
+    "MIN":{
+        "name":"Minidoka Dam",
+        "river":"Snake"
+    },
+    "PAL":{
+        "name":"Palisades Reservoir",
+        "river":"Snake"
+    },
+    "PHL":{
+        "name":"Mason Dam",
+        "river":"Snake"
+    },
+    "RIR":{
+        "name":"Ririe Dam",
+        "river":"Snake"
+    },
+    "UNY":{
+        "name":"Unity Reservoir",
+        "river":"Snake"
+    },
+    "WAS":{
+        "name":"Wasco Dam",
+        "river":"Columbia"
+    },
+    "BRN":{
+        "name":"Brownlee Dam",
+        "river":"Snake"
+    }
+}
