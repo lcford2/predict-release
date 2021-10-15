@@ -1,4 +1,5 @@
 */**/*.sh
+!lower_col_data/get_raw_data_files.sh
 data_from_dol/hess_formatted_data
 **/__pycache__/**
 python_scripts/graps/bin/*
@@ -6,3 +7,4 @@ python_scripts/graps/json-fortran
 python_scripts/graps/json-fortran/*
 plotly_config.json
 python_scripts/sry_python.code-workspace
+upper_colorado_data/hydrodata_data/upper_col_data.pickle
