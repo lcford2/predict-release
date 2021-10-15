@@ -19,39 +19,36 @@ GIS_DIR = pathlib.Path("G:\\My Drive\\ms_yr_1\\GIS")
 OFFSETS = {
     "Apalachia":(-0.15, 0.1),
     "BlueRidge":(-0.12, -0.12),
-    "Boone":(-0.1, -0.13),
-    "Chatuge":(0.1, 0.1),
-    "Cherokee":(-0.4, 0.02),
+    "Boone":(-0.1, -0.18),
+    "Chatuge":(0.07, 0.07),
+    "Cherokee":(-0.5, 0.02),
     "Chickamauga":(0.1, 0.1),
     "Douglas":(0.08, -0.1),
     "Fontana":(0.1, 0.04),
     "FtLoudoun":(0.1, -0.1),
     "FtPatrick":(-0.2,0.12),
     "Guntersville":(0.1, 0.1),
-    "Hiwassee":(0.1, 0.06),
-    "Kentucky":(0.1, 0.1),
+    "Hiwassee":(0.07, 0.02),
+    "Kentucky":(0.07, 0.1),
     "MeltonH":(0.1, 0.1),
     "Nickajack":(-0.15, 0.1),
-    "Norris":(-0.3, 0.02),
+    "Norris":(-0.4, 0.02),
     "Nottely":(0.04, -0.1),
-    "Ocoee1":(-0.3, -0.1),
-    "Ocoee3":(-0.12, -0.12),
-    "Pickwick":(0.1, 0.1),
+    "Ocoee1":(-0.4, -0.1),
+    "Ocoee3":(-0.2, -0.12),
+    "Pickwick":(0.07, 0.1),
     "RaccoonMt":(0.1, 0.1),
     "SHolston":(0.08, 0.1),
     "TimsFord":(0.1, 0.1),
     "WattsBar":(0.1, -0.1),
     "Watauga":(-0.12, -0.12),
     "Wheeler":(0.1, 0.1),
-    "Wilson":(0.1, 0.1),
-    "Wilbur":(0.1, 0.1)
+    "Wilson":(-0.3, -0.1),
+    "Wilbur":(0.1, 0.05)
 }
 
 def setup_map(ax, control_area=True, coords=None):
-    if not coords:
-        west, south, east, north = -90.62, 32.08, -80.94, 37.99
-    else:
-        west, south, east, north = coords
+    west, south, east, north = coords or (-90.62, 32.08, -80.94, 37.99)
     m = Basemap(resolution="c",
                 llcrnrlon=west,
                 llcrnrlat=south,
@@ -162,7 +159,7 @@ def make_system_map():
         x = loc.x + offset[0]
         y = loc.y + offset[1]
         name = row["Name"]
-        ax.text(x, y, name, zorder=5)
+        ax.text(x, y, name, zorder=5, fontsize=14)
 
     handles, labels = ax.get_legend_handles_labels()
     
@@ -175,9 +172,10 @@ def make_system_map():
     handles.extend([river_line, river_basin])#, CA_line])
     labels.extend(
         ["Tennessee River", "Tennessee River Basin"])#, "TVA Control Area"])
-
-    # leg_ax.legend(handles, labels, loc="center", frameon=False, ncol=3)
-    ax.legend(handles, labels, loc="best", prop={"size":14})
+    leg_fig, leg_ax = plt.subplots(1,1, frameon=False)
+    leg_ax.legend(handles, labels, loc="center", frameon=False, ncol=5,
+                    prop={"size":16})
+    # ax.legend(handles, labels, loc="best", prop={"size":14})
 
     plt.tight_layout()
 

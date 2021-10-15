@@ -200,13 +200,16 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     #                      for i in X_scaled.index.get_level_values(0)]
 
     #* this introduces a intercept that varies monthly and between groups
-    month_arrays = {i:[] for i in calendar.month_abbr[1:]}
-    for date in X_scaled.index.get_level_values(0):
-        for key in month_arrays.keys():
-            if calendar.month_abbr[date.month] == key:
-                month_arrays[key].append(1)
-            else:
-                month_arrays[key].append(0)
+    month_arrays = {i:[0 for i in range(X_scaled.shape[0])] for i in calendar.month_abbr[1:]}
+    for i, date in enumerate(X_scaled.index.get_level_values(0)):
+        abbr = calendar.month_abbr[date.month]
+        month_arrays[abbr][i] = 1
+    # for date in X_scaled.index.get_level_values(0):
+    #     for key in month_arrays.keys():
+    #         if calendar.month_abbr[date.month] == key:
+    #             month_arrays[key].append(1)
+    #         else:
+    #             month_arrays[key].append(0)
 
     for key, array in month_arrays.items():
         X_scaled[key] = array
@@ -253,8 +256,8 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
 
     exog_terms = [
-        "const", "Net Inflow", "Storage_pre", #"Release_pre",
-        "Storage_roll7",  "Inflow_roll7", # "Release_roll7"
+        "const", "Net Inflow", "Storage_pre", "Release_pre",
+        "Storage_roll7",  "Inflow_roll7", "Release_roll7"
     ]
 
         # exog_terms = [
@@ -275,7 +278,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
                                         cov_re=np.eye(exog_re.shape[1]))
     md = sm.MixedLM(y_train, mexog, groups=groups, exog_re=exog_re)
     mdf = md.fit(free=free)
-
+    
     fitted = mdf.fittedvalues
     fitted_act = (fitted.unstack() * 
                 std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
@@ -290,7 +293,6 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
     fe_coefs = mdf.params
     re_coefs = mdf.random_effects
-
 
     y_train_mean = y_train_act.groupby(
         y_train_act.index.get_level_values(1)
@@ -414,6 +416,8 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
     coefs = pd.DataFrame(mdf.random_effects)
     train_data = pd.DataFrame(dict(actual=y_train_act.stack(), model=fitted_act.stack()))
+    II()
+    sys.exit()
     # test_data = pd.DataFrame(dict(actual=y_test_act.stack(), model=preds_act.stack()))
     
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
@@ -549,7 +553,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         )
     )
 
-    with open(f"../results/synthesis/simple_model/all_res_time_fit/{filename}_SIx_pre_std_swapped_res_roll7.pickle", "wb") as f:
+    with open(f"../results/synthesis/simple_model/all_res_time_fit/{filename}_SIx_pre_std_swapped_res_roll7_wrel.pickle", "wb") as f:
         pickle.dump(output, f, protocol=4)
 
 def mass_balance(sto_pre, rel, inf):

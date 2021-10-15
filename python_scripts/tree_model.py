@@ -1,30 +1,36 @@
-import pandas as pd
-import numpy as np
-import statsmodels.api as sm
-from statsmodels.regression.mixed_linear_model import MixedLMParams
-from sklearn.metrics import r2_score, mean_squared_error
-from sklearn.tree import (DecisionTreeRegressor,
-                          plot_tree, export_graphviz)
-from sklearn.ensemble import RandomForestRegressor
-# import dtreeviz.trees as dtrees
-from utils.helper_functions import (read_tva_data, scale_multi_level_df,
-                              read_all_res_data, find_max_date_range)
-from simple_model import (change_group_names, combine_columns,
-                          predict_mixedLM, forecast_mixedLM, print_coef_table,
-                          fit_release_and_storage, forecast_mixedLM_new)
-from utils.timing_function import time_function
-from time import perf_counter as timer
-from copy import deepcopy
-from datetime import timedelta, datetime
-from collections import defaultdict
-from itertools import combinations
-from IPython import embed as II
+# import base packages for fs ops, calendar, serialization, and data management
 import calendar
 import sys
 import pickle
 import pathlib
 import subprocess
 import psutil
+import pandas as pd
+import numpy as np
+from copy import deepcopy
+from datetime import timedelta, datetime
+from collections import defaultdict
+from itertools import combinations
+from IPython import embed as II
+
+# import modeling packages
+import statsmodels.api as sm
+from statsmodels.regression.mixed_linear_model import MixedLMParams
+from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.tree import (DecisionTreeRegressor,
+                          plot_tree, export_graphviz)
+from sklearn.ensemble import RandomForestRegressor
+
+# import my functions for this project
+from utils.helper_functions import (read_tva_data, scale_multi_level_df,
+                              read_all_res_data, find_max_date_range)
+from simple_model import (change_group_names, combine_columns,
+                          predict_mixedLM, forecast_mixedLM, print_coef_table,
+                          fit_release_and_storage, forecast_mixedLM_new)
+
+# timing functions
+from utils.timing_function import time_function
+from time import perf_counter as timer
 
 # group name map to numeric variables
 group_names = {
@@ -47,33 +53,42 @@ def prep_data(df, groups, filter_groups=None, scaler=None, timelevel="all"):
     for_groups = df.loc[:, groups]
     # create an interactoin term between 
     df["Storage_Inflow_interaction"] = df.loc[:, "Storage_pre"].mul(df.loc[:, "Net Inflow"])
+    df["sto_diff_pre"] = df["Storage_pre"] - df["Storage_roll7"]
+    
 
+    # these reservoirs are high RT res, original grouping
+    # was based on inflow types so they need to be swapped
     change_names = ["Douglas", "Cherokee", "Hiwassee"]
     for ch_name in change_names:
         size = df[df.index.get_level_values(1) == ch_name].shape[0]
         df.loc[df.index.get_level_values(1) == ch_name, "NaturalOnly"] = [
             1 for i in range(size)]
 
+    # if we only want to model a single group
     if filter_groups:
         for key, value in filter_groups.items():
             df = df.loc[df[key] == inverse_groupnames[key][value], :]
 
+    # standardize variables x = (X - mu) / SD
     if scaler == "mine":
         scaled_df, means, std = scale_multi_level_df(df, timelevel)
-        X = scaled_df.loc[:, ["Storage", "Storage_pre", "Net Inflow", "Release_pre",
-                                "Storage_Inflow_interaction",
-                                "Release_roll7", "Inflow_roll7", "Storage_roll7",
-                                "Release_7", "Storage_7"
-                                #"Storage_roll14", "Release_roll7", "Inflow_roll14"
-                                ]]
+        X = scaled_df.loc[:, [
+            "Storage", "Storage_pre", "Net Inflow", "Release_pre",
+            "Storage_Inflow_interaction",
+            "Release_roll7", "Inflow_roll7", "Storage_roll7",
+            "Release_7", "Storage_7", "sto_diff_pre"
+            ]
+        ]
+                        
         y = scaled_df.loc[:, "Release"]
 
     else:
-        X = df.loc[:, ["Storage_pre", "Net Inflow", "Release_pre",
-                    "Storage_Inflow_interaction",
-                    "Release_roll7", "Inflow_roll7", "Storage_roll7",
-                    #"Storage_roll14", "Release_roll7", "Inflow_roll14"
-                   ]]
+        X = df.loc[:, [
+            "Storage_pre", "Net Inflow", "Release_pre",
+            "Storage_Inflow_interaction",
+            "Release_roll7", "Inflow_roll7", "Storage_roll7",
+            ]
+        ]
 
         y = df.loc[:,"Release"]
         # give means of 0 and std of 1 so I do not have to write conditionals throughout
@@ -83,7 +98,6 @@ def prep_data(df, groups, filter_groups=None, scaler=None, timelevel="all"):
 
     # add back the groups 
     X[groups] = for_groups
-
     return X, y, means, std
 
 @time_function
@@ -125,6 +139,7 @@ def tree_model(X, y, tree_type="decision", **tree_args):
 def get_leaves_and_groups(X, tree):
     # use the tree to get what leaves correpond with each entry 
     # in the X matrix
+    # II()
     leaves = tree.apply(X)
     # make those leaves into a pandas series for the ml model
     if leaves.ndim == 2:
@@ -136,37 +151,44 @@ def get_leaves_and_groups(X, tree):
 
 
 # @time_function
-def sub_tree_multi_level_model(X, y, tree=None, groups=None, my_id=None, drop_rel_roll: bool=False):
+def sub_tree_multi_level_model(X, y, tree_vars, tree=None, groups=None, my_id=None):
     if tree:
-        if drop_rel_roll and "Release_roll7" in X.columns:
-            leaves, groups = get_leaves_and_groups(X.drop("Release_roll7", axis=1), tree)
-        else:
-            leaves, groups = get_leaves_and_groups(X, tree)
+        X_tree = X.loc[:,tree_vars]
+        leaves, groups = get_leaves_and_groups(X_tree, tree)
     elif not groups:
         raise ValueError("Must provide either a tree or groups.")
     else:
         groups = groups[my_id]
-        
+    if "st_frac" in X.columns:
+        X = X.drop("st_frac", axis=1)
+    # setup constants
     mexog = pd.DataFrame(np.ones((y.size, 1)), index=y.index,  columns=["const"])
+    X["const"] = mexog["const"]
+    # setup covariance structure for ml model
     free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
                                          cov_re=np.eye(X.shape[1]))
+    
+    # we do not want these columns, but an error is thrown 
+    # if we drop and they do not exist
     try:
         X = X.drop(["NaturalOnly", "RunOfRiver"], axis=1)
     except KeyError as e:
         pass
+    # setup model and return fitted instance
     md = sm.MixedLM(y, mexog, groups=groups, exog_re=X)
-    mdf = md.fit()
-    return mdf
+    return md.fit()
 
 
 def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None, std=None, timelevel="all", actual_inflow=None):
+    # wrap prediction for sub tree model
     # means and std required if forecast is True
+    # first thing to do is get the proper groupings for the exogogenous (independent) variables
     if forecast:
         leaves, groups = get_leaves_and_groups(X.drop("Storage_pre_act", axis=1), tree)
     else:
         leaves, groups = get_leaves_and_groups(X, tree)
 
-
+    # create exog dataframe for predictoin
     mexog = pd.DataFrame(np.ones((y.size, 1)), index=y.index, columns=["const"])
     exog_re = deepcopy(X)
     exog_re["group"] = groups
@@ -176,9 +198,12 @@ def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None
         pass
 
     if forecast:
+        # Cannot forecast withour standardization variables because storage must be calculated
+        # using the mass balance in normal space
         if not isinstance(means, pd.DataFrame) or not isinstance(std, pd.DataFrame):
             raise ValueError("If forecast=True, means and std must be provided.")
- 
+        # step through time for forecast release, then calculate storage based on 
+        # mass balance, and back transform storage for use in the next time step
         preds = forecast_mixedLM(
                 ml_model.params,
                 ml_model.random_effects,
@@ -192,6 +217,9 @@ def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None
                 tree=True
             )
     else:
+        # in this case, we are directly providing all the independent variable values
+        # this is essentially a day ahead release prediction beacuse we assume all past data is known
+        # in the forcast function we only seed the model with initial values
         preds = predict_mixedLM(
                 ml_model.params,
                 ml_model.random_effects,
@@ -203,6 +231,7 @@ def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None
     return preds, groups
 
 def pipeline():
+    # get prepped data set for modeling
     df = read_tva_data()
     groups = ["NaturalOnly", "RunOfRiver"]
     # filter groups {group to filter by: attribute of entries that should be included}
@@ -212,30 +241,46 @@ def pipeline():
     # get the X matrix, and y vector along with means and std.
     # note: if no scaler is provided, means and std will be 0 and 1 respectively.
     timelevel="all"
+    st_max = df.groupby(df.index.get_level_values(1))["Storage"].max()
+
+    st_frac = (df["Storage"].unstack() / st_max).stack()
     
+    #* I want to try the tree using storage fraction as well. 
+    #* So previous to standardization, Take the current storage and divide it by the maximum storage.
+    #* then fit the tree with just that variable as an unstandardized value. 
+    #* this actually would probably work best if we could fit the tree splits and the parameters at the same time. 
+    # split data sets and standardize variables
     X,y,means,std = prep_data(df, groups, filter_groups, scaler="mine", timelevel=timelevel)
-    X["rel_diff"] = X["Release_pre"] - X["Release_roll7"]
+    # calculate difference between storage pre and rolling 
     X["sto_diff"] = X["Storage_pre"] - X["Storage_roll7"]
-    X["inf_diff"] = X["Net Inflow"] - X["Inflow_roll7"]
+    X["st_frac"] = st_frac
+    
+    # if we want a training and testing set that is split temporally
     # train_index, test_index = split_train_test_dt(y.index, date=datetime(2010, 1, 1), level=0, keep=8)
     reservoirs = X.index.get_level_values(1).unique()
 
 
-    # set exogenous variables
-    X_vars = ["Storage_pre", "Release_pre", "Net Inflow",
-            "Storage_Inflow_interaction",
-            "Inflow_roll7", "Release_roll7", "Storage_roll7",
-            #"Storage_7", "Release_7",
-            #   "NaturalOnly", "RunOfRiver"
-            ]
+    # old x_vars 
+    X_vars = [
+        "Storage_pre", "Release_pre", "Net Inflow",
+        "Storage_Inflow_interaction",
+        "Inflow_roll7", "Release_roll7", "Storage_roll7",
+    ] 
+    # new x_vars
+    X_vars = [
+        "sto_diff", "Storage_Inflow_interaction",
+        "Release_pre", "Release_roll7",
+        "Net Inflow", "Inflow_roll7"
+    ]
+    # for fitting tree
+    X_vars_tree = [
+        "sto_diff", "Storage_Inflow_interaction",
+         "Release_pre", "Net Inflow", "Inflow_roll7"
+        # "Net Inflow", "Inflow_roll7"
+    ]
 
-    X_vars = ["sto_diff", "Storage_Inflow_interaction",
-            "Release_pre", "Release_roll7",
-            "Net Inflow", "Inflow_roll7"]
-    X_vars_tree =["sto_diff", "Storage_Inflow_interaction",
-            "Release_pre",
-            "Net Inflow", "Inflow_roll7"] 
-
+    X_vars_tree = ["st_frac"]
+    
     # split into training and testing sets
     train_index = X.index
     X_train = X.loc[train_index,X_vars]
@@ -256,14 +301,26 @@ def pipeline():
     tree = tree_model(X_train_tree, y_train_rel, tree_type="decision", max_depth=max_depth,
                     random_state=37)
     leaves, groups = get_leaves_and_groups(X_train_tree, tree)
+    II()
+    sys.exit()
     # # fit the sub_tree ml model
     # X_train = X_train.drop(["NaturalOnly", "RunOfRiver"], axis=1)
 
-    ml_model = sub_tree_multi_level_model(X_train, y_train_rel, tree, drop_rel_roll=True)
+
+    month_arrays = {i:[0]*X_train.shape[0] for i in calendar.month_abbr[1:]}
+    for i, date in enumerate(X.index.get_level_values(0)):
+        abbr = calendar.month_abbr[date.month]            
+        month_arrays[abbr][i] = 1   
+
+    for key, value in month_arrays.items():
+        X_train[key] = value                      
     
+    X_train["st_frac"] = st_frac
+    ml_model = sub_tree_multi_level_model(X_train, y_train_rel, X_vars_tree, tree)
+    # II()
     coefs = pd.DataFrame(ml_model.random_effects)
     fitted = ml_model.fittedvalues
-
+    
     y_train_rel_act = (y_train_rel.unstack() *
                     std.loc[train_res,"Release"] + means.loc[train_res,"Release"]).stack()
     y_train_sto_act = (y_train_sto.unstack() *
@@ -439,7 +496,7 @@ def pipeline():
         prepend = ""
     else:
         prepend = f"{timelevel}_"
-    foldername = f"{prepend}upstream_basic_td{max_depth:d}_roll7_simple_tree"
+    foldername = f"{prepend}upstream_basic_td{max_depth:d}_roll7_simple_tree_month_coefs_st_frac"
     folderpath = pathlib.Path("..", "results", "treed_ml_model_dual_fit", foldername)
     folderpath = pathlib.Path("..", "results", "synthesis", "treed_model", foldername)
     # check if the directory exists and handle it

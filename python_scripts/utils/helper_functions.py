@@ -85,8 +85,7 @@ def find_max_date_range(file="date_res.csv"):
     end = date_res["streak_count"].idxmax()
     sid = date_res.loc[end, "streak_id"]
     start = date_res[(date_res["streak_id"] == sid) & (date_res["streak_start"])].index[0]
-    date_range = pd.date_range(start=start, end=end)
-    return date_range
+    return pd.date_range(start=start, end=end)
 
 
 def read_tva_data(just_load=False):
