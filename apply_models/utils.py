@@ -56,6 +56,7 @@ def set_proper_index(df: pd.DataFrame, location: str, use_gpu=False) -> pd.DataF
     else:
         mindex = pd.MultiIndex.from_frame
     if location == "upper_col":
+        df.loc[:, "datetime"] = pd.to_datetime(df.loc[:, "datetime"])
         index = mindex(df.loc[:,["site_name", "datetime"]])
         df.index = index
         df = df.drop(["site_name", "datetime"], axis=1)
@@ -107,6 +108,21 @@ def get_max_res_date_spans(in_df: pd.DataFrame, use_gpu: bool=False) -> pd.DataF
     spans["delta"] = spans["max"] - spans["min"]
     return spans.sort_values(by="delta")  
 
+def trim_data_to_span(in_df: pd.DataFrame, spans: pd.DataFrame, min_yrs: int=5) -> pd.DataFrame:
+    cut_off = min_yrs * 365.25
+    trimmed_spans = spans[spans["delta"].dt.days >= cut_off]
+    out_dfs = []
+    idx = pd.IndexSlice
+    for res, row in trimmed_spans.iterrows():
+        min_date = row["min"]
+        max_date = row["max"]
+        my_df = in_df.loc[idx[res,:],:]
+        my_df = my_df.loc[(my_df.index.get_level_values(1) >= min_date) &
+                          (my_df.index.get_level_values(1) <= max_date)]
+        out_dfs.append(my_df)
+    out_df = pd.concat(out_dfs, axis=0, ignore_index=True)
+    return out_df
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
@@ -123,6 +139,5 @@ if __name__ == "__main__":
     data = set_proper_index(data, location, use_gpu=USE_GPU)
     data = prep_data(data, location, use_gpu=USE_GPU)
     spans = get_max_res_date_spans(data, use_gpu=USE_GPU)
+    trimmed_data = trim_data_to_span(data, spans)
     II()
-
-    
