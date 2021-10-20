@@ -4,6 +4,7 @@ import datetime
 import pathlib
 import pandas as pd
 import numpy as np
+from sklearn.metrics import r2_score, mean_squared_error
 from typing import Callable, Optional, Union
 from IPython import embed as II
 try:
@@ -47,8 +48,14 @@ def load_data(location: str, use_gpu: bool=False) -> pd.DataFrame:
         files = glob.glob(
             "../missouri_data/hydromet_data/*.csv"
         )
-        data = read_multiple_files_to_df(files, reader=reader, reader_args=reader_args)
     return data
+
+def get_valid_entries(df: pd.DataFrame, location: str) -> pd.DataFrame:
+    if location == "upper_col":
+        good = ~df.isna()
+        return df.loc[(good["release volume"] | good["total release"]) & (good["storage"])]
+    else:
+        raise NotImplementedError(f"Cannot get valid entries for location {location}")
 
 def set_proper_index(df: pd.DataFrame, location: str, use_gpu=False) -> pd.DataFrame:
     if use_gpu:
@@ -120,8 +127,51 @@ def trim_data_to_span(in_df: pd.DataFrame, spans: pd.DataFrame, min_yrs: int=5) 
         my_df = my_df.loc[(my_df.index.get_level_values(1) >= min_date) &
                           (my_df.index.get_level_values(1) <= max_date)]
         out_dfs.append(my_df)
-    out_df = pd.concat(out_dfs, axis=0, ignore_index=True)
+    out_df = pd.concat(out_dfs, axis=0, ignore_index=False)
     return out_df
+
+def standardize_variables(in_df: pd.DataFrame) -> pd.DataFrame:
+    means = in_df.groupby(in_df.index.get_level_values(0)).mean()
+    stds = in_df.groupby(in_df.index.get_level_values(0)).mean()
+    idx = pd.IndexSlice
+    out_dfs = []
+    for res in means.index:
+        out_dfs.append(
+            (in_df.loc[idx[res,:],:] - means.loc[res]) / stds.loc[res]
+        )
+    return pd.concat(out_dfs, axis=0, ignore_index=False), means, stds
+
+def make_meta_data(df: pd.DataFrame, means: pd.DataFrame, loc: str) -> pd.DataFrame:
+    rts = means["storage"] / (means["release"] * 24 * 3600 / 43560)
+    
+    corrs = {}
+    idx = pd.IndexSlice
+    for res in means.index:
+        corrs[res] = df.loc[idx[res,:],"release"].corr(df.loc[idx[res,:], "inflow"])
+    corrs = pd.Series(corrs)
+
+    max_sto = df.groupby(df.index.get_level_values(0))["storage"].max()
+    return pd.DataFrame({"rts":rts, "rel_inf_corr":corrs, "max_sto":max_sto})
+
+def find_res_group(meta_row: pd.Series) -> str:
+    if meta_row.rts > 31:
+        return "high_rt"
+    else:
+        if meta_row.rel_inf_corr >= 0.95 and meta_row.max_sto < 10_000:
+            return "ror"
+        else:
+            return "low_rt"
+
+def apply_high_rt_model(std_df: pd.DataFrame):
+    from high_rt_model import vec_find_leaf, get_params, run_model
+    leaves = vec_find_leaf(std_df["release_pre"])
+    params = np.array([get_params(l) for l in leaves])
+    X = std_df.copy()
+    X["sto_diff"] = X["storage_pre"] - X["storage_roll7"]
+    X = X[["sto_diff", "storage_x_inflow", "release_pre", "release_roll7", "inflow", "inflow_roll7"]]
+    X = X.values
+    Y = (X*params).sum(axis=1)
+    return pd.Series(Y, index=std_df.index)
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -136,8 +186,45 @@ if __name__ == "__main__":
     location = args.location
     USE_GPU = False
     data = load_data(location, use_gpu=USE_GPU)
+    data = get_valid_entries(data, location)
     data = set_proper_index(data, location, use_gpu=USE_GPU)
     data = prep_data(data, location, use_gpu=USE_GPU)
     spans = get_max_res_date_spans(data, use_gpu=USE_GPU)
     trimmed_data = trim_data_to_span(data, spans)
-    II()
+    trimmed_data = trimmed_data.loc[:, ["release","release_pre", "storage", "storage_pre", "inflow",
+                                        "release_roll7", "inflow_roll7", "storage_roll7"]]
+    trimmed_data = trimmed_data[~trimmed_data.isna().any(axis=1)]
+    trimmed_data[["storage", "storage_roll7", "storage_pre"]] *= (1/1000) # 1000 acre-ft
+    trimmed_data[["release", "release_pre", "release_roll7","inflow","inflow_roll7"]] *= (43560 / 24 / 3600 / 1000) # cfs to 1000 acre ft per day
+    trimmed_data["storage_x_inflow"] = trimmed_data["storage_pre"] * trimmed_data["inflow"]
+    std_data, means, std = standardize_variables(trimmed_data)
+    meta = make_meta_data(trimmed_data, means, location)
+    meta["group"] = meta.apply(find_res_group, axis=1)
+    
+    high_rt_res = meta[meta["group"] == "high_rt"].index
+    high_rt_std_data = std_data[std_data.index.get_level_values(0).isin(high_rt_res)]
+    high_rt_data = trimmed_data[trimmed_data.index.get_level_values(0).isin(high_rt_res)]
+    modeled_release = apply_high_rt_model(high_rt_std_data)
+    modeled_release_act = (modeled_release.unstack().T * std.loc[high_rt_res, "release"] +
+                             means.loc[high_rt_res, "release"]).T.stack()
+    eval_data = pd.DataFrame(
+        {
+            "actual":trimmed_data["release"],
+            "modeled":modeled_release_act
+        }
+    )
+    eval_data = eval_data.loc[eval_data.index.get_level_values(0) != "CRYSTAL",:]
+    metrics = pd.DataFrame(index=eval_data.index.get_level_values(0).unique(), columns=["r2_score", "rmse"])
+    idx = pd.IndexSlice
+    for res in metrics.index:
+        score = r2_score(
+            eval_data.loc[idx[res,:],"actual"],
+            eval_data.loc[idx[res,:],"modeled"]
+        )
+        rmse = np.sqrt(mean_squared_error(
+            eval_data.loc[idx[res,:],"actual"],
+            eval_data.loc[idx[res,:],"modeled"]
+        ))
+        metrics.loc[res,:] = [score, rmse]
+
+    II() 
