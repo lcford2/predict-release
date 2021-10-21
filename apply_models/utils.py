@@ -5,7 +5,7 @@ import pathlib
 import pandas as pd
 import numpy as np
 from sklearn.metrics import r2_score, mean_squared_error
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, Iterable
 from IPython import embed as II
 try:
     import cudf as cd
@@ -132,7 +132,7 @@ def trim_data_to_span(in_df: pd.DataFrame, spans: pd.DataFrame, min_yrs: int=5) 
 
 def standardize_variables(in_df: pd.DataFrame) -> pd.DataFrame:
     means = in_df.groupby(in_df.index.get_level_values(0)).mean()
-    stds = in_df.groupby(in_df.index.get_level_values(0)).mean()
+    stds = in_df.groupby(in_df.index.get_level_values(0)).std()
     idx = pd.IndexSlice
     out_dfs = []
     for res in means.index:
@@ -162,29 +162,9 @@ def find_res_group(meta_row: pd.Series) -> str:
         else:
             return "low_rt"
 
-def apply_high_rt_model(std_df: pd.DataFrame):
-    from high_rt_model import vec_find_leaf, get_params, run_model
-    leaves = vec_find_leaf(std_df["release_pre"])
-    params = np.array([get_params(l) for l in leaves])
-    X = std_df.copy()
-    X["sto_diff"] = X["storage_pre"] - X["storage_roll7"]
-    X = X[["sto_diff", "storage_x_inflow", "release_pre", "release_roll7", "inflow", "inflow_roll7"]]
-    X = X.values
-    Y = (X*params).sum(axis=1)
-    return pd.Series(Y, index=std_df.index)
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("location", action="store", choices=["upper_col", "lower_col", "missouri", "pnw"],
-                        help="Indicate which basin to load data for.")
-    
-    return parser.parse_args()
-
-if __name__ == "__main__":
-    args = parse_args()
+def get_model_ready_data(args):
     location = args.location
-    USE_GPU = False
+    USE_GPU = args.use_gpu
     data = load_data(location, use_gpu=USE_GPU)
     data = get_valid_entries(data, location)
     data = set_proper_index(data, location, use_gpu=USE_GPU)
@@ -200,21 +180,21 @@ if __name__ == "__main__":
     std_data, means, std = standardize_variables(trimmed_data)
     meta = make_meta_data(trimmed_data, means, location)
     meta["group"] = meta.apply(find_res_group, axis=1)
-    
-    high_rt_res = meta[meta["group"] == "high_rt"].index
-    high_rt_std_data = std_data[std_data.index.get_level_values(0).isin(high_rt_res)]
-    high_rt_data = trimmed_data[trimmed_data.index.get_level_values(0).isin(high_rt_res)]
-    modeled_release = apply_high_rt_model(high_rt_std_data)
-    modeled_release_act = (modeled_release.unstack().T * std.loc[high_rt_res, "release"] +
-                             means.loc[high_rt_res, "release"]).T.stack()
-    eval_data = pd.DataFrame(
-        {
-            "actual":trimmed_data["release"],
-            "modeled":modeled_release_act
-        }
-    )
-    eval_data = eval_data.loc[eval_data.index.get_level_values(0) != "CRYSTAL",:]
-    metrics = pd.DataFrame(index=eval_data.index.get_level_values(0).unique(), columns=["r2_score", "rmse"])
+
+    return trimmed_data, std_data, means, std, meta
+
+def get_group_res(meta: pd.DataFrame) -> tuple:
+    high_rt_res = list(meta[meta["group"] == "high_rt"].index)
+    low_rt_res = list(meta[meta["group"] == "low_rt"].index)
+    ror_res = list(meta[meta["group"] == "ror"].index)
+    return (high_rt_res, low_rt_res, ror_res)
+
+def filter_group_data(df: pd.DataFrame, resers: Iterable) -> pd.DataFrame:
+    return df[df.index.get_level_values(0).isin(resers)]
+
+def calc_metrics(eval_data: pd.DataFrame) -> pd.DataFrame:
+    metrics = pd.DataFrame(index=eval_data.index.get_level_values(0).unique(), 
+                           columns=["r2_score", "rmse"])
     idx = pd.IndexSlice
     for res in metrics.index:
         score = r2_score(
@@ -226,5 +206,8 @@ if __name__ == "__main__":
             eval_data.loc[idx[res,:],"modeled"]
         ))
         metrics.loc[res,:] = [score, rmse]
+    return metrics
 
-    II() 
+if __name__ == "__main__":
+    print("This file is not designed to be ran on it is own.")
+    print("It simply provides utilities for other scripts.")
