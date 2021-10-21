@@ -15,6 +15,26 @@ except ImportError as e:
     USE_GPU = False
 
 
+DATA_LOCS = {
+    "upper_col":{
+        "ready":"../upper_colorado_data/model_ready_data/upper_col_data.csv",
+        "raw":"../upper_colorado_data/hydrodata_data/req_upper_col_data.csv",
+    },
+    "pnw":{
+        "ready":"../pnw_data/model_ready_data/pnw_data.csv",
+        "raw":"../pnw_data/dam_data/*_data/*.csv",
+    },
+    "lower_col":{
+        "ready":"../lower_col_data/model_ready_data/lower_col_data.csv",
+        "raw":"../lower_col_data/lower_col_dam_data.csv",
+    },
+    "missour":{
+        "ready":"../missouri_data/model_ready_data/missouri_data.csv",
+        "raw":"../missouri_data/hydromet_data/*.csv",
+    }
+}
+
+
 def read_multiple_files_to_df(files: list, reader: Callable = pd.read_csv, 
                               reader_args: Optional[dict] = None) -> pd.DataFrame:
     reader_args = {} if not reader_args else reader_args
@@ -35,20 +55,28 @@ def load_data(location: str, use_gpu: bool=False) -> pd.DataFrame:
         reader = pd.read_csv
     reader_args = {"index_col":0}
 
-    if location == "upper_col":
-        data = reader("../upper_colorado_data/hydrodata_data/req_upper_col_data.csv", **reader_args)
-    elif location == "pnw":
-        files = glob.glob(
-            "../pnw_data/dam_data/*_data/*.csv"
-        )
-        data = read_multiple_files_to_df(files, reader=reader, reader_args=reader_args)
-    elif location == "lower_col":
-        data = reader("../lower_col_data/lower_col_dam_data.csv", **reader_args)
-    elif location == "missouri":
-        files = glob.glob(
-            "../missouri_data/hydromet_data/*.csv"
-        )
-    return data
+    if location in ["upper_col", "lower_col"]:
+        ready_path = pathlib.Path(DATA_LOCS[location]["ready"])
+        if ready_path.exists():
+            data = reader(ready_path.as_posix(), **reader_args)
+            needs_format = False
+        else:
+            data = reader(DATA_LOCS[location]["raw"], **reader_args)
+            needs_format = True
+    elif location in ["pnw", "missouri"]:
+        ready_path = pathlib.Path(DATA_LOCS[location]["ready"])
+        if ready_path.exists():
+            data = reader(ready_path.as_posix(), **reader_args)
+            needs_format = False
+        else:
+            files = glob.glob(
+                DATA_LOCS[location]["raw"]
+            )
+            data = read_multiple_files_to_df(files, reader=reader, reader_args=reader_args)
+            needs_format = True
+    else:
+        raise NotImplementedError(f"No data available for location {location}")
+    return data, needs_format
 
 def get_valid_entries(df: pd.DataFrame, location: str) -> pd.DataFrame:
     if location == "upper_col":
@@ -165,20 +193,25 @@ def find_res_group(meta_row: pd.Series) -> str:
 def get_model_ready_data(args):
     location = args.location
     USE_GPU = args.use_gpu
-    data = load_data(location, use_gpu=USE_GPU)
-    data = get_valid_entries(data, location)
-    data = set_proper_index(data, location, use_gpu=USE_GPU)
-    data = prep_data(data, location, use_gpu=USE_GPU)
-    spans = get_max_res_date_spans(data, use_gpu=USE_GPU)
-    trimmed_data = trim_data_to_span(data, spans)
-    trimmed_data = trimmed_data.loc[:, ["release","release_pre", "storage", "storage_pre", "inflow",
-                                        "release_roll7", "inflow_roll7", "storage_roll7"]]
-    trimmed_data = trimmed_data[~trimmed_data.isna().any(axis=1)]
-    trimmed_data[["storage", "storage_roll7", "storage_pre"]] *= (1/1000) # 1000 acre-ft
-    trimmed_data[["release", "release_pre", "release_roll7","inflow","inflow_roll7"]] *= (43560 / 24 / 3600 / 1000) # cfs to 1000 acre ft per day
-    trimmed_data["storage_x_inflow"] = trimmed_data["storage_pre"] * trimmed_data["inflow"]
-    std_data, means, std = standardize_variables(trimmed_data)
-    meta = make_meta_data(trimmed_data, means, location)
+    data, needs_format = load_data(location, use_gpu=USE_GPU)
+    if needs_format:
+        data = get_valid_entries(data, location)
+        data = set_proper_index(data, location, use_gpu=USE_GPU)
+        data = prep_data(data, location, use_gpu=USE_GPU)
+        spans = get_max_res_date_spans(data, use_gpu=USE_GPU)
+        trimmed_data = trim_data_to_span(data, spans)
+        trimmed_data = trimmed_data.loc[:, ["release","release_pre", "storage", "storage_pre", "inflow",
+                                            "release_roll7", "inflow_roll7", "storage_roll7"]]
+        trimmed_data = trimmed_data[~trimmed_data.isna().any(axis=1)]
+        trimmed_data[["storage", "storage_roll7", "storage_pre"]] *= (1/1000) # 1000 acre-ft
+        trimmed_data[["release", "release_pre", "release_roll7","inflow","inflow_roll7"]] *= (43560 / 24 / 3600 / 1000) # cfs to 1000 acre ft per day
+        trimmed_data["storage_x_inflow"] = trimmed_data["storage_pre"] * trimmed_data["inflow"]
+        trimmed_data.to_csv(DATA_LOCS[location]["ready"])
+        std_data, means, std = standardize_variables(trimmed_data)
+        meta = make_meta_data(trimmed_data, means, location)
+    else:
+        std_data, means, std = standardize_variables(data) 
+        meta = make_meta_data(data, means, location)
     meta["group"] = meta.apply(find_res_group, axis=1)
 
     return trimmed_data, std_data, means, std, meta
