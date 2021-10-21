@@ -53,26 +53,27 @@ def load_data(location: str, use_gpu: bool=False) -> pd.DataFrame:
         reader = cd.read_csv
     else:
         reader = pd.read_csv
-    reader_args = {"index_col":0}
+    naw_reader_args = {"index_col":0}
+    ready_reader_args = {"index_col":[0,1]}
 
     if location in ["upper_col", "lower_col"]:
         ready_path = pathlib.Path(DATA_LOCS[location]["ready"])
         if ready_path.exists():
-            data = reader(ready_path.as_posix(), **reader_args)
+            data = reader(ready_path.as_posix(), **ready_reader_args)
             needs_format = False
         else:
-            data = reader(DATA_LOCS[location]["raw"], **reader_args)
+            data = reader(DATA_LOCS[location]["raw"], **raw_reader_args)
             needs_format = True
     elif location in ["pnw", "missouri"]:
         ready_path = pathlib.Path(DATA_LOCS[location]["ready"])
         if ready_path.exists():
-            data = reader(ready_path.as_posix(), **reader_args)
+            data = reader(ready_path.as_posix(), **ready_reader_args)
             needs_format = False
         else:
             files = glob.glob(
                 DATA_LOCS[location]["raw"]
             )
-            data = read_multiple_files_to_df(files, reader=reader, reader_args=reader_args)
+            data = read_multiple_files_to_df(files, reader=reader, reader_args=raw_reader_args)
             needs_format = True
     else:
         raise NotImplementedError(f"No data available for location {location}")
@@ -209,12 +210,13 @@ def get_model_ready_data(args):
         trimmed_data.to_csv(DATA_LOCS[location]["ready"])
         std_data, means, std = standardize_variables(trimmed_data)
         meta = make_meta_data(trimmed_data, means, location)
+        meta["group"] = meta.apply(find_res_group, axis=1)
+        return trimmed_data, std_data, means, std, meta
     else:
         std_data, means, std = standardize_variables(data) 
         meta = make_meta_data(data, means, location)
-    meta["group"] = meta.apply(find_res_group, axis=1)
-
-    return trimmed_data, std_data, means, std, meta
+        meta["group"] = meta.apply(find_res_group, axis=1)
+        return data, std_data, means, std, meta
 
 def get_group_res(meta: pd.DataFrame) -> tuple:
     high_rt_res = list(meta[meta["group"] == "high_rt"].index)
