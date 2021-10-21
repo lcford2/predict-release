@@ -59,11 +59,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 def main(args):
-    # params = load_params()
+    params = load_params()
     act_data, std_data, means, stds, meta = get_model_ready_data(args)
-    import sys
-    sys.exit()
-    res_groups = get_group_res(meta) # h, l, ror
+    res_groups = get_group_res(meta) # h, l, ror 
 
     group_output = {}
     for label, resers in zip(["high_rt", "low_rt", "ror"], res_groups):
