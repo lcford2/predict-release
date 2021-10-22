@@ -1,6 +1,7 @@
 import pathlib
 import argparse
 import json
+import pickle
 import pandas as pd
 import numpy as np
 from IPython import embed as II
@@ -81,10 +82,13 @@ def main(args):
             }
         )
         metrics = calc_metrics(eval_data)
+        print(f"{label}: {resers}")
+        print(metrics.to_markdown(floatfmt="0.3f"))
         group_output[label] = {
             "eval_data":eval_data, "metrics":metrics
         }
-    II() 
+    with open(f"basin_output/{args.location}.pickle", "wb") as f:
+        pickle.dump(group_output, f)
 
 if __name__ == "__main__":
     main(parse_args())
