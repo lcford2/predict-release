@@ -258,7 +258,6 @@ def pipeline():
     leaves, groups = get_leaves_and_groups(X_train_tree, tree)
     # # fit the sub_tree ml model
     # X_train = X_train.drop(["NaturalOnly", "RunOfRiver"], axis=1)
-
     ml_model = sub_tree_multi_level_model(X_train, y_train_rel, tree, drop_rel_roll=True)
     
     coefs = pd.DataFrame(ml_model.random_effects)

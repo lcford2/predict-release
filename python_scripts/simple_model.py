@@ -253,8 +253,8 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
 
     exog_terms = [
-        "const", "Net Inflow", "Storage_pre", #"Release_pre",
-        "Storage_roll7",  "Inflow_roll7", # "Release_roll7"
+        "const", "Net Inflow", "Storage_pre", "Release_pre",
+        "Storage_roll7",  "Inflow_roll7", "Release_roll7"
     ]
 
         # exog_terms = [
@@ -262,7 +262,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         #     "Release_roll7", "Inflow_roll7"
         # ]
 
-    exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:]]
+    exog_re = exog.loc[:,exog_terms + interaction_terms]# + calendar.month_abbr[1:]]
 
     mexog = exog.loc[:,["const"]]
 
@@ -549,7 +549,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         )
     )
 
-    with open(f"../results/synthesis/simple_model/all_res_time_fit/{filename}_SIx_pre_std_swapped_res_roll7.pickle", "wb") as f:
+    with open(f"../results/synthesis/simple_model/all_res_time_fit/{filename}_SIx_pre_std_swapped_res_roll7_no_ints.pickle", "wb") as f:
         pickle.dump(output, f, protocol=4)
 
 def mass_balance(sto_pre, rel, inf):

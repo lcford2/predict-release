@@ -44,8 +44,8 @@ def apply_low_rt_model(std_df: pd.DataFrame, params: dict, group: str) -> pd.Ser
       
     X = std_df.copy()
     X["const"] = 1
-    X = X[["const", "inflow", "storage_pre", "storage_roll7", "inflow_roll7", 
-            "storage_x_inflow"]]
+    X = X[["const", "inflow", "storage_pre", "release_pre", "storage_roll7", "inflow_roll7", 
+            "release_roll7", "storage_x_inflow"]]
     X = X.values
     Y = X @ coefs
     return pd.Series(Y, index=std_df.index)
@@ -87,10 +87,10 @@ def main(args):
         group_output[label] = {
             "eval_data":eval_data, "metrics":metrics
         }
-    with open(f"basin_output/{args.location}.pickle", "wb") as f:
+    with open(f"basin_output_no_ints/{args.location}.pickle", "wb") as f:
         pickle.dump(group_output, f)
     
-    with open(f"basin_output/{args.location}_meta.pickle", "wb") as f:
+    with open(f"basin_output_no_ints/{args.location}_meta.pickle", "wb") as f:
         pickle.dump(meta, f)
 
 
