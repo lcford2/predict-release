@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import r2_score, mean_squared_error
 from typing import Callable, Optional, Union, Iterable
+from datetime import timedelta
 from IPython import embed as II
 try:
     import cudf as cd
@@ -53,7 +54,7 @@ def load_data(location: str, use_gpu: bool=False) -> pd.DataFrame:
         reader = cd.read_csv
     else:
         reader = pd.read_csv
-    naw_reader_args = {"index_col":0}
+    raw_reader_args = {"index_col":0}
     ready_reader_args = {"index_col":[0,1]}
 
     if location in ["upper_col", "lower_col"]:
@@ -82,17 +83,42 @@ def load_data(location: str, use_gpu: bool=False) -> pd.DataFrame:
 def get_valid_entries(df: pd.DataFrame, location: str) -> pd.DataFrame:
     if location == "upper_col":
         good = ~df.isna()
+        # get entries that have the required data in some form
         return df.loc[(good["release volume"] | good["total release"]) & (good["storage"])]
+    elif location == "pnw":
+        # only possible ways data is available
+        df = df.loc[:, ["Reservoir","DateTime","Inflow_cfs", "Release_cfs", "Storage_acft"]]
+        # so we can just filter out rows that do not have all of this information
+        return df.loc[(~df.isna()).all(axis=1)]
     else:
         raise NotImplementedError(f"Cannot get valid entries for location {location}")
+
+def rename_columns(df: pd.DataFrame, location: str) -> pd.DataFrame:
+    if location == "upper_col":
+        return df
+    elif location == "pnw":
+        columns = {"Reservoir":"site_name", "DateTime":"datetime", "Inflow_cfs":"inflow", 
+                   "Release_cfs":"release", "Storage_acft":"storage"}
+        return df.rename(columns=columns)
+    else:
+        raise NotImplementedError(f"Cannot rename columns for location {location}")
 
 def set_proper_index(df: pd.DataFrame, location: str, use_gpu=False) -> pd.DataFrame:
     if use_gpu:
         mindex = cd.MultiIndex.from_frame
     else:
         mindex = pd.MultiIndex.from_frame
-    if location == "upper_col":
-        df.loc[:, "datetime"] = pd.to_datetime(df.loc[:, "datetime"])
+    if location in ["upper_col", "pnw"]:
+        dt_values = pd.to_datetime(df.loc[:, "datetime"])
+        if location == "pnw":
+            # some are marked as being recorded at the end of the previous day (i.e. hour = 23)
+            # (e.g. records for 2000-10-23 00:00:00 and 2000-10-23 23:00:00 but none for 2000-10-24)
+            # so I need to move the day to the next one for the span checker to work properly
+            # dt_values = dt_values.apply(lambda x: x+timedelta(hours=1) if x.hour == 23 else x)
+            # the above does not check if there are entries the next day that are the same
+            # so while this is slower, it will not replace data that exists
+            dt_values = move_dt_one_hour(dt_values)
+        df.loc[:,"datetime"] = dt_values
         index = mindex(df.loc[:,["site_name", "datetime"]])
         df.index = index
         df = df.drop(["site_name", "datetime"], axis=1)
@@ -100,17 +126,27 @@ def set_proper_index(df: pd.DataFrame, location: str, use_gpu=False) -> pd.DataF
         raise NotImplementedError(f"Cannot set index for location {location}")
     return df
 
+def move_dt_one_hour(dt_values):
+    ret_vals = dt_values.values
+    size = dt_values.size
+    for i, x in enumerate(dt_values):
+        if x.hour == 23:
+            new_x = x+timedelta(hours=1)
+            if i < size - 1:
+                if new_x != ret_vals[i+1]:
+                    ret_vals[i] = new_x
+    return ret_vals
+
 def prep_data(df: pd.DataFrame, location: str, use_gpu=False) -> pd.DataFrame:
     nan = cp.nan if use_gpu else np.nan
-    if location == "upper_col":
+    if location in ["upper_col", "pnw"]:
         shifted = df.groupby(df.index.get_level_values(0))[
             ["storage", "release"]].shift(1)
         df["release_pre"] = shifted["release"]
         df["storage_pre"] = shifted["storage"]
-        df = df.fillna(nan)
         tmp = df.groupby(df.index.get_level_values(0))[
             ["storage_pre", "release_pre", "inflow"]].rolling(7).mean()
-        tmp.index = df.index
+        tmp.index = tmp.index.droplevel(0)
         df[["storage_roll7", "release_roll7", "inflow_roll7"]] = tmp
     else:
         raise NotImplementedError(f"Cannot prep data for location {location}")
@@ -172,7 +208,6 @@ def standardize_variables(in_df: pd.DataFrame) -> pd.DataFrame:
 
 def make_meta_data(df: pd.DataFrame, means: pd.DataFrame, loc: str) -> pd.DataFrame:
     rts = means["storage"] / (means["release"] * 24 * 3600 / 43560)
-    
     corrs = {}
     idx = pd.IndexSlice
     for res in means.index:
@@ -186,7 +221,7 @@ def find_res_group(meta_row: pd.Series) -> str:
     if meta_row.rts > 31:
         return "high_rt"
     else:
-        if meta_row.rel_inf_corr >= 0.95 and meta_row.max_sto < 10_000:
+        if meta_row.rel_inf_corr >= 0.95 and meta_row.max_sto < 10:
             return "ror"
         else:
             return "low_rt"
@@ -197,10 +232,12 @@ def get_model_ready_data(args):
     data, needs_format = load_data(location, use_gpu=USE_GPU)
     if needs_format:
         data = get_valid_entries(data, location)
+        data = rename_columns(data, location)
         data = set_proper_index(data, location, use_gpu=USE_GPU)
-        data = prep_data(data, location, use_gpu=USE_GPU)
+        # data = prep_data(data, location, use_gpu=USE_GPU)
         spans = get_max_res_date_spans(data, use_gpu=USE_GPU)
         trimmed_data = trim_data_to_span(data, spans)
+        trimmed_data = prep_data(trimmed_data, location, use_gpu=USE_GPU)
         trimmed_data = trimmed_data.loc[:, ["release","release_pre", "storage", "storage_pre", "inflow",
                                             "release_roll7", "inflow_roll7", "storage_roll7"]]
         trimmed_data = trimmed_data[~trimmed_data.isna().any(axis=1)]
