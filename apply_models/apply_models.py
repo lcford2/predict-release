@@ -89,6 +89,10 @@ def main(args):
         }
     with open(f"basin_output/{args.location}.pickle", "wb") as f:
         pickle.dump(group_output, f)
+    
+    with open(f"basin_output/{args.location}_meta.pickle", "wb") as f:
+        pickle.dump(meta, f)
+
 
 if __name__ == "__main__":
     main(parse_args())
