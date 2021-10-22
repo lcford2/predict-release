@@ -93,6 +93,22 @@ def get_valid_entries(df: pd.DataFrame, location: str) -> pd.DataFrame:
     elif location == "missouri":
         df = df.loc[:, ["Reservoir", "DATE", "IN", "QD", "AF"]]
         return df.loc[(~df.isna()).any(axis=1)]
+    elif location == "lower_col":
+        # hoover -> davis -> parker -> 
+        keepers = ["Hoover_rel_cfs", "Davis_rel_cfs", "Parker_rel_cfs", 
+                   "Hoover_stor_KAF", "Davis_stor_KAF", "Parker_stor_KAF",
+                   "Hoover_inflow_cfs" ]
+        df = df.loc[:,keepers]
+        df["Davis_inflow_cfs"] = df["Hoover_rel_cfs"]
+        df["Parker_inflow_cfs"] = df["Davis_rel_cfs"]
+        df = df.melt(ignore_index=False)
+        df = df.reset_index()
+        df[["Reservoir", "ResVar", "Unit"]] = df["variable"].str.split("_", expand=True)
+        df.loc[df["Unit"] == "KAF", "value"] *= 1000
+        df = df.drop(["variable", "Unit"], axis=1)
+        df = df.pivot(index=["Reservoir", "Day"], columns=["ResVar"])
+        df.columns = df.columns.droplevel(0)
+        return df.reset_index()
     else:
         raise NotImplementedError(f"Cannot get valid entries for location {location}")
 
@@ -107,6 +123,9 @@ def rename_columns(df: pd.DataFrame, location: str) -> pd.DataFrame:
         columns = {"Reservoir":"site_name", "DATE":"datetime", "IN":"inflow",
                     "QD":"release","AF":"storage"}
         return df.rename(columns=columns)
+    elif location == "lower_col":
+        columns = {"Reservoir":"site_name", "Day":"datetime", "rel":"release", "stor":"storage"}
+        return df.rename(columns=columns)
     else:
         raise NotImplementedError(f"Cannot rename columns for location {location}")
 
@@ -115,7 +134,7 @@ def set_proper_index(df: pd.DataFrame, location: str, use_gpu=False) -> pd.DataF
         mindex = cd.MultiIndex.from_frame
     else:
         mindex = pd.MultiIndex.from_frame
-    if location in ["upper_col", "pnw", "missouri"]:
+    if location in ["upper_col", "pnw", "missouri", "lower_col"]:
         dt_values = pd.to_datetime(df.loc[:, "datetime"])
         if location == "pnw":
             # some are marked as being recorded at the end of the previous day (i.e. hour = 23)
@@ -146,7 +165,7 @@ def move_dt_one_hour(dt_values):
 
 def prep_data(df: pd.DataFrame, location: str, use_gpu=False) -> pd.DataFrame:
     nan = cp.nan if use_gpu else np.nan
-    if location in ["upper_col", "pnw", "missouri"]:
+    if location in ["upper_col", "pnw", "missouri", "lower_col"]:
         shifted = df.groupby(df.index.get_level_values(0))[
             ["storage", "release"]].shift(1)
         df["release_pre"] = shifted["release"]
@@ -286,6 +305,13 @@ def calc_metrics(eval_data: pd.DataFrame) -> pd.DataFrame:
         ))
         metrics.loc[res,:] = [score, rmse]
     return metrics
+
+def combine_res_meta():
+    metas = []
+    for location in DATA_LOCS.keys():
+        metas.append(pd.read_pickle(f"./basin_output/{location}_meta.pickle"))
+    meta = pd.concat(metas, axis=0, ignore_index=False)
+    return meta
 
 if __name__ == "__main__":
     print("This file is not designed to be ran on it is own.")
