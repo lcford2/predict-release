@@ -29,7 +29,7 @@ DATA_LOCS = {
         "ready":"../lower_col_data/model_ready_data/lower_col_data.csv",
         "raw":"../lower_col_data/lower_col_dam_data.csv",
     },
-    "missour":{
+    "missouri":{
         "ready":"../missouri_data/model_ready_data/missouri_data.csv",
         "raw":"../missouri_data/hydromet_data/*.csv",
     }
@@ -74,7 +74,7 @@ def load_data(location: str, use_gpu: bool=False) -> pd.DataFrame:
             files = glob.glob(
                 DATA_LOCS[location]["raw"]
             )
-            data = read_multiple_files_to_df(files, reader=reader, reader_args=raw_reader_args)
+            data = read_multiple_files_to_df(files, reader=reader)
             needs_format = True
     else:
         raise NotImplementedError(f"No data available for location {location}")
@@ -89,7 +89,10 @@ def get_valid_entries(df: pd.DataFrame, location: str) -> pd.DataFrame:
         # only possible ways data is available
         df = df.loc[:, ["Reservoir","DateTime","Inflow_cfs", "Release_cfs", "Storage_acft"]]
         # so we can just filter out rows that do not have all of this information
-        return df.loc[(~df.isna()).all(axis=1)]
+        return df.loc[(~df.isna()).any(axis=1)]
+    elif location == "missouri":
+        df = df.loc[:, ["Reservoir", "DATE", "IN", "QD", "AF"]]
+        return df.loc[(~df.isna()).any(axis=1)]
     else:
         raise NotImplementedError(f"Cannot get valid entries for location {location}")
 
@@ -100,6 +103,10 @@ def rename_columns(df: pd.DataFrame, location: str) -> pd.DataFrame:
         columns = {"Reservoir":"site_name", "DateTime":"datetime", "Inflow_cfs":"inflow", 
                    "Release_cfs":"release", "Storage_acft":"storage"}
         return df.rename(columns=columns)
+    elif location == "missouri":
+        columns = {"Reservoir":"site_name", "DATE":"datetime", "IN":"inflow",
+                    "QD":"release","AF":"storage"}
+        return df.rename(columns=columns)
     else:
         raise NotImplementedError(f"Cannot rename columns for location {location}")
 
@@ -108,7 +115,7 @@ def set_proper_index(df: pd.DataFrame, location: str, use_gpu=False) -> pd.DataF
         mindex = cd.MultiIndex.from_frame
     else:
         mindex = pd.MultiIndex.from_frame
-    if location in ["upper_col", "pnw"]:
+    if location in ["upper_col", "pnw", "missouri"]:
         dt_values = pd.to_datetime(df.loc[:, "datetime"])
         if location == "pnw":
             # some are marked as being recorded at the end of the previous day (i.e. hour = 23)
@@ -139,7 +146,7 @@ def move_dt_one_hour(dt_values):
 
 def prep_data(df: pd.DataFrame, location: str, use_gpu=False) -> pd.DataFrame:
     nan = cp.nan if use_gpu else np.nan
-    if location in ["upper_col", "pnw"]:
+    if location in ["upper_col", "pnw", "missouri"]:
         shifted = df.groupby(df.index.get_level_values(0))[
             ["storage", "release"]].shift(1)
         df["release_pre"] = shifted["release"]
