@@ -329,7 +329,7 @@ def calc_metrics(eval_data: pd.DataFrame,use_gpu:bool=False) -> pd.DataFrame:
     )
 
     metrics["rmse"] = eval_data.groupby(grouper).apply(
-        lambda x: mean_squared_error(x["actual"], x["modeled"], squared=True).item()
+        lambda x: mean_squared_error(x["actual"], x["modeled"], squared=False).item()
     )
     # idx = pd.IndexSlice
     # for res in metrics.index:
