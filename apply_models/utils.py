@@ -4,16 +4,18 @@ import datetime
 import pathlib
 import pandas as pd
 import numpy as np
-from sklearn.metrics import r2_score, mean_squared_error
+from pandas.core import groupby
 from typing import Callable, Optional, Union, Iterable
 from datetime import timedelta
 from IPython import embed as II
 try:
     import cudf as cd
     import cupy as cp
+    from cuml.metrics.regression import r2_score, mean_squared_error
     USE_GPU = True
 except ImportError as e:
     USE_GPU = False
+    from sklearn.metrics import r2_score, mean_squared_error
 
 
 DATA_LOCS = {
@@ -50,17 +52,22 @@ def read_multiple_files_to_df(files: list, reader: Callable = pd.read_csv,
     return df
 
 def load_data(location: str, use_gpu: bool=False) -> pd.DataFrame:
+    raw_reader_args = {"index_col":0}
+    cpu_ready_args = {"index_col":[0,1]}
+    gpu_ready_args = {}
     if use_gpu:
         reader = cd.read_csv
+        ready_reader_args = gpu_ready_args
     else:
         reader = pd.read_csv
-    raw_reader_args = {"index_col":0}
-    ready_reader_args = {"index_col":[0,1]}
+        ready_reader_args = cpu_ready_args
 
     if location in ["upper_col", "lower_col"]:
         ready_path = pathlib.Path(DATA_LOCS[location]["ready"])
         if ready_path.exists():
             data = reader(ready_path.as_posix(), **ready_reader_args)
+            if use_gpu:
+                data = data.set_index(["site_name", "datetime"])
             needs_format = False
         else:
             data = reader(DATA_LOCS[location]["raw"], **raw_reader_args)
@@ -69,6 +76,8 @@ def load_data(location: str, use_gpu: bool=False) -> pd.DataFrame:
         ready_path = pathlib.Path(DATA_LOCS[location]["ready"])
         if ready_path.exists():
             data = reader(ready_path.as_posix(), **ready_reader_args)
+            if use_gpu:
+                data = data.set_index(["site_name", "datetime"])
             needs_format = False
         else:
             files = glob.glob(
@@ -222,35 +231,48 @@ def trim_data_to_span(in_df: pd.DataFrame, spans: pd.DataFrame, min_yrs: int=5) 
     return out_df
 
 def standardize_variables(in_df: pd.DataFrame) -> pd.DataFrame:
-    means = in_df.groupby(in_df.index.get_level_values(0)).mean()
-    stds = in_df.groupby(in_df.index.get_level_values(0)).std()
-    idx = pd.IndexSlice
-    out_dfs = []
-    for res in means.index:
-        out_dfs.append(
-            (in_df.loc[idx[res,:],:] - means.loc[res]) / stds.loc[res]
-        )
-    return pd.concat(out_dfs, axis=0, ignore_index=False), means, stds
+    grouper = in_df.index.get_level_values(0)
+    std_data = in_df.groupby(grouper).apply(lambda x: (x - x.mean()) / (x.std()))
+    means = in_df.groupby(grouper).mean()
+    stds = in_df.groupby(grouper).std()
+    return std_data, means, stds
+    # II()
+    # idx = pd.IndexSlice
+    # out_dfs = []
+    # for res in means.index:
+    #     out_dfs.append(
+    #         (in_df.loc[idx[res,:],:] - means.loc[res]) / stds.loc[res]
+    #     )
+    # return pd.concat(out_dfs, axis=0, ignore_index=False), means, stds
 
-def make_meta_data(df: pd.DataFrame, means: pd.DataFrame, loc: str) -> pd.DataFrame:
+def make_meta_data(df: pd.DataFrame, means: pd.DataFrame, loc: str, use_gpu:bool=False) -> pd.DataFrame:
     rts = means["storage"] / (means["release"] * 24 * 3600 / 43560)
-    corrs = {}
-    idx = pd.IndexSlice
-    for res in means.index:
-        corrs[res] = df.loc[idx[res,:],"release"].corr(df.loc[idx[res,:], "inflow"])
-    corrs = pd.Series(corrs)
+    grouper = df.index.get_level_values(0)
+    corrs = df.groupby(grouper).apply(lambda x: x["release"].corr(x["inflow"]))
+    max_sto = df.groupby(grouper)["storage"].max()
+    if use_gpu:
+        return cd.DataFrame({"rts":rts, "rel_inf_corr":corrs, "max_sto":max_sto})
+    else:    
+        return pd.DataFrame({"rts":rts, "rel_inf_corr":corrs, "max_sto":max_sto})
 
-    max_sto = df.groupby(df.index.get_level_values(0))["storage"].max()
-    return pd.DataFrame({"rts":rts, "rel_inf_corr":corrs, "max_sto":max_sto})
-
-def find_res_group(meta_row: pd.Series) -> str:
-    if meta_row.rts > 31:
+def find_res_group(rt: float, ricorr: float, max_sto: float) -> str:
+    if rt > 31:
         return "high_rt"
     else:
-        if meta_row.rel_inf_corr >= 0.95 and meta_row.max_sto < 10:
+        if ricorr >= 0.95 and max_sto < 10:
             return "ror"
         else:
             return "low_rt"
+
+def make_res_groups(meta: pd.DataFrame) -> pd.Series:
+    if type(meta) == cd.core.dataframe.DataFrame:
+        groups = cd.Series(index=meta.index, dtype=str)
+    else:
+        groups = pd.Series(index=meta.index, dtype=str)
+    groups[meta["rts"] > 31] = "high_rt"
+    groups[(meta["rel_inf_corr"] >= 0.95) & (meta["max_sto"] < 10)] = "ror"
+    groups = groups.fillna("low_rt")
+    return groups
 
 def get_model_ready_data(args):
     location = args.location
@@ -272,38 +294,54 @@ def get_model_ready_data(args):
         trimmed_data["storage_x_inflow"] = trimmed_data["storage_pre"] * trimmed_data["inflow"]
         trimmed_data.to_csv(DATA_LOCS[location]["ready"])
         std_data, means, std = standardize_variables(trimmed_data)
-        meta = make_meta_data(trimmed_data, means, location)
+        meta = make_meta_data(trimmed_data, means, location, use_gpu=USE_GPU)
         meta["group"] = meta.apply(find_res_group, axis=1)
         return trimmed_data, std_data, means, std, meta
     else:
         std_data, means, std = standardize_variables(data) 
-        meta = make_meta_data(data, means, location)
-        meta["group"] = meta.apply(find_res_group, axis=1)
+        meta = make_meta_data(data, means, location, use_gpu=USE_GPU)
+        meta["group"] = make_res_groups(meta)
         return data, std_data, means, std, meta
 
 def get_group_res(meta: pd.DataFrame) -> tuple:
-    high_rt_res = list(meta[meta["group"] == "high_rt"].index)
-    low_rt_res = list(meta[meta["group"] == "low_rt"].index)
-    ror_res = list(meta[meta["group"] == "ror"].index)
+    high_rt_res = meta[meta["group"] == "high_rt"].index
+    low_rt_res = meta[meta["group"] == "low_rt"].index
+    ror_res = meta[meta["group"] == "ror"].index
     return (high_rt_res, low_rt_res, ror_res)
 
 def filter_group_data(df: pd.DataFrame, resers: Iterable) -> pd.DataFrame:
     return df[df.index.get_level_values(0).isin(resers)]
 
-def calc_metrics(eval_data: pd.DataFrame) -> pd.DataFrame:
-    metrics = pd.DataFrame(index=eval_data.index.get_level_values(0).unique(), 
+def calc_metrics(eval_data: pd.DataFrame,use_gpu:bool=False) -> pd.DataFrame:
+    grouper = eval_data.index.get_level_values(0)    
+    if use_gpu:
+        metrics = cd.DataFrame(index=grouper.unique(), 
                            columns=["r2_score", "rmse"])
-    idx = pd.IndexSlice
-    for res in metrics.index:
-        score = r2_score(
-            eval_data.loc[idx[res,:],"actual"],
-            eval_data.loc[idx[res,:],"modeled"]
-        )
-        rmse = np.sqrt(mean_squared_error(
-            eval_data.loc[idx[res,:],"actual"],
-            eval_data.loc[idx[res,:],"modeled"]
-        ))
-        metrics.loc[res,:] = [score, rmse]
+        sqrt = cp.sqrt
+
+    else:
+        metrics = pd.DataFrame(index=grouper.unique(), 
+                           columns=["r2_score", "rmse"])
+        sqrt, mean, power = np.sqrt, np.mean, np.power
+
+    metrics["r2_score"] = eval_data.groupby(grouper).apply(
+        lambda x: r2_score(x["actual"], x["modeled"])
+    )
+
+    metrics["rmse"] = eval_data.groupby(grouper).apply(
+        lambda x: mean_squared_error(x["actual"], x["modeled"], squared=True).item()
+    )
+    # idx = pd.IndexSlice
+    # for res in metrics.index:
+    #     score = r2_score(
+    #         eval_data.loc[idx[res,:],"actual"],
+    #         eval_data.loc[idx[res,:],"modeled"]
+    #     )
+    #     rmse = np.sqrt(mean_squared_error(
+    #         eval_data.loc[idx[res,:],"actual"],
+    #         eval_data.loc[idx[res,:],"modeled"]
+    #     ))
+    #     metrics.loc[res,:] = [score, rmse]
     return metrics
 
 def combine_res_meta():
