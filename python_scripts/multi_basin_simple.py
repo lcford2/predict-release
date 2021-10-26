@@ -11,7 +11,7 @@ from multi_basin_tree import read_basin_data, get_basin_meta_data, prep_data
 
 
 def pipeline():
-    basin = "tva"
+    basin = sys.argv[1]
     df = read_basin_data(basin)
     meta = get_basin_meta_data(basin)
     
@@ -30,8 +30,18 @@ def pipeline():
 
     for res, group in groups.items():
         X.loc[res_grouper == res, "group"] = group
-    
-    scaled_MixedEffects(X,y,means,std,month_intercepts=False)
+
+    mi = False 
+    output = scaled_MixedEffects(X,y,means,std,month_intercepts=mi)
+
+    int_mod = "_no_ints" if mi else ""
+
+    output_dir = pathlib.Path(f"../results/basin_eval/{basin}/simple_model{int_mod}") 
+    if not output_dir.exists():
+        output_dir.mkdir(parents=True)
+
+    with open(output_dir / "results.pickle", "wb") as f:
+        pickle.dump(output, f, protocol=4)    
 
 def scaled_MixedEffects(X,y,means,std,month_intercepts=False):
     if month_intercepts:
@@ -172,13 +182,7 @@ def scaled_MixedEffects(X,y,means,std,month_intercepts=False):
             # forecasted=forecasted[["Release", "Storage", "Release_act", "Storage_act"]]
         )
     )
-    int_mod = "_no_ints" if month_intercepts else ""
-    output_dir = pathlib.Path("../results/basin_eval/{basin}/simple_model{int_mod}") 
-    if not output_dir.exists():
-        output_dir.mkdir(parents=True)
-
-    with open(output_dir / "results.pickle", "wb") as f:
-        pickle.dump(output, f, protocol=4)    
+    return output
 
 if __name__ == "__main__":
     pipeline()

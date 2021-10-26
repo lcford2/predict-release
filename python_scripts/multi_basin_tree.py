@@ -189,7 +189,7 @@ def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None
     return preds, groups
 
 def pipeline():
-    basin = "tva"
+    basin = sys.argv[1]
     df = read_basin_data(basin) 
     meta = get_basin_meta_data(basin)
     
@@ -209,10 +209,10 @@ def pipeline():
             "release_pre", "release_roll7",
             "inflow", "inflow_roll7"]
 
-    # X_vars_tree = ["sto_diff", "storage_x_inflow",
-    #         "release_pre",
-    #         "inflow", "inflow_roll7"]
-    X_vars_tree = X_vars
+    X_vars_tree = ["sto_diff", "storage_x_inflow",
+            "release_pre",
+            "inflow", "inflow_roll7"]
+    # X_vars_tree = X_vars
 
     train_index = X.index
     X_train = X.loc[train_index,X_vars]
@@ -226,7 +226,7 @@ def pipeline():
     tree = tree_model(X_train_tree, y_train_rel, tree_type="decision", max_depth=max_depth,
                     random_state=37)
     leaves, groups = get_leaves_and_groups(X_train_tree, tree)
-    ml_model = sub_tree_multi_level_model(X_train, y_train_rel, tree, drop_rel_roll=False)
+    ml_model = sub_tree_multi_level_model(X_train, y_train_rel, tree, drop_rel_roll=True)
     
     coefs = pd.DataFrame(ml_model.random_effects)
     fitted = ml_model.fittedvalues

@@ -65,7 +65,7 @@ def load_data(location: str, use_gpu: bool=False) -> pd.DataFrame:
         reader = pd.read_csv
         ready_reader_args = cpu_ready_args
 
-    if location in ["upper_col", "lower_col"]:
+    if location in ["upper_col", "lower_col", "tva"]:
         ready_path = pathlib.Path(DATA_LOCS[location]["ready"])
         if ready_path.exists():
             data = reader(ready_path.as_posix(), **ready_reader_args)

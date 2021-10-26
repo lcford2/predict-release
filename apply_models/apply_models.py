@@ -77,7 +77,7 @@ def apply_low_rt_model(std_df: pd.DataFrame, params: dict, group: str, use_gpu:b
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("location", action="store", choices=["upper_col", "lower_col", "missouri", "pnw"],
+    parser.add_argument("location", action="store", choices=["upper_col", "lower_col", "missouri", "pnw", "tva"],
                         help="Indicate which basin to load data for.")
     parser.add_argument("--use_gpu", "-GPU", action="store_true", default=False,
                         help="Flag to indicate process should be performed on GPU") 
