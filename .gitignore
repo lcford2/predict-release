@@ -1,4 +1,6 @@
 */**/*.sh
+*/**/.ipynb_checkpoints
+*/**/.ipynb_checkpoints/*
 !lower_col_data/get_raw_data_files.sh
 data_from_dol/hess_formatted_data
 **/__pycache__/**
