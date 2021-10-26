@@ -76,5 +76,14 @@ def prep_data(df):
     y = std_data["release"]
     return X, y, means, std
 
+def summarize_trace(trace):
+    summary = {}
+    for var in trace.varnames:
+        mean = trace[var].mean()
+        l = np.percentile(trace[var], 2.5)
+        u = np.percentile(trace[var], 97.5)
+        summary[var] = (l, mean, u)
+    return summary
+
 if __name__ == "__main__":
     read_basin_data("upper_col") 
