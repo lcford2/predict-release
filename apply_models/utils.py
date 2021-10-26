@@ -34,6 +34,9 @@ DATA_LOCS = {
     "missouri":{
         "ready":"../missouri_data/model_ready_data/missouri_data.csv",
         "raw":"../missouri_data/hydromet_data/*.csv",
+    },
+    "tva":{
+        "ready":"../csv/tva_model_ready_data.csv"
     }
 }
 
@@ -331,23 +334,12 @@ def calc_metrics(eval_data: pd.DataFrame,use_gpu:bool=False) -> pd.DataFrame:
     metrics["rmse"] = eval_data.groupby(grouper).apply(
         lambda x: mean_squared_error(x["actual"], x["modeled"], squared=False).item()
     )
-    # idx = pd.IndexSlice
-    # for res in metrics.index:
-    #     score = r2_score(
-    #         eval_data.loc[idx[res,:],"actual"],
-    #         eval_data.loc[idx[res,:],"modeled"]
-    #     )
-    #     rmse = np.sqrt(mean_squared_error(
-    #         eval_data.loc[idx[res,:],"actual"],
-    #         eval_data.loc[idx[res,:],"modeled"]
-    #     ))
-    #     metrics.loc[res,:] = [score, rmse]
     return metrics
 
 def combine_res_meta():
     metas = []
     for location in DATA_LOCS.keys():
-        metas.append(pd.read_pickle(f"./basin_output/{location}_meta.pickle"))
+        metas.append(pd.read_pickle(f"./basin_output_no_ints/{location}_meta.pickle"))
     meta = pd.concat(metas, axis=0, ignore_index=False)
     return meta
 
