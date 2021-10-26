@@ -45,13 +45,13 @@ def apply_high_rt_model(std_df: pd.DataFrame, params: dict, use_gpu:bool=False) 
     X = X[["sto_diff", "storage_x_inflow", "release_pre", "release_roll7",
              "inflow", "inflow_roll7"]]
     X = X.values
-    N = 1000
-    time1 = timer()
-    for N in range(N):
-        Y = (X*coefs).sum(axis=1)
-    time2 = timer()
-    avg_time = (time2 - time1) / N
-    print(f"Avg Time for comp.: {avg_time}")
+    # N = 1000
+    # time1 = timer()
+    # for N in range(N):
+    Y = (X*coefs).sum(axis=1)
+    # time2 = timer()
+    # avg_time = (time2 - time1) / N
+    # print(f"Avg Time for comp.: {avg_time}")
     if use_gpu:
         return cd.Series(Y, index=std_df.index)
     else:
