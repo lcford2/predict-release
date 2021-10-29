@@ -10,3 +10,5 @@ python_scripts/graps/json-fortran/*
 plotly_config.json
 python_scripts/sry_python.code-workspace
 upper_colorado_data/hydrodata_data/upper_col_data.pickle
+missouri_data/acoe_data/pdf_data
+missouri_data/acoe_data/pdf_data/*
