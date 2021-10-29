@@ -163,6 +163,8 @@ def scaled_MixedEffects(X,y,means,std,month_intercepts=False):
         f_act_rmse=f_act_rmse,
         f_bias=f_bias,
         f_bias_month=f_bias_month,
+        res_scores=res_scores,
+        quant_scores=quant_scores,
         data=dict(
             # X_test=X_test,
             # y_test=y_test,
@@ -178,7 +180,6 @@ def scaled_MixedEffects(X,y,means,std,month_intercepts=False):
             # y_train_sto_act=y_train_sto_act,
             # predicted_act_rel=predicted_rel,
             # predicted_act_sto=predicted_sto,
-            quant_scores=quant_scores
             # forecasted=forecasted[["Release", "Storage", "Release_act", "Storage_act"]]
         )
     )

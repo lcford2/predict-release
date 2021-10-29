@@ -309,6 +309,7 @@ def pipeline():
         # cov_re=ml_model.cov_re,
         # coefs=coefs,
         **results,
+        quant_scores=quant_scores,
         data=dict(
             # X_test=X_test,
             # y_test=y_test,
@@ -324,7 +325,6 @@ def pipeline():
             # predicted_act_sto=preds_sto.stack(),
             # groups=test_groups,
             groups=groups,
-            quant_scores=quant_scores
             # forecasted=forecasted[["Release", "Storage",
                                 #    "Release_act", "Storage_act"]]
         )
