@@ -12,4 +12,6 @@ python_scripts/sry_python.code-workspace
 upper_colorado_data/hydrodata_data/upper_col_data.pickle
 missouri_data/acoe_data/pdf_data
 missouri_data/acoe_data/pdf_data/*
+missouri_data/acoe_data/pdf_to_csv
+missouri_data/acoe_data/pdf_to_csv/*
 !missouri_data/*.sh
