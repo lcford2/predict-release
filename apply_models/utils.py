@@ -280,7 +280,18 @@ def make_res_groups(meta: pd.DataFrame) -> pd.Series:
 def get_model_ready_data(args):
     location = args.location
     USE_GPU = args.use_gpu
-    data, needs_format = load_data(location, use_gpu=USE_GPU)
+    if location == "all":
+        datas = []
+        locs = pd.Series()
+        for loc in DATA_LOCS.keys():
+            data, needs_format = load_data(loc, use_gpu=USE_GPU)
+            datas.append(data)
+            for res in data.index.get_level_values(0).unique():
+                locs[res] = loc
+        data = pd.concat(datas)
+        needs_format=False
+    else:
+        data, needs_format = load_data(location, use_gpu=USE_GPU)
     if needs_format:
         data = get_valid_entries(data, location)
         data = rename_columns(data, location)
@@ -304,6 +315,8 @@ def get_model_ready_data(args):
         std_data, means, std = standardize_variables(data) 
         meta = make_meta_data(data, means, location, use_gpu=USE_GPU)
         meta["group"] = make_res_groups(meta)
+        if location == "all":
+            meta["basin"] = locs
         return data, std_data, means, std, meta
 
 def get_group_res(meta: pd.DataFrame) -> tuple:
@@ -315,7 +328,8 @@ def get_group_res(meta: pd.DataFrame) -> tuple:
 def filter_group_data(df: pd.DataFrame, resers: Iterable) -> pd.DataFrame:
     return df[df.index.get_level_values(0).isin(resers)]
 
-def calc_metrics(eval_data: pd.DataFrame,use_gpu:bool=False) -> pd.DataFrame:
+def calc_metrics(eval_data: pd.DataFrame,use_gpu:bool=False, 
+                act_name: str="actual", mod_name: str="modeled") -> pd.DataFrame:
     grouper = eval_data.index.get_level_values(0)    
     if use_gpu:
         metrics = cd.DataFrame(index=grouper.unique(), 
@@ -328,11 +342,11 @@ def calc_metrics(eval_data: pd.DataFrame,use_gpu:bool=False) -> pd.DataFrame:
         sqrt, mean, power = np.sqrt, np.mean, np.power
 
     metrics["r2_score"] = eval_data.groupby(grouper).apply(
-        lambda x: r2_score(x["actual"], x["modeled"])
+        lambda x: r2_score(x[act_name], x[mod_name])
     )
 
     metrics["rmse"] = eval_data.groupby(grouper).apply(
-        lambda x: mean_squared_error(x["actual"], x["modeled"], squared=False).item()
+        lambda x: mean_squared_error(x[act_name], x[mod_name], squared=False).item()
     )
     return metrics
 
