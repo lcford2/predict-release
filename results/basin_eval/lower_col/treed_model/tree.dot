@@ -1,7 +1,7 @@
 digraph Tree {
 node [shape=box, style="filled, rounded", color="black", fontname="helvetica"] ;
 edge [fontname="helvetica"] ;
-0 [label=<release_pre &le; -0.046<br/>squared_error = 1.0<br/>samples = 100.0%<br/>value = 0.0>, fillcolor="#f0b890"] ;
+0 [label=<release_pre &le; -0.046<br/>squared_error = 1.0<br/>samples = 100.0%<br/>value = -0.0>, fillcolor="#f0b890"] ;
 1 [label=<release_pre &le; -0.988<br/>squared_error = 0.485<br/>samples = 47.8%<br/>value = -0.764>, fillcolor="#f7d7c0"] ;
 0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
 2 [label=<release_pre &le; -1.622<br/>squared_error = 0.324<br/>samples = 17.1%<br/>value = -1.336>, fillcolor="#fbeee4"] ;
