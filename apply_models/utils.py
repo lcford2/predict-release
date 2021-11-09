@@ -268,10 +268,10 @@ def find_res_group(rt: float, ricorr: float, max_sto: float) -> str:
             return "low_rt"
 
 def make_res_groups(meta: pd.DataFrame) -> pd.Series:
-    if type(meta) == cd.core.dataframe.DataFrame:
-        groups = cd.Series(index=meta.index, dtype=str)
-    else:
+    if type(meta) == pd.core.frame.DataFrame:
         groups = pd.Series(index=meta.index, dtype=str)
+    else:
+        groups = cd.Series(index=meta.index, dtype=str)
     groups[meta["rts"] > 31] = "high_rt"
     groups[(meta["rel_inf_corr"] >= 0.95) & (meta["max_sto"] < 10)] = "ror"
     groups = groups.fillna("low_rt")

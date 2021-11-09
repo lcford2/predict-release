@@ -5,12 +5,14 @@ import pickle
 import pandas as pd
 import numpy as np
 from time import perf_counter as timer
-from numba import jit
 from IPython import embed as II
 from utils import (get_model_ready_data, get_group_res, 
                    filter_group_data, calc_metrics)
-import cupy as cp
-import cudf as cd   
+try:
+    import cupy as cp
+    import cudf as cd   
+except ModuleNotFoundError as e:
+    pass
 
 def load_params(file: str="./model_params.json", use_gpu: bool=False) -> dict:
     with open(file, "r") as f:
