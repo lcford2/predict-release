@@ -180,7 +180,7 @@ def load_meta_data():
     }
 
 if __name__ == "__main__":
-    results = read_results(True)
+    results = read_results(False)
     output = results["output"]
     meta = load_meta_data()
     # plot_time_series(output, var="release", N=-1)
