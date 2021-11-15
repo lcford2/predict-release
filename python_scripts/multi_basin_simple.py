@@ -31,7 +31,7 @@ def pipeline():
     for res, group in groups.items():
         X.loc[res_grouper == res, "group"] = group
 
-    mi = False 
+    mi = True
     output = scaled_MixedEffects(X,y,means,std,month_intercepts=mi)
 
     int_mod = "_no_ints" if mi else ""
