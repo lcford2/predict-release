@@ -1,6 +1,7 @@
 import pickle
 import pathlib
 import sys
+import calendar
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
@@ -125,9 +126,10 @@ def get_leaves_and_groups(X, tree):
 def sub_tree_multi_level_model(X, y, tree=None, groups=None, my_id=None, drop_rel_roll: bool=False):
     if tree:
         if drop_rel_roll and "release_roll7" in X.columns:
-            leaves, groups = get_leaves_and_groups(X.drop("release_roll7", axis=1), tree)
+            leaves, groups = get_leaves_and_groups(X.drop(
+                ["release_roll7",*calendar.month_abbr[1:]], axis=1), tree)
         else:
-            leaves, groups = get_leaves_and_groups(X, tree)
+            leaves, groups = get_leaves_and_groups(X.drop(calendar.month_abbr[1:], axis=1), tree)
     elif not groups:
         raise ValueError("Must provide either a tree or groups.")
     else:
@@ -188,7 +190,7 @@ def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None
     
     return preds, groups
 
-def pipeline():
+def pipeline(month_intercepts=False):
     basin = sys.argv[1]
     df = read_basin_data(basin) 
     meta = get_basin_meta_data(basin)
@@ -204,10 +206,25 @@ def pipeline():
     X,y,means,std = prep_data(df)
     X["sto_diff"] = X["storage_pre"] - X["storage_roll7"]
 
+    # Setup monthly intercepts if using
+    if month_intercepts:
+        month_arrays = {i:[] for i in calendar.month_abbr[1:]}
+        for date in X.index.get_level_values(1):
+            for key in month_arrays.keys():
+                if calendar.month_abbr[date.month] == key:
+                    month_arrays[key].append(1)
+                else:
+                    month_arrays[key].append(0)
+        for key, array in month_arrays.items():
+            X[key] = array
+
     # set exogenous variables
     X_vars = ["sto_diff",  "storage_x_inflow",
             "release_pre", "release_roll7",
             "inflow", "inflow_roll7"]
+    
+    if month_intercepts:
+        X_vars.extend(calendar.month_abbr[1:])
 
     X_vars_tree = ["sto_diff", "storage_x_inflow",
             "release_pre",
@@ -281,6 +298,8 @@ def pipeline():
 
     # setup output parameters
     foldername = "treed_model"
+    int_mod = "" if month_intercepts else "_no_ints"
+    foldername = foldername + int_mod
     folderpath = pathlib.Path("..", "results", "basin_eval", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
@@ -339,7 +358,7 @@ def pipeline():
     coefs.to_csv((folderpath/"random_effects.csv").as_posix())
 
 if __name__ == "__main__":
-    pipeline()
+    pipeline(month_intercepts=True)
     # mem_usage = psutil.Process().memory_info().peak_wset
     # print(f"Max Memory Used: {mem_usage/1000/1000:.4f} MB")
     # from resource import getrusage, RUSAGE_SELF

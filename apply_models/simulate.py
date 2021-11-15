@@ -22,15 +22,18 @@ def parse_args() -> argparse.Namespace:
                         help="Indicate which basin to load data for.")
     parser.add_argument("--bsp", "-B", action="store_true",
                         help="Flag to use basin specific parameters for simulation.")
+    parser.add_argument("--ints", "-I", action="store_true",
+                        help="Use time varying intercepts or not.")
     # parser.add_argument("--use_gpu", "-GPU", action="store_true", default=False,
                         # help="Flag to indicate process should be performed on GPU") 
     return parser.parse_args()
 
-def simulate_res(X, dates, porder, means, std, params, leaves=None):
+def simulate_res(X, dates, porder, means, std, params, use_ints=False, leaves=None):
     # X should be actual data, will standardize as we go.
     high_rt = leaves is not None
     out_dates = dates[6:]
     end = out_dates.size
+    months = out_dates.astype('datetime64[M]').astype(int) % 12 + 1
     storage_out = np.empty(shape=out_dates.size, dtype=np.float64)
     release_out = np.empty(shape=out_dates.size, dtype=np.float64)
     # x_order = ["release_pre", "storage_pre", "inflow", "release_roll7", 
@@ -48,19 +51,26 @@ def simulate_res(X, dates, porder, means, std, params, leaves=None):
         data[5] = inf_roll
         data[6] = sto_x_inf
 
+        month = months[i]
+
         std_data = (data - means) / std
         if high_rt:
             mparams = params[np.searchsorted(leaves, std_data[0])]
+            mint = mparams[month + 5] if use_ints else 0.0 #! hard coded number of variables here (5)
+            mparams = mparams[:6] #! same deal here (6 comes from the above 5 + 1)
             mdata = np.array(
                 [std_data[1] - std_data[4], *std_data[porder]]
             )
         else:
             mparams = params
+            #! similar to above, the 7 and 8 are hardcoded and will need to be dealt with later
+            mint = mparams[month + 7] if use_ints else 0.0
+            mparams = mparams[:8]
             mdata = np.array(
                 [1, *std_data[porder]]
             )
 
-        rel_t = mdata @ mparams
+        rel_t = mdata @ mparams + mint
         rel_t_act = rel_t * std[0] + means[0]
         if rel_t_act < 0:
             rel_t_act = 0
@@ -79,7 +89,7 @@ def simulate_res(X, dates, porder, means, std, params, leaves=None):
 
 def simul(res_args):
     res, req_args = res_args
-    act_data, meta, params, means, stds, x_order, high_rt_porder, low_rt_porder, basin = req_args
+    act_data, meta, params, means, stds, x_order, high_rt_porder, low_rt_porder, use_ints, basin = req_args
     group = meta.loc[res, "group"]
     if group == "high_rt":
         porder = high_rt_porder
@@ -103,13 +113,14 @@ def simul(res_args):
     X = X[x_order].values
     my_means = means.loc[res, x_order].values
     my_std = stds.loc[res, x_order].values
-    return simulate_res(X, dates, porder, my_means, my_std, my_params, leaves)
+    return simulate_res(X, dates, porder, my_means, my_std, my_params, use_ints, leaves)
 
 def main(args):
     use_gpu = False
     args.use_gpu = use_gpu
+    int_mod = "" if args.ints else "_no_ints"
     if args.bsp:
-        files = glob.glob("./basin_params/*.json")
+        files = glob.glob(f"./basin_params/*{int_mod}.json")
         params = {i.split("/")[-1].split(".")[0]: load_params(i, use_gpu=False) for i in files}
     else:
         params = load_params(use_gpu=False)
@@ -129,12 +140,11 @@ def main(args):
     high_rt_porder = [x_order.index(i) for i in high_rt_order[1:]]
     low_rt_porder = [x_order.index(i) for i in low_rt_order[1:]]
 
-    req_args = [act_data, meta, params, means, stds, x_order, high_rt_porder, low_rt_porder]
+    req_args = [act_data, meta, params, means, stds, x_order, high_rt_porder, low_rt_porder, args.ints]
     if args.bsp:
         res_args = [(res, [*req_args, meta.loc[res, "basin"]]) for res in means.index]
     else:
         res_args = [(res, [*req_args, False]) for res in means.index]
-
 
     with mp.Pool(min(mp.cpu_count(), means.index.size)) as p:
         out_vals = p.map(simul, res_args)
@@ -149,7 +159,7 @@ def main(args):
     storage_metrics = calc_metrics(output, act_name="storage_act", mod_name="storage")
     release_metrics = calc_metrics(output, act_name="release_act", mod_name="release")
     bsp_flag = "bsp_" if args.bsp else ""
-    with open(f"./simulation_output/{args.location}_{bsp_flag}results.pickle", "wb") as f:
+    with open(f"./simulation_output/{args.location}_{bsp_flag}results{int_mod}.pickle", "wb") as f:
         pickle.dump({"output":output, 
                      "metrics":{
                          "storage":storage_metrics,

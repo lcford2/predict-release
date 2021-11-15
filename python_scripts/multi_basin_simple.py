@@ -34,7 +34,7 @@ def pipeline():
     mi = True
     output = scaled_MixedEffects(X,y,means,std,month_intercepts=mi)
 
-    int_mod = "_no_ints" if mi else ""
+    int_mod = "" if mi else "_no_ints"
 
     output_dir = pathlib.Path(f"../results/basin_eval/{basin}/simple_model{int_mod}") 
     if not output_dir.exists():
@@ -47,7 +47,7 @@ def scaled_MixedEffects(X,y,means,std,month_intercepts=False):
     if month_intercepts:
         #* this introduces a intercept that varies monthly and between groups
         month_arrays = {i:[] for i in calendar.month_abbr[1:]}
-        for date in X.index.get_level_values(0):
+        for date in X.index.get_level_values(1):
             for key in month_arrays.keys():
                 if calendar.month_abbr[date.month] == key:
                     month_arrays[key].append(1)
@@ -96,11 +96,13 @@ def scaled_MixedEffects(X,y,means,std,month_intercepts=False):
     exog_terms = [
         "const", "inflow", "storage_pre", "release_pre",
         "storage_roll7",  "inflow_roll7", "release_roll7"
+        , *interaction_terms
     ]
     
-    exog_re = exog.loc[:,exog_terms + interaction_terms]
     if month_intercepts:
-        exog_re.extend(calendar.month_abbr[1:])
+        exog_terms.extend(calendar.month_abbr[1:])
+
+    exog_re = exog.loc[:,exog_terms]
 
     mexog = exog.loc[:,["const"]]
        
