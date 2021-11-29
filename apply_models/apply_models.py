@@ -22,7 +22,9 @@ def load_params(file: str="./model_params.json", use_gpu: bool=False) -> dict:
             params[key]["params"] = cp.array(params[key]["params"])
         params["high_rt"]["leaves"] = cp.array(params["high_rt"]["leaves"])
     else:
-        params["high_rt"]["leaves"] = np.array(params["high_rt"]["leaves"])
+        if "high_rt" in params:
+            params["high_rt"]["leaves"] = np.array(params["high_rt"]["leaves"])
+
     return params
 
 def get_low_rt_params(params: dict) -> list:

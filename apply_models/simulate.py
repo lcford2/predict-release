@@ -18,12 +18,15 @@ from timing_function import time_function
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("location", action="store", choices=["upper_col", "lower_col", "missouri", "pnw", "tva", "all"],
+    parser.add_argument("location", action="store", choices=["upper_col", "lower_col", "missouri",
+                                                             "pnw", "tva", "all", "colorado"],
                         help="Indicate which basin to load data for.")
     parser.add_argument("--bsp", "-B", action="store_true",
                         help="Flag to use basin specific parameters for simulation.")
     parser.add_argument("--ints", "-I", action="store_true",
                         help="Use time varying intercepts or not.")
+    parser.add_argument("--purp_grp", "-P", action="store_true",
+                        help="Use purpose based grouping instead of RT based.")
     # parser.add_argument("--use_gpu", "-GPU", action="store_true", default=False,
                         # help="Flag to indicate process should be performed on GPU") 
     return parser.parse_args()
@@ -120,15 +123,27 @@ def main(args):
     args.use_gpu = use_gpu
     int_mod = "" if args.ints else "_no_ints"
     if args.bsp:
-        files = glob.glob(f"./basin_params/*{int_mod}.json")
+        if args.purp_grp:
+            files = glob.glob(f"./basin_params/*{int_mod}_purpose.json")
+        else:
+            files = glob.glob(f"./basin_params/*{int_mod}.json")
         params = {i.split("/")[-1].split(".")[0]: load_params(i, use_gpu=False) for i in files}
+        for key, value in list(params.items()):
+            if key.split("_")[-1] == "purpose":
+                params["_".join(key.split("_")[:-1])] = params[key]
+                del params[key]
     else:
         params = load_params(use_gpu=False)
     act_data, std_data, means, stds, meta = get_model_ready_data(args)
     index = pd.MultiIndex.from_tuples(zip(act_data.index.get_level_values(0),
                                     pd.to_datetime(act_data.index.get_level_values(1))))
     act_data.index = index
+    purposes = pd.read_csv("../nid_data/col_purposes.csv", index_col=0, squeeze=True)
     res_groups = get_group_res(meta)
+
+    if args.purp_grp:
+        meta["group"] = purposes
+
     output = {}
     high_rt_order = ["sto_diff", "storage_x_inflow", "release_pre", 
                      "release_roll7", "inflow", "inflow_roll7"]
@@ -139,6 +154,8 @@ def main(args):
 
     high_rt_porder = [x_order.index(i) for i in high_rt_order[1:]]
     low_rt_porder = [x_order.index(i) for i in low_rt_order[1:]]
+
+    # meta["group"] = "high_rt"
 
     req_args = [act_data, meta, params, means, stds, x_order, high_rt_porder, low_rt_porder, args.ints]
     if args.bsp:
@@ -159,7 +176,8 @@ def main(args):
     storage_metrics = calc_metrics(output, act_name="storage_act", mod_name="storage")
     release_metrics = calc_metrics(output, act_name="release_act", mod_name="release")
     bsp_flag = "bsp_" if args.bsp else ""
-    with open(f"./simulation_output/{args.location}_{bsp_flag}results{int_mod}.pickle", "wb") as f:
+    pg_flag = "_purposes" if args.purp_grp else ""
+    with open(f"./simulation_output/{args.location}_{bsp_flag}results{int_mod}{pg_flag}.pickle", "wb") as f:
         pickle.dump({"output":output, 
                      "metrics":{
                          "storage":storage_metrics,

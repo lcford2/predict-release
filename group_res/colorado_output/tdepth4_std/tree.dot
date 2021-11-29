@@ -1,0 +1,38 @@
+digraph Tree {
+node [shape=box, style="filled, rounded", color="black", fontname="helvetica"] ;
+edge [fontname="helvetica"] ;
+rankdir=LR ;
+0 [label="Water Supply <= 0.5\nsquared_error = 1.0\nsamples = 100.0%\nvalue = -0.0", fillcolor="#f3c6a5"] ;
+1 [label="max_sto <= 17.517\nsquared_error = 1.006\nsamples = 98.4%\nvalue = 0.005", fillcolor="#f3c5a4"] ;
+0 -> 1 [labeldistance=2.5, labelangle=-45, headlabel="True"] ;
+2 [label="max_sto <= 11.049\nsquared_error = 1.175\nsamples = 5.1%\nvalue = 0.139", fillcolor="#eeae80"] ;
+1 -> 2 ;
+3 [label="inflow <= 0.025\nsquared_error = 1.035\nsamples = 2.9%\nvalue = -0.026", fillcolor="#f4caac"] ;
+2 -> 3 ;
+4 [label="squared_error = 1.242\nsamples = 1.1%\nvalue = 0.042", fillcolor="#f2bf9a"] ;
+3 -> 4 ;
+5 [label="squared_error = 0.906\nsamples = 1.8%\nvalue = -0.067", fillcolor="#f6d2b8"] ;
+3 -> 5 ;
+6 [label="rts <= 92.11\nsquared_error = 1.276\nsamples = 2.2%\nvalue = 0.351", fillcolor="#e78a46"] ;
+2 -> 6 ;
+7 [label="squared_error = 1.296\nsamples = 1.0%\nvalue = 0.4", fillcolor="#e58139"] ;
+6 -> 7 ;
+8 [label="squared_error = 1.254\nsamples = 1.2%\nvalue = 0.307", fillcolor="#e89152"] ;
+6 -> 8 ;
+9 [label="inflow <= 0.1\nsquared_error = 0.995\nsamples = 93.3%\nvalue = -0.002", fillcolor="#f3c6a6"] ;
+1 -> 9 ;
+10 [label="rts <= 545.909\nsquared_error = 0.851\nsamples = 14.2%\nvalue = -0.051", fillcolor="#f5cfb3"] ;
+9 -> 10 ;
+11 [label="squared_error = 0.891\nsamples = 11.9%\nvalue = -0.034", fillcolor="#f4ccaf"] ;
+10 -> 11 ;
+12 [label="squared_error = 0.626\nsamples = 2.2%\nvalue = -0.141", fillcolor="#f8decc"] ;
+10 -> 12 ;
+13 [label="inflow <= 0.178\nsquared_error = 1.021\nsamples = 79.1%\nvalue = 0.007", fillcolor="#f3c5a4"] ;
+9 -> 13 ;
+14 [label="squared_error = 1.182\nsamples = 9.9%\nvalue = 0.136", fillcolor="#eeaf81"] ;
+13 -> 14 ;
+15 [label="squared_error = 0.995\nsamples = 69.2%\nvalue = -0.012", fillcolor="#f4c8a9"] ;
+13 -> 15 ;
+16 [label="squared_error = 0.523\nsamples = 1.6%\nvalue = -0.331", fillcolor="#ffffff"] ;
+0 -> 16 [labeldistance=2.5, labelangle=45, headlabel="False"] ;
+}

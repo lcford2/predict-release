@@ -290,6 +290,17 @@ def get_model_ready_data(args):
                 locs[res] = loc
         data = pd.concat(datas)
         needs_format=False
+    elif location == "colorado":
+        datas = []
+        locs = pd.Series()
+        for loc in ["upper_col", "lower_col"]:
+            data, needs_format = load_data(loc, use_gpu=USE_GPU)
+            datas.append(data)
+            for res in data.index.get_level_values(0).unique():
+                locs[res] = "colorado"
+        data = pd.concat(datas)
+        data = data[~data.index.get_level_values(0).isin(["SANTA ROSA ", "DILLON RESERVOIR"])]
+        needs_format=False
     else:
         data, needs_format = load_data(location, use_gpu=USE_GPU)
     if needs_format:
@@ -315,8 +326,10 @@ def get_model_ready_data(args):
         std_data, means, std = standardize_variables(data) 
         meta = make_meta_data(data, means, location, use_gpu=USE_GPU)
         meta["group"] = make_res_groups(meta)
-        if location == "all":
+        if location == "all" :
             meta["basin"] = locs
+        else:
+            meta["basin"] = location
         return data, std_data, means, std, meta
 
 def get_group_res(meta: pd.DataFrame) -> tuple:

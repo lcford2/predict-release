@@ -39,26 +39,44 @@ def read_basin_data(basin: str) -> pd.DataFrame:
             "ready":"../csv/tva_model_ready_data.csv"
         }
     }
-    if basin not in data_locs:
-        raise NotImplementedError(f"No data available for basin {basin}")
-    
-    fpath = pathlib.Path(data_locs[basin]["ready"])
-    if fpath.exists():
+
+    if basin == "colorado":
+        lfpath = data_locs["lower_col"]["ready"]
+        ldf = pd.read_csv(lfpath)
+        ldf["datetime"] = pd.to_datetime(ldf["datetime"])
+        ldf = ldf.set_index(["site_name", "datetime"])
+
+        ufpath = data_locs["upper_col"]["ready"]
+        udf = pd.read_csv(ufpath)
+        udf["datetime"] = pd.to_datetime(udf["datetime"])
+        udf = udf.set_index(["site_name", "datetime"])
+
+        df = ldf.append(udf)
+        df = df.sort_index()
+    elif basin in data_locs:
+        fpath = pathlib.Path(data_locs[basin]["ready"])
         df = pd.read_csv(fpath)
         df["datetime"] = pd.to_datetime(df["datetime"])
-        return df.set_index(["site_name", "datetime"])
     else:
-        print(f"Please run ../apply_models/apply_models.py {basin} to generate model ready data for this basin.")
-        sys.exit()
+        raise NotImplementedError(f"No data available for basin {basin}")
+    return df
 
 def get_basin_meta_data(basin: str):
     if basin == "tva":
-        file = "../pickles/tva_res_meta.pickle"
+        files = ["../pickles/tva_res_meta.pickle"]
+    elif basin == "colorado":
+        files = [
+            "../apply_models/basin_output_no_ints/upper_col_meta.pickle",
+            "../apply_models/basin_output_no_ints/lower_col_meta.pickle"
+        ]
     else:
-        file = f"../apply_models/basin_output_no_ints/{basin}_meta.pickle"
-    with open(file, "rb") as f:
-        meta = pickle.load(f)
-    return meta  
+        files = [f"../apply_models/basin_output_no_ints/{basin}_meta.pickle"]
+
+    meta = pd.DataFrame()
+    for file in files:
+        fmeta = pd.read_pickle(file)
+        meta = fmeta if meta.empty else meta.append(fmeta)
+    return meta
 
 @time_function
 def prep_data(df):
@@ -194,8 +212,12 @@ def pipeline(month_intercepts=False):
     basin = sys.argv[1]
     df = read_basin_data(basin) 
     meta = get_basin_meta_data(basin)
-    
-    reservoirs = meta[meta["group"] == "high_rt"].index
+
+    use_all = True
+    if use_all:
+        reservoirs = meta.index
+    else:
+        reservoirs = meta[meta["group"] == "high_rt"].index
 
     res_grouper = df.index.get_level_values(0)
     df = df.loc[res_grouper.isin(reservoirs)]
@@ -299,7 +321,8 @@ def pipeline(month_intercepts=False):
     # setup output parameters
     foldername = "treed_model"
     int_mod = "" if month_intercepts else "_no_ints"
-    foldername = foldername + int_mod
+    all_mod = "_all_res" if use_all else ""
+    foldername = foldername + int_mod + all_mod
     folderpath = pathlib.Path("..", "results", "basin_eval", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
@@ -315,7 +338,7 @@ def pipeline(month_intercepts=False):
         folderpath.mkdir(parents=True)
     
     # export tree to graphviz file so it can be converted nicely
-    # rotate_tree = True if max_depth > 3 else False
+    # rotate_tree = True if max_depth > 3 else e
     export_graphviz(tree, out_file=(folderpath / "tree.dot").as_posix(),
                     feature_names=X_vars_tree, filled=True, proportion=True, rounded=True,
                     special_characters=True)

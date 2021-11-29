@@ -8,14 +8,22 @@ import statsmodels.api as sm
 from statsmodels.regression.mixed_linear_model import MixedLMParams
 from sklearn.metrics import r2_score, mean_squared_error
 from multi_basin_tree import read_basin_data, get_basin_meta_data, prep_data
+from IPython import embed as II
 
 
 def pipeline():
     basin = sys.argv[1]
     df = read_basin_data(basin)
     meta = get_basin_meta_data(basin)
-    
-    reservoirs = meta[meta["group"].isin(["low_rt", "ror"])].index
+
+    use_all = True
+    if use_all:
+        reservoirs = meta.index
+    else:
+        reservoirs = meta[meta["group"].isin(["low_rt", "ror"])].index
+
+    reservoirs = reservoirs[~reservoirs.isin(["SANTA ROSA ", "DILLON RESERVOIR"])]
+
     if len(reservoirs) == 0:
         print("No reservoirs to model.")
         sys.exit()
@@ -27,7 +35,9 @@ def pipeline():
 
     X,y,means,std = prep_data(df)
     groups = df.groupby(res_grouper).apply(lambda x: meta.loc[x.name, "group"])
+    purposes = pd.read_csv("../nid_data/col_purposes.csv", index_col=0, squeeze=True)
 
+    groups = purposes
     for res, group in groups.items():
         X.loc[res_grouper == res, "group"] = group
 
@@ -35,8 +45,10 @@ def pipeline():
     output = scaled_MixedEffects(X,y,means,std,month_intercepts=mi)
 
     int_mod = "" if mi else "_no_ints"
+    all_mod = "_all_res" if use_all else ""
 
-    output_dir = pathlib.Path(f"../results/basin_eval/{basin}/simple_model{int_mod}") 
+    output_dir = pathlib.Path(f"../results/basin_eval/{basin}/simple_model{int_mod}{all_mod}_purposes")
+
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 

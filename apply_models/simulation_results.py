@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns 
 import numpy as np 
 import pandas as pd
+import argparse
 from sklearn.metrics import r2_score, mean_squared_error
 from datetime import datetime, timedelta
 from plot_helpers import determine_grid_size, abline
@@ -15,12 +16,13 @@ style_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 
 BASIN_NAMES = {"upper_col":"Upper Colorado", "lower_col":"Lower Colorado",
-               "pnw":"Pacific Northwest","missouri":"Missouri","tva":"TVA"}
+               "pnw":"Pacific Northwest","missouri":"Missouri","tva":"TVA",
+               "colorado":"Colorado"}
 
 
-def read_results(bsp):
+def read_results(basin,bsp):
     modifier = "bsp_" if bsp else ""
-    with open(f"./simulation_output/all_{modifier}results.pickle", "rb") as f:
+    with open(f"./simulation_output/{basin}_{modifier}results.pickle", "rb") as f:
         data = pickle.load(f)
     return data
 
@@ -179,9 +181,20 @@ def load_meta_data():
         for i in files
     }
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("location", action="store", choices=["upper_col", "lower_col",
+                                                             "pnw", "tva", "missouri",
+                                                             "all", "colorado"],
+                        help="Indicate which basin to load data for.")
+    return parser.parse_args()
+
 if __name__ == "__main__":
-    results = read_results(False)
+    args = parse_args()
+    basin = args.location
+    results = read_results(basin,True)
     output = results["output"]
     meta = load_meta_data()
-    # plot_time_series(output, var="release", N=-1)
+    meta["colorado"] = meta["upper_col"].append(meta["lower_col"])
+    # PLOT_time_series(output, var="release", N=-1)
     plot_one2one_split(output, meta, var="release", N=-1)

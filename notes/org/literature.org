@@ -1,0 +1,53 @@
+#+TITLE: Literature review
+#+DATE: <2021-11-29 Mon>
+
+* Statistical Modeling of Reservoir Operations
+** Simulating California reservoir operation using the classification and regression-tree algorithm combined with a shuffled cross-validation scheme (Yang et al., 2016)
+*** Abstract
+**** 9 major reservoirs in California
+**** Original CART, enhanced CART, random forest,
+***** Enhanced and random forest outperform orignal CART
+***** Enhanced CART predicts peak flow better than random forest
+**** Oroville lake is significantly dominated by SWP allocation amount
+**** Reservoirs with low elevation are more significant to inflow than others.
+*** Introduction
+**** TODO Comeback and read introduction for other related literature
+*** Reservoirs and Data
+**** Trinity Lake, Don Pedro Reservoir, New Exchequer Reservoir, Folsom Lake, Friant Reservoir, New Melones Reservoir, Oroville, Success Lake, Shasta Lake
+***** All reservoirs belong to different river basins, therefore no cascade effects are studied
+**** California Data Exchange Center (CDEC)
+***** Gathers information from various organizations
+**** Model Input:
+***** Reservoir Storage
+****** During verification, this is calculated using mass balance and simulated releases of previous day
+***** Daily inflow
+***** Daily accumulated precipitation [we dont use]
+***** Snow depth in upstream mountains [we dont use]
+***** Downstream flow conditions [we dont use]
+***** Water Year Index (wet/dry conditions) [we dont use]
+****** (1) wet, (2) above normal, (3) below normal, (4) dry, (5) critical year
+***** Six river indices: [we dont use]
+****** Sacramento Valley Oct-Mar runoff
+****** Sacramento Valley Apr-Jul runoff
+****** Sacramento Valley water year total runoff
+****** Same things above but for San Joaquin Valley
+***** State Water Project (SWP) allocation amount [we dont use]
+***** Month of the year to control for seasonality
+**** Model Output:
+***** Controlled reservoir daily outflow [release]
+*** Methodology
+**** Classification and Regression Tree (CART) algorithm
+**** They fit a model for each reservoir
+***** This is in contrast to our goal of fitting a model that works for many reservoirs
+*** Results
+**** Their simulation results with the best model all have good NSE ( >= 0.75 )
+**** Downstream (low elevation reservoirs) are more dependent on inflow
+***** We see similar results in across the country with out methods (except for Lower Colorado)
+**** Authors find that releases are dependent on downstream river stage as well
+***** They state that downstream status is crucial for release decisions during high flow periods
+****** Basically, if downstream flow exceeds a certain level, operators must reduce their release and deviate from rule curves
+**** They state that at the daily level, the release time series is highly variable.
+***** This variability means that regression models underestimate the role of storage in release prediction as it is less variable on a day-to-day basis
+***** Additionally, rule curves are more of a guideline than strict rules and releases often deviate from USACE specified curves
+*****
+**

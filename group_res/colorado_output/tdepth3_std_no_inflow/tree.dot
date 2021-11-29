@@ -1,0 +1,30 @@
+digraph Tree {
+node [shape=box, style="filled, rounded", color="black", fontname="helvetica"] ;
+edge [fontname="helvetica"] ;
+rankdir=LR ;
+0 [label="rts <= 833.437\nsquared_error = 1.0\nsamples = 100.0%\nvalue = -0.0", fillcolor="#e89152"] ;
+1 [label="Hydroelectric <= 0.5\nsquared_error = 1.0\nsamples = 75.2%\nvalue = 0.0", fillcolor="#e78a47"] ;
+0 -> 1 [labeldistance=2.5, labelangle=-45, headlabel="True"] ;
+2 [label="Fish and Wildlife Pond <= 0.5\nsquared_error = 1.0\nsamples = 49.4%\nvalue = 0.0", fillcolor="#e78c4a"] ;
+1 -> 2 ;
+3 [label="squared_error = 1.0\nsamples = 33.3%\nvalue = 0.0", fillcolor="#e78945"] ;
+2 -> 3 ;
+4 [label="squared_error = 1.0\nsamples = 16.1%\nvalue = -0.0", fillcolor="#e99356"] ;
+2 -> 4 ;
+5 [label="max_sto <= 112.03\nsquared_error = 1.0\nsamples = 25.8%\nvalue = 0.0", fillcolor="#e6843e"] ;
+1 -> 5 ;
+6 [label="squared_error = 1.0\nsamples = 9.2%\nvalue = 0.0", fillcolor="#e78945"] ;
+5 -> 6 ;
+7 [label="squared_error = 1.0\nsamples = 16.7%\nvalue = 0.0", fillcolor="#e58139"] ;
+5 -> 7 ;
+8 [label="Multipurpose <= 0.5\nsquared_error = 1.0\nsamples = 24.8%\nvalue = -0.0", fillcolor="#eeac7d"] ;
+0 -> 8 [labeldistance=2.5, labelangle=45, headlabel="False"] ;
+9 [label="squared_error = 1.0\nsamples = 4.3%\nvalue = -0.0", fillcolor="#ffffff"] ;
+8 -> 9 ;
+10 [label="rts <= 1281.06\nsquared_error = 1.0\nsamples = 20.5%\nvalue = -0.0", fillcolor="#ea995f"] ;
+8 -> 10 ;
+11 [label="squared_error = 1.0\nsamples = 13.6%\nvalue = -0.0", fillcolor="#eca46f"] ;
+10 -> 11 ;
+12 [label="squared_error = 1.0\nsamples = 6.9%\nvalue = 0.0", fillcolor="#e68742"] ;
+10 -> 12 ;
+}
