@@ -22,7 +22,12 @@ def pipeline():
     else:
         reservoirs = meta[meta["group"].isin(["low_rt", "ror"])].index
 
-    reservoirs = reservoirs[~reservoirs.isin(["SANTA ROSA ", "DILLON RESERVOIR"])]
+    if len(sys.argv) == 3:
+        reservoirs = [sys.argv[2]]
+        single = True
+    else:
+        reservoirs = reservoirs[~reservoirs.isin(["SANTA ROSA ", "DILLON RESERVOIR"])]
+        single = False
 
     if len(reservoirs) == 0:
         print("No reservoirs to model.")
@@ -46,8 +51,9 @@ def pipeline():
 
     int_mod = "" if mi else "_no_ints"
     all_mod = "_all_res" if use_all else ""
-
-    output_dir = pathlib.Path(f"../results/basin_eval/{basin}/simple_model{int_mod}{all_mod}_purposes")
+    sing_mod = f"{reservoirs[0]}_" if single else ""
+    # sing_mod = f"{reservoirs[0]}_" if single else ""
+    output_dir = pathlib.Path(f"../results/basin_eval/{basin}/{sing_mod}simple_model{int_mod}{all_mod}_purposes")
 
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
