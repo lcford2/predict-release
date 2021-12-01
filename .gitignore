@@ -17,3 +17,5 @@ missouri_data/acoe_data/pdf_to_csv/*
 missouri_data/acoe_data/pdf_to_csv_fixed
 missouri_data/acoe_data/pdf_to_csv_fixed/*
 !missouri_data/*.sh
+bwvenv/
+bwvenv/*

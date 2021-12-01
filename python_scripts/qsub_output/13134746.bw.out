@@ -1,0 +1,19 @@
+----------------------------------------
+Begin Torque Prologue on nid25260
+at Tue Nov 30 13:14:13 CST 2021
+Job Id:			13134746.bw
+Username:		lcford2
+Group:			EOT_bbgf
+Job name:		single_res_fit
+Requested resources:	nodes=1:ppn=16:xe,walltime=01:00:00,neednodes=1:ppn=16:xe
+Queue:			normal
+Account:		bbgf
+End Torque Prologue:  0.099 elapsed
+----------------------------------------
+
+
+
+
+Time to run 'read_basin_data': 1.26245 seconds
+Application 108626027 exit codes: 1
+Application 108626027 resources: utime ~4s, stime ~4s, Rss ~176100, inblocks ~124821, outblocks ~23

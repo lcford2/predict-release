@@ -1,0 +1,41 @@
+PrgEnv-gnu/5.2.82(10):ERROR:150: Module 'PrgEnv-gnu/5.2.82' conflicts with the currently loaded module(s) 'PrgEnv-cray/5.2.82'
+PrgEnv-gnu/5.2.82(10):ERROR:102: Tcl command execution failed: conflict PrgEnv-cray
+
+/mnt/bwpy/single/usr/lib/python3.6/site-packages/sklearn/ensemble/weight_boosting.py:29: DeprecationWarning: numpy.core.umath_tests is an internal NumPy module and should not be imported. It will be removed in a future NumPy release.
+  from numpy.core.umath_tests import inner1d
+Traceback (most recent call last):
+  File "/u/eot/lcford2/projects/predict-release/bwvenv/lib/python3.6/site-packages/pandas/io/pickle.py", line 182, in read_pickle
+    return pickle.load(f)
+AttributeError: Can't get attribute 'new_block' on <module 'pandas.core.internals.blocks' from '/u/eot/lcford2/projects/predict-release/bwvenv/lib/python3.6/site-packages/pandas/core/internals/blocks.py'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/bwpy/single/usr/lib64/python3.6/pickle.py", line 269, in _getattribute
+    obj = getattr(obj, subpath)
+AttributeError: module 'pandas.core.internals.blocks' has no attribute 'new_block'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "multi_basin_simple.py", line 209, in <module>
+    pipeline()
+  File "multi_basin_simple.py", line 17, in pipeline
+    meta = get_basin_meta_data(basin)
+  File "/mnt/a/u/eot/lcford2/projects/predict-release/python_scripts/multi_basin_tree.py", line 77, in get_basin_meta_data
+    fmeta = pd.read_pickle(file)
+  File "/u/eot/lcford2/projects/predict-release/bwvenv/lib/python3.6/site-packages/pandas/io/pickle.py", line 187, in read_pickle
+    return pc.load(f, encoding=None)
+  File "/u/eot/lcford2/projects/predict-release/bwvenv/lib/python3.6/site-packages/pandas/compat/pickle_compat.py", line 249, in load
+    return up.load()
+  File "/mnt/bwpy/single/usr/lib64/python3.6/pickle.py", line 1050, in load
+    dispatch[key[0]](self)
+  File "/mnt/bwpy/single/usr/lib64/python3.6/pickle.py", line 1347, in load_stack_global
+    self.append(self.find_class(module, name))
+  File "/u/eot/lcford2/projects/predict-release/bwvenv/lib/python3.6/site-packages/pandas/compat/pickle_compat.py", line 189, in find_class
+    return super().find_class(module, name)
+  File "/mnt/bwpy/single/usr/lib64/python3.6/pickle.py", line 1390, in find_class
+    return _getattribute(sys.modules[module], name)[0]
+  File "/mnt/bwpy/single/usr/lib64/python3.6/pickle.py", line 272, in _getattribute
+    .format(name, obj))
+AttributeError: Can't get attribute 'new_block' on <module 'pandas.core.internals.blocks' from '/u/eot/lcford2/projects/predict-release/bwvenv/lib/python3.6/site-packages/pandas/core/internals/blocks.py'>
