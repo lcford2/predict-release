@@ -179,19 +179,22 @@ def sub_tree_multi_level_model(X, y, tree_vars, tree=None, groups=None, my_id=No
     return md.fit()
 
 
-def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None, std=None, timelevel="all", actual_inflow=None):
+def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None, std=None, timelevel="all", actual_inflow=None, tree_vars=None):
     # wrap prediction for sub tree model
     # means and std required if forecast is True
     # first thing to do is get the proper groupings for the exogogenous (independent) variables
+    if tree_vars == None:
+        tree_vars = X.columns
     if forecast:
-        leaves, groups = get_leaves_and_groups(X.drop("Storage_pre_act", axis=1), tree)
+        leaves, groups = get_leaves_and_groups(X.drop("Storage_pre_act", axis=1)[tree_vars], tree)
     else:
-        leaves, groups = get_leaves_and_groups(X, tree)
+        leaves, groups = get_leaves_and_groups(X[tree_vars], tree)
 
     # create exog dataframe for predictoin
     mexog = pd.DataFrame(np.ones((y.size, 1)), index=y.index, columns=["const"])
     exog_re = deepcopy(X)
     exog_re["group"] = groups
+    exog_re["const"] = mexog["const"]
     try:
         exog_re = exog_re.drop(["NaturalOnly", "RunOfRiver"], axis=1)
     except KeyError as e:
@@ -204,10 +207,11 @@ def predict_from_sub_tree_model(X, y, tree, ml_model, forecast=False, means=None
             raise ValueError("If forecast=True, means and std must be provided.")
         # step through time for forecast release, then calculate storage based on 
         # mass balance, and back transform storage for use in the next time step
-        preds = forecast_mixedLM(
-                ml_model.params,
-                ml_model.random_effects,
-                mexog,
+        preds = forecast_mixedLM_new(
+                # ml_model.params,
+                # ml_model.random_effects,
+                pd.DataFrame(ml_model.random_effects),
+                # mexog,
                 exog_re,
                 means, 
                 std,
@@ -279,20 +283,21 @@ def pipeline():
         # "Net Inflow", "Inflow_roll7"
     ]
 
-    X_vars_tree = ["st_frac"]
     
     # split into training and testing sets
-    train_index = X.index
+    split_date = datetime(2010, 1, 1)
+    test_index = X.loc[X.index.get_level_values(0) >= split_date - timedelta(days=8)].index
+    train_index = X.loc[X.index.get_level_values(0) < split_date].index
     X_train = X.loc[train_index,X_vars]
     X_train_tree = X.loc[train_index, X_vars_tree]
-    # X_test = X.loc[test_index,X_vars]
+    X_test = X.loc[test_index,X_vars]
+    X_test_tree = X.loc[test_index,X_vars_tree]
     # X_test_all = X.loc[:,X_vars]
     y_train_rel = y.loc[train_index]
-    # y_test_rel = y.loc[test_index]
-    y_train_sto = X.loc[train_index, "Storage"]
+    y_test_rel = y.loc[test_index]
     # y_test_sto = X.loc[test_index, "Storage"]
 
-    train_res = X_train.index.get_level_values(1).unique()
+    # train_res = X_train.index.get_level_values(1).unique()
     # test_res = X_test.index.get_level_values(1).unique()
 
     # fit the decision tree model
@@ -301,14 +306,11 @@ def pipeline():
     tree = tree_model(X_train_tree, y_train_rel, tree_type="decision", max_depth=max_depth,
                     random_state=37)
     leaves, groups = get_leaves_and_groups(X_train_tree, tree)
-    II()
-    sys.exit()
-    # # fit the sub_tree ml model
-    # X_train = X_train.drop(["NaturalOnly", "RunOfRiver"], axis=1)
 
 
-    month_arrays = {i:[0]*X_train.shape[0] for i in calendar.month_abbr[1:]}
-    for i, date in enumerate(X.index.get_level_values(0)):
+    month_arrays = {i:[0 for i in range(X_train.shape[0])] for i in calendar.month_abbr[1:]}
+    
+    for i, date in enumerate(X_train.index.get_level_values(0)):
         abbr = calendar.month_abbr[date.month]            
         month_arrays[abbr][i] = 1   
 
@@ -317,33 +319,73 @@ def pipeline():
     
     X_train["st_frac"] = st_frac
     ml_model = sub_tree_multi_level_model(X_train, y_train_rel, X_vars_tree, tree)
-    # II()
+
     coefs = pd.DataFrame(ml_model.random_effects)
     fitted = ml_model.fittedvalues
     
+    month_arrays = {i:[0 for i in range(X_test.shape[0])] for i in calendar.month_abbr[1:]}
+    
+    for i, date in enumerate(X_test.index.get_level_values(0)):
+        abbr = calendar.month_abbr[date.month]            
+        month_arrays[abbr][i] = 1   
+
+    for key, value in month_arrays.items():
+        X_test[key] = value                      
+    # coefs = {g: np.mean(fit_results["params"][g], axis=0)
+    #          for g in groups.unique()}
+    # coefs = pd.DataFrame(coefs, index=X_train.columns)
+
+    test_leaves, test_groups = get_leaves_and_groups(X_test_tree, tree)
+
+    # predict and forecast from the sub_tree model
+    X_test["Storage_pre_act"] = df.loc[test_index, "Storage_pre"]
+    preds, pgroups = predict_from_sub_tree_model(X_test, y_test_rel, tree, ml_model, tree_vars=X_vars_tree)
+
+    idx = pd.IndexSlice
+    actual_inflow_test = df.loc[test_index, "Net Inflow"] 
+    X_test["Storage_pre"] = X.loc[test_index, "Storage_pre"]
+    forecasted, fgroups = predict_from_sub_tree_model(X_test, y_test_rel, tree, ml_model, 
+                                            forecast=True, means=means,std=std,
+                                            timelevel=timelevel, actual_inflow=actual_inflow_test,
+                                            tree_vars=X_vars_tree)
+    forecasted = forecasted.dropna()
+    
+    # X_test["group"] = test_groups
+    # forecasted = forecast_mixedLM_new(coefs, X_test, means, std, "group", actual_inflow_test)
+    # forecasted = forecasted[forecasted.index.get_level_values(0).year >= 2010]
+
     y_train_rel_act = (y_train_rel.unstack() *
-                    std.loc[train_res,"Release"] + means.loc[train_res,"Release"]).stack()
-    y_train_sto_act = (y_train_sto.unstack() *
-                    std.loc[train_res,"Storage"] + means.loc[train_res,"Storage"]).stack()
-    # y_test_rel_act = (y_test_rel.unstack() *
-                    # std.loc[test_res,"Release"] + means.loc[test_res,"Release"]).stack()
-    # y_test_sto_act = (y_test_sto.unstack() *
-                    # std.loc[test_res,"Storage"] + means.loc[test_res,"Storage"]).stack()
-
+                    std.loc[:,"Release"] + means.loc[:,"Release"]).stack()
+    y_test_rel_act = (y_test_rel.unstack() *
+                    std.loc[:,"Release"] + means.loc[:,"Release"]).stack()
     fitted_act = (fitted.unstack() *
-                      std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
+                      std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
+    preds_act = (preds.unstack() *
+                      std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
+    forecasted_act = forecasted["Release_act"]
 
-    f_act_score = r2_score(y_train_rel_act, fitted_act)
-    f_act_rmse = np.sqrt(mean_squared_error(y_train_rel_act, fitted_act))
+    train_score = r2_score(y_train_rel_act, fitted_act)
+    train_rmse = mean_squared_error(y_train_rel_act, fitted_act, squared=False)
+    test_score = r2_score(y_test_rel_act, preds_act)
+    test_rmse = mean_squared_error(y_test_rel_act, preds_act, squared=False)
+    fc_index = forecasted_act.index
+    forecasted_score = r2_score(y_test_rel_act.loc[fc_index], forecasted_act)
+    forecasted_rmse = mean_squared_error(y_test_rel_act.loc[fc_index], forecasted_act, squared=False)
     
     y_train_mean = y_train_rel_act.groupby(
         y_train_rel_act.index.get_level_values(1)
     ).mean()
-    # y_test_mean = y_test_rel_act.groupby(
-        # y_test_rel_act.index.get_level_values(1)
-    # ).mean()
+    y_test_mean = y_test_rel_act.groupby(
+        y_test_rel_act.index.get_level_values(1)
+    ).mean()
     fmean = fitted_act.groupby(
         fitted_act.index.get_level_values(1)
+    ).mean()
+    pmean = preds_act.groupby(
+        preds_act.index.get_level_values(1)
+    ).mean()
+    fcmean = forecasted_act.groupby(
+        forecasted_act.index.get_level_values(1)
     ).mean()
 
     f_bias = fmean - y_train_mean
@@ -351,23 +393,42 @@ def pipeline():
         fitted_act.index.get_level_values(0).month
         ).mean() - y_train_rel_act.groupby(
             y_train_rel_act.index.get_level_values(0).month).mean()
-
-
-
+    p_bias = pmean - y_test_mean
+    p_bias_month = preds_act.groupby(
+        preds_act.index.get_level_values(0).month
+        ).mean() - y_test_rel_act.groupby(
+            y_test_rel_act.index.get_level_values(0).month).mean()
+    fc_bias = fcmean - y_test_mean
+    fc_bias_month = forecasted_act.groupby(
+        forecasted_act.index.get_level_values(0).month
+        ).mean() - y_test_rel_act.groupby(
+            y_test_rel_act.index.get_level_values(0).month).mean()
 
     results = {
-        "f_act_score": f_act_score,
-        "f_act_rmse": f_act_rmse,
+        "f_act_score": train_score,
+        "f_act_rmse": train_rmse,
         "f_bias": f_bias,
         "f_bias_month": f_bias_month,
+
+        "p_act_score": test_score,
+        "p_act_rmse": test_rmse,
+        "p_bias": p_bias,
+        "p_bias_month": p_bias_month,
+        
+        "fc_act_score": forecasted_score,
+        "fc_act_rmse": forecasted_rmse,
+        "fc_bias": fc_bias,
+        "fc_bias_month": fc_bias_month,
+        
         "coefs":coefs,
     }
 
     fitted_act = fitted_act.unstack()
+    preds_act = preds_act.unstack()
+    forecasted_act = forecasted_act.unstack()
     y_train_act = y_train_rel_act.unstack()
 
     res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
-
     for res in reservoirs:
         ya = y_train_act[res]
         ym = fitted_act[res]
@@ -377,10 +438,13 @@ def pipeline():
     results["res_scores"] = res_scores
 
     train_data = pd.DataFrame(dict(actual=y_train_rel_act, model=fitted_act.stack()))
+    test_p_data = pd.DataFrame(dict(actual=y_test_rel_act, model=preds_act.stack()))
+    test_f_data = pd.DataFrame(dict(actual=y_test_rel_act, model=forecasted_act.stack())).dropna()
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
-    quant_scores = pd.DataFrame(index=[0,1,2], columns=["NSE", "RMSE"])
-    train_data["bin"] = train_quant
+    test_quant, test_bins = pd.qcut(test_p_data["actual"], 3, labels=False, retbins=True)
 
+    train_quant_scores = pd.DataFrame(index=[0,1,2], columns=["NSE", "RMSE"])
+    train_data["bin"] = train_quant
     for q in [0,1,2]:
         score = r2_score(
             train_data[train_data["bin"] == q]["actual"],
@@ -390,171 +454,99 @@ def pipeline():
             train_data[train_data["bin"] == q]["actual"],
             train_data[train_data["bin"] == q]["model"]
         ))
-        quant_scores.loc[q] = [score, rmse]
+        train_quant_scores.loc[q] = [score, rmse]
 
-    # coefs = {g: np.mean(fit_results["params"][g], axis=0)
-    #          for g in groups.unique()}
-    # coefs = pd.DataFrame(coefs, index=X_train.columns)
+    test_p_quant_scores = pd.DataFrame(index=[0,1,2], columns=["NSE", "RMSE"])
+    test_p_data["bin"] = test_quant
+    for q in [0,1,2]:
+        score = r2_score(
+            test_p_data[test_p_data["bin"] == q]["actual"],
+            test_p_data[test_p_data["bin"] == q]["model"]
+        )
+        rmse = np.sqrt(mean_squared_error(
+            test_p_data[test_p_data["bin"] == q]["actual"],
+            test_p_data[test_p_data["bin"] == q]["model"]
+        ))
+        test_p_quant_scores.loc[q] = [score, rmse]
 
-    # test_leaves, test_groups = get_leaves_and_groups(X_test, tree)
-
-    # predict and forecast from the sub_tree model
-    # preds, pgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model)
-    # pred_result = fit_release_and_storage(y_test_rel, y_test_sto, X_test, test_groups, means, std,
-                                        #   init_values=coefs, niters=0)
-
-    # idx = pd.IndexSlice
-    # X_test.loc[idx[datetime(2010, 1, 1), resers],"Storage_pre_act"] = df.loc[idx[datetime(2010, 1, 1), resers],"Storage_pre"]
+    test_f_quant_scores = pd.DataFrame(index=[0,1,2], columns=["NSE", "RMSE"])
+    test_f_data["bin"] = test_quant
+    for q in [0,1,2]:
+        score = r2_score(
+            test_f_data[test_f_data["bin"] == q]["actual"],
+            test_f_data[test_f_data["bin"] == q]["model"]
+        )
+        rmse = np.sqrt(mean_squared_error(
+            test_f_data[test_f_data["bin"] == q]["actual"],
+            test_f_data[test_f_data["bin"] == q]["model"]
+        ))
+        test_f_quant_scores.loc[q] = [score, rmse]
     
-    # forecasted, fgroups = predict_from_sub_tree_model(X_test, y_test, tree, ml_model, 
-    #                                         #  forecast=True, means=test_means, std=test_sd,
-    #                                         forecast=True, means=means,std=std,
-    #                                         timelevel=timelevel, actual_inflow=actual_inflow_test)
-    # X_test["group"] = test_groups
-    # forecasted = forecast_mixedLM_new(coefs, X_test, means, std, "group", actual_inflow_test)
-    # forecasted = forecasted[forecasted.index.get_level_values(0).year >= 2010]
-
-
-    # get all variables back to original space
-    # preds_rel = pred_result["f_rel_act"][0].unstack()
-    # preds_sto = pred_result["f_sto_act"][0].unstack()
-    # fc_rel = forecasted.loc[:, "Release_act"].unstack()
-    # fc_sto = forecasted.loc[:, "Storage_act"].unstack()
-    # fitted = fitted.unstack()
-    # y_train = y_train.unstack()
-    # y_test = y_test.unstack()
-    # II()
-    # try:
-    #     y_test.columns = y_test.columns.get_level_values(1)
-    #     y_train.columns = y_train.columns.get_level_values(1)
-    # except IndexError as e:
-    #     pass
     
-    # train_means = means
-    # test_means = means
-    # train_sd = std
-    # test_sd = std
-    # if timelevel == "all":
-    #     preds_act = (preds * test_sd["Release"] + test_means["Release"]).stack()
-    #     fitted_act = (fitted * train_sd["Release"] + train_means["Release"]).stack()
-    #     y_train_act = (y_train * train_sd["Release"] + train_means["Release"]).stack()
-    #     y_test_act = (y_test * test_sd["Release"] + test_means["Release"]).stack()
-    # else:
-    #     rel_means_test = test_means["Release"].unstack()
-    #     rel_std_test = test_sd["Release"].unstack()
-    #     rel_means_train = train_means["Release"].unstack()
-    #     rel_std_train = train_sd["Release"].unstack()
-    #     preds_act = deepcopy(preds)
-    #     fitted_act = deepcopy(fitted)
-    #     y_train_act = deepcopy(y_train)
-    #     y_test_act = deepcopy(y_test)
-    #     extent = 13 if timelevel == "month" else 4
-    #     for tl in range(1,extent):
-    #         ploc = getattr(preds.index, timelevel) == tl
-    #         floc = getattr(fitted.index, timelevel) == tl
-    #         preds_act.loc[ploc] = preds_act.loc[ploc] * rel_std_test.loc[tl] + rel_means_test.loc[tl]
-    #         fitted_act.loc[floc] = fitted_act.loc[floc] * rel_std_train.loc[tl] + rel_means_train.loc[tl]
-    #         y_train_act.loc[floc] = y_train_act.loc[floc] * rel_std_train.loc[tl] + rel_means_train.loc[tl]
-    #         y_test_act.loc[ploc] = y_test_act.loc[ploc] * rel_std_test.loc[tl] + rel_means_test.loc[tl]
-    #     preds_act = preds_act.stack()
-    #     fitted_act = fitted_act.stack()
-    #     y_train_act = y_train_act.stack()
-    #     y_test_act = y_test_act.stack()
-    # forecasted_act = forecasted["Release_act"]
-
-
-    # report scores for the current model run
-    # try:
-    #     preds_score_rel = r2_score(y_test_rel_act, preds_rel.stack())
-    #     preds_score_sto = r2_score(y_test_sto_act, preds_sto.stack())
-    # except ValueError as e:
-    #     II()
-    # y_test_rel_act = y_test_rel_act.loc[fc_rel.index]
-    # y_test_sto_act = y_test_sto_act.loc[fc_sto.index]
-
-    # fit_score_rel = r2_score(y_train_rel_act, fitted_rel)
-    # fit_score_sto = r2_score(y_train_sto_act, fitted_sto)
-    # try:
-    #     fc_score_rel = r2_score(y_test_rel_act, fc_rel.stack())
-    #     fc_score_sto = r2_score(y_test_sto_act, fc_sto.stack())
-    # except ValueError as e:
-    #     fc_score_rel = np.nan
-    #     fc_score_sto = np.nan
-
-    # score_strings = [f"{ftype:<12} = {score:.3f}" for ftype, score in zip(
-    #                 ["Fit", "Forecast", "Preds"], [fit_score_rel, fc_score_rel, preds_score_rel])]
-    # print("Release Scores:")
-    # print("\n".join(score_strings))
-
-    # score_strings = [f"{ftype:<12} = {score:.3f}" for ftype, score in zip(
-    #                 ["Fit", "Forecast", "Preds"], [fit_score_sto, fc_score_sto, preds_score_sto])]
-    # print("Storage Scores:")
-    # print("\n".join(score_strings))
+    print(train_quant_scores.to_markdown(floatfmt="0.3f"))
+    print(test_p_quant_scores.to_markdown(floatfmt="0.3f"))
+    print(test_f_quant_scores.to_markdown(floatfmt="0.3f"))
 
     # setup output parameters
     if timelevel == "all":
         prepend = ""
     else:
         prepend = f"{timelevel}_"
-    foldername = f"{prepend}upstream_basic_td{max_depth:d}_roll7_simple_tree_month_coefs_st_frac"
-    folderpath = pathlib.Path("..", "results", "treed_ml_model_dual_fit", foldername)
-    folderpath = pathlib.Path("..", "results", "synthesis", "treed_model", foldername)
+    # foldername = f"{prepend}upstream_basic_td{max_depth:d}_roll7_simple_tree_month_coefs_st_frac"
+    # folderpath = pathlib.Path("..", "results", "treed_ml_model_dual_fit", foldername)
+    # folderpath = pathlib.Path("..", "results", "synthesis", "treed_model", foldername)
     # check if the directory exists and handle it
-    if folderpath.is_dir():
-        # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
-        response = "y"
-        if response[0].lower() != "y":
-            folderpath = pathlib.Path(
-                "..", "results", "treed_ml_model", 
-                "_".join([foldername, datetime.today().strftime("%Y%m%d_%H%M")]))
-            print(f"Saving at {folderpath} instead.")
-            folderpath.mkdir()
-    else:
-        folderpath.mkdir()
-    
+    # if folderpath.is_dir():
+    #     # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
+    #     response = "y"
+    #     if response[0].lower() != "y":
+    #         folderpath = pathlib.Path(
+    #             "..", "results", "treed_ml_model", 
+    #             "_".join([foldername, datetime.today().strftime("%Y%m%d_%H%M")]))
+    #         print(f"Saving at {folderpath} instead.")
+    #         folderpath.mkdir()
+    # else:
+    #     folderpath.mkdir()
+
+    output_dir = pathlib.Path(f"../results/agu_2021_runs/tree_model_temporal_validation")
+    if not output_dir.exists():
+        output_dir.mkdir(parents=True)
+
     # export tree to graphviz file so it can be converted nicely
     # rotate_tree = True if max_depth > 3 else False
 
-    export_graphviz(tree, out_file=(folderpath / "tree.dot").as_posix(),
+    export_graphviz(tree, out_file=(output_dir / "tree.dot").as_posix(),
                     feature_names=X_vars_tree, filled=True, proportion=True, rounded=True,
                     special_characters=True)
 
     # setup output container for modeling information
     X_train["Storage_pre"] = X["Storage_pre"]
     output = dict(
-        # re_coefs=ml_model.random_effects,
-        # fe_coefs=ml_model.params,
-        # cov_re=ml_model.cov_re,
-        # coefs=coefs,
         **results,
         data=dict(
-            # X_test=X_test,
-            # y_test=y_test,
+            X_test=X_test,
             X_train=X_train,
-            # y_train=y_train,
             fitted_rel=fitted_act,
-            # fitted_sto=fitted_sto,
-            # y_test_rel_act=y_test_rel_act,
             y_train_rel_act=y_train_rel_act,
-            # y_test_sto_act=y_test_sto_act,
-            # y_train_sto_act=y_train_sto_act,
-            # predicted_act_rel=preds_rel.stack(),
-            # predicted_act_sto=preds_sto.stack(),
-            # groups=test_groups,
             groups=groups,
-            quant_scores=quant_scores
-            # forecasted=forecasted[["Release", "Storage",
-                                #    "Release_act", "Storage_act"]]
+            train_quant_scores=train_quant_scores,
+            test_p_quant_scores=test_p_quant_scores,
+            test_f_quant_scores=test_f_quant_scores,
+            train_data=train_data,
+            test_p_data=test_p_data,
+            test_f_data=test_f_data,
+            forecasted=forecasted[["Release", "Storage",
+                                   "Release_act", "Storage_act"]]
         )
     )
     # write the output dict to a pickle file
-    with open((folderpath / "results.pickle").as_posix(), "wb") as f:
+    with open((output_dir / "results.pickle").as_posix(), "wb") as f:
         pickle.dump(output, f, protocol=4)
     
     # write the random effects to a csv file for easy access
     # pd.DataFrame(ml_model.random_effects).to_csv(
     #     (folderpath / "random_effects.csv").as_posix())
-    coefs.to_csv((folderpath/"random_effects.csv").as_posix())
+    coefs.to_csv((output_dir/"random_effects.csv").as_posix())
 
 if __name__ == "__main__":
     pipeline()

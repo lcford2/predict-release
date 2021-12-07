@@ -122,14 +122,12 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     filename = "-".join(groups)
     for_groups = df.loc[:,groups]
     fraction_names = ["Fraction_Storage",
-                    #   "Fraction_Release", 
                       "Fraction_Net Inflow"]
     fractions = df.loc[:, fraction_names]
     if filter_groups:
         filename += "_filter"
         for key, value in filter_groups.items():
             df = df.loc[df[key] == inverse_groupnames[key][value],:]
-            # y_scaled = y_scaled.loc[X_scaled.index]
             filename += f"_{value}"
     
     df = df.copy()
@@ -140,43 +138,17 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         df.loc[:,"Release_pre"])
     df.loc[:,"Release_Inflow_interaction"] = df.loc[:,"Release_pre"].mul(
         df.loc[:,"Net Inflow"])
-    # sys.exit()
-    # extra_lag_terms = np.ravel([[f"Storage_{i}pre", f"Release_{i}pre"] for i in range(2,8)]).tolist()
-    # extra_lag_terms = [f"Release_{i}pre" for i in range(2,8)]
-    if scaler == "mine":
-        scaled_df, means, std = scale_multi_level_df(df)
-        X_scaled = scaled_df.loc[:, ["Storage_pre", "Net Inflow", "Release_pre",
-                                     "Storage_Inflow_interaction",
-                                     "Storage_Release_interaction",
-                                     "Release_Inflow_interaction",
-                                     "Release_roll7", "Release_roll14", "Storage_roll7",
-                                     "Storage_roll14", "Inflow_roll7", "Inflow_roll14"] 
-                                ]
-        y_scaled = scaled_df.loc[:, "Release"]
-        y_scaled_sto = scaled_df.loc[:, "Storage"]
-    else:
-        scaler = StandardScaler()
-        X = df.loc[:,["Storage_pre", "Net Inflow", "Release_pre"] + 
-                  extra_lag_terms + ["Storage_roll7", "Release_roll7", "Inflow_roll7"]
-                  ]
-        y = df.loc[:,"Release"]
-
-        x_scaler = scaler.fit(X)
-        X_scaled = x_scaler.transform(X)
-
-        y_scaler = scaler.fit(y.values.reshape(-1,1))
-        y_scaled = y_scaler.transform(y.values.reshape(-1, 1))
-
-        X_scaled = pd.DataFrame(X_scaled, index=X.index, columns=X.columns)
-        y_scaled = pd.Series(y_scaled.reshape(-1), index=y.index)
-
-    # X_scaled = df.loc[X_scaled.index, X_scaled.columns]
-    # y_scaled = df.loc[y_scaled.index, y_scaled.name]
-    # means = pd.DataFrame(0,index=means.index,columns=means.columns)
-    # std = pd.DataFrame(1,index=std.index,columns=std.columns)
-    # II()
-    # sys.exit()
     
+    scaled_df, means, std = scale_multi_level_df(df)
+    X_scaled = scaled_df.loc[:, ["Storage_pre", "Net Inflow", "Release_pre",
+                                    "Storage_Inflow_interaction",
+                                    "Storage_Release_interaction",
+                                    "Release_Inflow_interaction",
+                                    "Release_roll7", "Release_roll14", "Storage_roll7",
+                                    "Storage_roll14", "Inflow_roll7", "Inflow_roll14"] 
+                            ]
+    y_scaled = scaled_df.loc[:, "Release"]
+
     X_scaled[groups] = for_groups
     X_scaled[fraction_names] = fractions
 
@@ -189,28 +161,18 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         X_scaled.loc[X_scaled.index.get_level_values(1) == ch_name, "NaturalOnly"] = ["NaturalFlow" for i in range(size)]
 
     X_scaled = combine_columns(X_scaled, groups, "compositegroup") 
-    # II()
+    
     X_scaled = X_scaled[~X_scaled.index.get_level_values(1).isin(change_names)]   
     y_scaled = y_scaled[~y_scaled.index.get_level_values(1).isin(change_names)]
-    y_scaled_sto = y_scaled_sto[~y_scaled_sto.index.get_level_values(1).isin(change_names)]
     means = means[~means.index.isin(change_names)]
     std = std[~std.index.isin(change_names)]
     
-    #* This lets me group by month 
-    # X_scaled["compositegroup"] = [calendar.month_abbr[i.month]
-    #                      for i in X_scaled.index.get_level_values(0)]
 
     #* this introduces a intercept that varies monthly and between groups
     month_arrays = {i:[0 for i in range(X_scaled.shape[0])] for i in calendar.month_abbr[1:]}
     for i, date in enumerate(X_scaled.index.get_level_values(0)):
         abbr = calendar.month_abbr[date.month]
         month_arrays[abbr][i] = 1
-    # for date in X_scaled.index.get_level_values(0):
-    #     for key in month_arrays.keys():
-    #         if calendar.month_abbr[date.month] == key:
-    #             month_arrays[key].append(1)
-    #         else:
-    #             month_arrays[key].append(0)
 
     for key, array in month_arrays.items():
         X_scaled[key] = array
@@ -218,24 +180,13 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     split_date = datetime(2010,1,1)
     reservoirs = X_scaled.index.get_level_values(1).unique()
 
-    # test_index = X_scaled.index[X_scaled.index.get_level_values(1).isin(lvout_res)]
     train_index = X_scaled.index
-    # test_res = lvout_res
-    train_res = train_index.get_level_values(1).unique()
-
 
     X_test = X_scaled.loc[X_scaled.index.get_level_values(0) >= split_date - timedelta(days=8)]
     X_train = X_scaled.loc[X_scaled.index.get_level_values(0) < split_date]
 
     y_test = y_scaled.loc[y_scaled.index.get_level_values(0) >= split_date - timedelta(days=8)]
     y_train = y_scaled.loc[y_scaled.index.get_level_values(0) < split_date]
-    y_test_sto = y_scaled_sto.loc[y_scaled_sto.index.get_level_values(0) >= split_date - timedelta(days=8)]
-    y_train_sto = y_scaled_sto.loc[y_scaled_sto.index.get_level_values(0) < split_date]
-
-    # X_train = X_scaled.loc[train_index]
-    # X_test = X_scaled.loc[test_index]
-    # y_train = y_scaled.loc[train_index]
-    # y_test = y_scaled.loc[test_index]
 
     N_time_train = X_train.index.get_level_values(0).unique().shape[0]
     N_time_test = X_test.index.get_level_values(0).unique().shape[0]
@@ -243,58 +194,49 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     # train model
     # Instead of adding a constant, I want to create dummy variable that accounts for season differences
     exog = X_train
-    exog["const"] = 1.0
+    exog.loc[:,"const"] = 1.0
     
     groups = exog["compositegroup"]
-    # Storage Release Interactions are near Useless
-    # Release Inflow Interaction does not provide a lot either
-    # Storage Inflow interaction seems to matter for ComboFlow-StorageDam reservoirs.
+    
     interaction_terms = ["Storage_Inflow_interaction"]
         
-        # exog_terms = [
-        #     "Storage_pre", "Net Inflow", "Release_pre", 
-        #     ] + extra_lag_terms
-
-
     exog_terms = [
         "const", "Net Inflow", "Storage_pre", "Release_pre",
         "Storage_roll7",  "Inflow_roll7", "Release_roll7"
     ]
 
-        # exog_terms = [
-        #     "const", "Net Inflow", "sto_diff", "Release_pre",
-        #     "Release_roll7", "Inflow_roll7"
-        # ]
-
     exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:]]
 
     mexog = exog.loc[:,["const"]]
 
-        # actual_inflow_train = df["Net Inflow"].loc[df.index.get_level_values(
-        #     0) < split_date]
-        # actual_inflow_test = df["Net Inflow"].loc[df.index.get_level_values(
-        #     0) >= split_date - timedelta(days=8)]
-        
+    actual_inflow_test = df["Net Inflow"].loc[df.index.get_level_values(
+        0) >= split_date - timedelta(days=8)]
+
+    #* fit the model 
     free = MixedLMParams.from_components(fe_params=np.ones(mexog.shape[1]),
                                         cov_re=np.eye(exog_re.shape[1]))
     md = sm.MixedLM(y_train, mexog, groups=groups, exog_re=exog_re)
     mdf = md.fit(free=free)
     
+    #* extract the fitted values (i.e., training set dependent variable predictions)
     fitted = mdf.fittedvalues
+    #* tranform variables back to normal space for evaluation
     fitted_act = (fitted.unstack() * 
-                std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
+                std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
     y_train_act = (y_train.unstack() *
-                   std.loc[train_res, "Release"] + means.loc[train_res, "Release"]).stack()
+                   std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
     y_test_act = (y_test.unstack() *
                    std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
 
-
+    #* get the NSE and RMSE for the training set
     f_act_score = r2_score(y_train_act, fitted_act)
     f_act_rmse = np.sqrt(mean_squared_error(y_train_act, fitted_act))
 
+    #* extract fitted parameters
     fe_coefs = mdf.params
     re_coefs = mdf.random_effects
 
+    #* calculate total and monthly bias for fitted values
     y_train_mean = y_train_act.groupby(
         y_train_act.index.get_level_values(1)
     ).mean()
@@ -311,18 +253,8 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         ).mean() - y_train_act.groupby(
             y_train_act.index.get_level_values(0).month).mean()
 
-    # if label == "0":
-    #     p_act_score = f_act_score
-    #     p_norm_score = f_norm_score
-    #     p_act_rmse = f_act_rmse
-    #     p_norm_rmse = f_norm_rmse
-    #     p_act_score_all = f_act_score
-    #     p_act_rmse_all = f_act_rmse
-    #     p_bias = f_bias
-    #     p_bias_month = f_bias_month
-    # else:
+    #* predict on testing data
     X_test["const"] = 1
-    X_all = X_train.append(X_test).sort_index()
     exog = X_test
     groups = exog["compositegroup"]
     exog_re = exog.loc[:, exog_terms + interaction_terms + 
@@ -331,31 +263,28 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         
     preds = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
 
-    exog = X_all
-    groups = exog["compositegroup"] 
-    exog_re = exog.loc[:, exog_terms + interaction_terms +
-                    calendar.month_abbr[1:] + ["compositegroup"]]
-    mexog = exog[["const"]]
-    preds_all = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
+    #* simulate/forecast reservoirs
+    coefs = pd.DataFrame(mdf.random_effects)
+    idx = pd.IndexSlice
+    #* provide storage_pre_act 
+    exog_re.loc[idx[datetime(2010,1,1),:], "Storage_pre_act"] = df.loc[idx[datetime(2010,1,1),:], "Storage_pre"]
+    forecasted = forecast_mixedLM_new(coefs, exog_re, means, std, "compositegroup", actual_inflow_test)
+
 
     preds_act = (preds.unstack() *
-                    std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
-    preds_act_all = (preds_all.unstack() *
                     std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
     y_test_act = (y_test.unstack() *
                     std.loc[:, "Release"] + means.loc[:, "Release"]).stack()
     y_act = y_train_act.append(y_test_act).sort_index()
+    forecasted = forecasted[forecasted.index.get_level_values(0).year >= 2010]
+    forecasted_act = forecasted.loc[:, "Release_act"]
+    forecast_score_rel = r2_score(y_test_act.loc[forecasted_act.index], 
+                              forecasted_act)
 
     preds_mean = preds_act.groupby(
         preds_act.index.get_level_values(1)
     ).mean()
 
-    preds_mean_all = preds_act_all.groupby(
-        preds_act_all.index.get_level_values(1)
-    ).mean()
-
-    p_act_score_all = r2_score(y_act, preds_act_all)
-    p_act_rmse_all = np.sqrt(mean_squared_error(y_act, preds_act_all))
     p_bias = preds_mean - y_test_mean 
     p_act_score = r2_score(y_test_act, preds_act)
     p_norm_score = r2_score(y_test, preds)
@@ -367,33 +296,12 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         ).mean() - y_test_act.groupby(
             y_test_act.index.get_level_values(0).month).mean()
 
-    # lvout_rt_results[label] = {
-    #     "pred": {
-    #         "p_act_score": p_act_score,
-    #         "p_act_rmse": p_act_rmse,
-    #         "p_act_score_all":p_act_score_all,
-    #         "p_act_rmse_all":p_act_rmse_all,
-    #         "p_bias":p_bias,
-    #         "p_bias_month":p_bias_month
-    #     },
-    #     "fitted":{
-    #         "f_act_score": f_act_score,
-    #         "f_act_rmse": f_act_rmse,
-    #         "f_bias": f_bias,
-    #         "f_bias_month":f_bias_month
-    #     },
-    #     "coefs":re_coefs,
-    #     "test_res":test_res,
-    #     "train_res":train_res
-    # }
 
     fitted_act = fitted_act.unstack()
     y_train_act = y_train_act.unstack()
     y_test_act = y_test_act.unstack()
-
-    # if label != "0":
     preds_act = preds_act.unstack()
-    # y_test_act = y_test_act.unstack()
+    forecasted_act = forecasted_act.unstack()
 
     res_scores = pd.DataFrame(index=reservoirs, columns=["NSE", "RMSE"])
     for res in reservoirs:
@@ -407,22 +315,20 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         res_scores.loc[res, "RMSE"] = np.sqrt(mean_squared_error(y, ym))
 
 
-    # pred_df = pd.DataFrame({k:v["pred"] for k,v in lvout_rt_results.items()})
-    # fitt_df = pd.DataFrame({k:v["fitted"] for k,v in lvout_rt_results.items()})
 
     coefs = pd.DataFrame(mdf.random_effects)
     train_data = pd.DataFrame(dict(actual=y_train_act.stack(), model=fitted_act.stack()))
-
-    test_data = pd.DataFrame(dict(actual=y_test_act.stack(), model=preds_act.stack()))
+    test_p_data = pd.DataFrame(dict(actual=y_test_act.stack(), model=preds_act.stack()))
+    test_f_data = pd.DataFrame(dict(actual=y_test_act.stack(), model=forecasted_act.stack())).dropna()
     
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
-    test_quant, test_bins = pd.qcut(test_data["actual"], 3, labels=False, retbins=True)
+    test_quant, test_bins = pd.qcut(test_p_data["actual"], 3, labels=False, retbins=True)
 
     train_data["bin"] = train_quant
-    test_data["bin"] = test_quant
+    test_p_data["bin"] = test_quant
+    test_f_data["bin"] = test_quant
 
-    quant_scores = pd.DataFrame(index=[0,1,2], columns=["NSE", "RMSE"])
-    
+    train_quant_scores = pd.DataFrame(index=[0,1,2], columns=["NSE", "RMSE"])
     for q in [0,1,2]:
         score = r2_score(
             train_data[train_data["bin"] == q]["actual"],
@@ -432,78 +338,40 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
             train_data[train_data["bin"] == q]["actual"],
             train_data[train_data["bin"] == q]["model"],
         ))
-        quant_scores.loc[q] = [score, rmse]
+        train_quant_scores.loc[q] = [score, rmse]
+    train_quant_table = train_quant_scores.to_markdown(tablefmt="github", floatfmt=".3f")
+    print(train_quant_table) 
 
-    quant_table = quant_scores.to_markdown(tablefmt="github", floatfmt=".3f")
-    print(quant_table) 
+    test_p_quant_scores = pd.DataFrame(index=[0,1,2], columns=["NSE", "RMSE"])
+    for q in [0,1,2]:
+        score = r2_score(
+            test_p_data[test_p_data["bin"] == q]["actual"],
+            test_p_data[test_p_data["bin"] == q]["model"],
+        )
+        rmse = np.sqrt(mean_squared_error(
+            test_p_data[test_p_data["bin"] == q]["actual"],
+            test_p_data[test_p_data["bin"] == q]["model"],
+        ))
+        test_p_quant_scores.loc[q] = [score, rmse]
+    test_p_quant_table = test_p_quant_scores.to_markdown(tablefmt="github", floatfmt=".3f")
+    print(test_p_quant_table) 
 
+    test_f_quant_scores = pd.DataFrame(index=[0,1,2], columns=["NSE", "RMSE"])
+    for q in [0,1,2]:
+        score = r2_score(
+            test_f_data[test_f_data["bin"] == q]["actual"],
+            test_f_data[test_f_data["bin"] == q]["model"],
+        )
+        rmse = np.sqrt(mean_squared_error(
+            test_f_data[test_f_data["bin"] == q]["actual"],
+            test_f_data[test_f_data["bin"] == q]["model"],
+        ))
+        test_f_quant_scores.loc[q] = [score, rmse]
+    test_f_quant_table = test_f_quant_scores.to_markdown(tablefmt="github", floatfmt=".3f")
+    print(test_f_quant_table) 
 
-    # train_score_rel = r2_score(y_train_rel_act, fitted_rel)
-    # train_score_sto = r2_score(y_train_sto_act, fitted_sto)
-
-    # # fe_coefs = mdf.params
-    # # re_coefs = mdf.random_effects
-    # coefs = {g:np.mean(fit_results["params"][g], axis=0) for g in groups.unique()}
-    # coefs = pd.DataFrame(coefs, index=exog_re.columns)
-
-    # print(pd.DataFrame(coefs))
-    
-    # # test on unseen data
-    # exog = sm.add_constant(X_test)
-    # groups = exog["compositegroup"]
-
-
-    # exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:] + ["compositegroup"]]
-    # mexog = exog[["const"]]
-    # resers = exog_re.index.get_level_values(1).unique()
-    # idx = pd.IndexSlice
-    # exog_re.loc[idx[datetime(2010,1,1),resers], "Storage_pre_act"] = df.loc[idx[datetime(2010,1,1),resers], "Storage_pre"]
-  
-    # pred_result = fit_release_and_storage(y_test, y_test_sto, exog_re.drop(
-    #     ["compositegroup", "Storage_pre_act"], axis=1), groups, means, std, init_values=coefs, niters=0)
-    # predicted_rel = pred_result["f_rel_act"][0]
-    # predicted_sto = pred_result["f_sto_act"][0]
-    
-    # # predicted = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
-
-  
-    # # forecasted = forecast_mixedLM(fe_coefs, re_coefs, mexog, exog_re, means, std, "compositegroup", actual_inflow_test)
-    # forecasted = forecast_mixedLM_new(coefs, exog_re, means, std, "compositegroup", actual_inflow_test)
-    # # predicted_act = (predicted.unstack() * std["Release"] + means["Release"]).stack()
-    # test_score_rel = r2_score(y_test_rel_act, predicted_rel)
-    # test_score_sto = r2_score(y_test_sto_act, predicted_sto)
-
-    
-    # forecasted = forecasted[forecasted.index.get_level_values(0).year >= 2010]
-    # forecast_score_rel = r2_score(y_test_rel_act.loc[forecasted["Release_act"].index], 
-    #                           forecasted["Release_act"])
-    # forecast_score_sto = r2_score(y_test_sto_act.loc[forecasted["Storage_act"].index], 
-    #                           forecasted["Storage_act"])
-    # # if forecast_score < 0:
-    # #     II()
-    # # print(mdf.summary())
-    # # print(f"N Time Train: {N_time_train}")
-    # # print(f"N Time Test : {N_time_test}")
-    # print("Release Scores")
-    # print(f"Train Score : {train_score_rel:.4f}")
-    # print(f"Test Score  : {test_score_rel:.4f}")
-    # print(f"Forecast Score  : {forecast_score_rel:.4f}")
-    # print("Storage Scores")
-    # print(f"Train Score : {train_score_sto:.4f}")
-    # print(f"Test Score  : {test_score_sto:.4f}")
-    # print(f"Forecast Score  : {forecast_score_sto:.4f}")
-    # # print("\nGroup Sizes:")
-    # # for (label, array) in zip(md.group_labels, md.exog_re_li):
-    # #     length = array.shape[0]
-    # #     nres = int(length/N_time_train)
-    # #     print(f"\t{label}: Length = {length}, # Res = {nres}")
-    # # print("\nGroup Coefficients:")
-    # # print_coef_table(re_coefs)
-    # # II()
-    
     output = dict(
         coefs=coefs,
-        # fe_coefs=fe_coefs,
         f_act_score=f_act_score,
         f_act_rmse=f_act_rmse,
         f_bias=f_bias,
@@ -514,22 +382,15 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
             X_train=X_train,
             y_train=y_train,
             y_results=train_data,
-            # fitted_rel=fitted_act,
-            # fitted_sto=fitted_sto,
-            # y_test_rel_act=y_test_rel_act,
-            # y_train_rel_act=y_train_rel_act,
-            # y_test_sto_act=y_test_sto_act,
-            # y_train_sto_act=y_train_sto_act,
-            # predicted_act_rel=predicted_rel,
-            # predicted_act_sto=predicted_sto,
-            quant_scores=quant_scores
-            # forecasted=forecasted[["Release", "Storage", "Release_act", "Storage_act"]]
+            y_pred=test_p_data,
+            y_forc=test_f_data,
+            forecasted=forecasted[["Release", "Storage", "Release_act", "Storage_act"]]
         )
     )
 
     output_dir = pathlib.Path(f"../results/agu_2021_runs/simple_model_temporal_validation")
     if not output_dir.exists():
-        pathlib.mkdir(output_dir, parents=True)
+        output_dir.mkdir(parents=True)
 
     with open(output_dir / "results.pickle", "wb") as f:
         pickle.dump(output, f, protocol=4)
@@ -804,34 +665,36 @@ def forecast_mixedLM_new(coefs, exog, means, std, group_col, actual_inflow, time
     groups = exog[group_col].unique()
     re_keys = coefs[groups[0]].keys()
 
+    # define date ranges
     start_date = exog.index.get_level_values(0)[0] + timedelta(days=8)
     end_date = exog.index.get_level_values(0)[-1]
     pre_dates = pd.date_range(start=exog.index.get_level_values(0)[0], end=start_date)
+    # columns that need to be calculated every time step
     calc_columns = ["Release_pre", "Storage_pre", "Storage_pre_act",
                     "Release_roll7", "Storage_roll7",
                     "Storage_act", "Release_act"]
+    # define where to stop adding columns to output df
     if "Storage_roll7" in exog.columns:
         stop_it = 5
     else:
         stop_it = 4    
+    
+    # setup output df by adding pre_date information
     idx = pd.IndexSlice
     for col in calc_columns[:stop_it]:
         output_df.loc[idx[pre_dates,:], col] = exog.loc[idx[pre_dates,:], col]
-    # output_df.loc[idx[start_date, :],
-    #               "Release_pre"] = exog.loc[idx[start_date, :], "Release_pre"]
-    # output_df.loc[idx[start_date, :], "Storage_pre"] = exog.loc[idx[start_date, :], "Storage_pre"]
-    # output_df.loc[:, "Storage_pre"] = exog.loc[:, "Storage_pre"]
 
     for col in output_df.columns:
         if col not in calc_columns:
             output_df[col] = exog.loc[:,col]
 
+    # actual iteration dates
     dates = pd.date_range(start=start_date, end=end_date)
     date = dates[0]
     output_df[group_col] = exog[group_col]
     resers = exog.index.get_level_values(1).unique()
-    nres = resers.size
 
+    # determine how to get parameters if it is a tree or simple model
     if tree:
         coeffs = pd.DataFrame(coefs).T
     else:
@@ -839,35 +702,37 @@ def forecast_mixedLM_new(coefs, exog, means, std, group_col, actual_inflow, time
         for res in resers:
             coeffs.loc[res, re_keys] = coefs[exog.loc[(date, res), group_col]]
 
+    # extract stdztion info for convience
     sto_means = means["Storage"]
-    sto_p_means = means["Storage_pre"]
     inf_means = means["Net Inflow"]
     rel_means = means["Release"]
     sto_std = std["Storage"]
-    sto_p_std = std["Storage_pre"]
     inf_std = std["Net Inflow"]
     rel_std = std["Release"]
     
+    # it is possible to have time varying means, though they provide no help
     if timelevel != "all":
         sto_means = sto_means.unstack()
         inf_means = inf_means.unstack()
         rel_means = rel_means.unstack()
         sto_std = sto_std.unstack()
         inf_std = inf_std.unstack()
-        rel_std = rel_std.unstack()
-
+        rel_std = rel_std.unstack() 
+   
     my_coefs = pd.DataFrame(index=resers, columns=re_keys, dtype="float64")
-    # II()
-    # sys.exit()
+
     for date in dates:
+        #* extract todays data
         dexog = output_df.loc[idx[date,:]][re_keys]
+        #* get parameters for todays data
         if tree:
             for res in resers:
-                param_group = dexog.loc[idx[date,res],group_col]
+                param_group = exog.loc[idx[date,res],group_col]
                 my_coefs.loc[res,re_keys] = coeffs.loc[param_group,re_keys]
         else:
             my_coefs = coeffs
 
+        # calculate todays standardized release
         rel = dexog.mul(my_coefs).sum(axis=1)
 
         if timelevel != "all":
@@ -877,9 +742,10 @@ def forecast_mixedLM_new(coefs, exog, means, std, group_col, actual_inflow, time
             inflow_act = output_df.loc[idx[date,:]]["Net Inflow"]*inf_std.loc[tl] + inf_means.loc[tl]
             # inflow_act = actual_inflow.loc[idx[date,:]]
         else:
+            #* back transform values needed for mass balance
             rel_act = rel*rel_std+rel_means
             # stor_pre_act = output_df.loc[idx[date, :]
-            #                              ]["Storage_pre"] * sto_p_std + sto_p_means
+            #                              ]["Storage_pre"] * sto_std + sto_means
             # stor_pre_act = output_df.loc[idx[date, :]
             #                              ]["Storage_pre_act"]
             inflow_act = output_df.loc[idx[date, :]
@@ -888,6 +754,7 @@ def forecast_mixedLM_new(coefs, exog, means, std, group_col, actual_inflow, time
         stor_pre_act = output_df.loc[idx[date, :]]["Storage_pre_act"]
 
         # inflow_act.index = inflow_act.index.get_level_values(1)
+        #* perform mass balance to get current storage
         storage_act = stor_pre_act + inflow_act - rel_act
             
         if timelevel != "all":
@@ -896,11 +763,13 @@ def forecast_mixedLM_new(coefs, exog, means, std, group_col, actual_inflow, time
         else:
             storage = (storage_act-sto_means)/sto_std
 
+        # store standardized and actual release and storage
         output_df.loc[idx[date,:],"Release"] = rel.values
         output_df.loc[idx[date,:],"Storage"] = storage.values
         output_df.loc[idx[date,:],"Release_act"] = rel_act.values
         output_df.loc[idx[date,:],"Storage_act"] = storage_act.values
 
+        # calculate rolling means for next time step
         tmrw = date+timedelta(days=1)
         tmp = output_df.groupby(
             output_df.index.get_level_values(1))[
@@ -913,16 +782,21 @@ def forecast_mixedLM_new(coefs, exog, means, std, group_col, actual_inflow, time
         tmp.loc[:,"Release_act"] = (tmp.loc[:,"Release_act"] - rel_means)/rel_std
     
         month_len = calendar.monthrange(date.year, date.month)[1]
+        # as long as there is another time step to simulate, set it up
         if date != end_date:
             # if date.timetuple().tm_yday in (365, 366):
             # if date.weekday() == 6:# or date.day == int(month_len//2):
             # output_df.loc[idx[tmrw,:],"Release_pre"] = exog.loc[idx[tmrw,:], "Release_pre"]
+            #* add calculated release values
             output_df.loc[idx[tmrw,:], "Release_pre"] = rel.values
                 # output_df.loc[idx[tmrw,:],"Storage_pre"] = exog.loc[idx[tmrw,:], "Storage_pre"]
             # else:
                 # output_df.loc[idx[tmrw,:],"Release_pre"] = rel.values
+            #* add calculated storage values (standardized)
             output_df.loc[idx[tmrw,:],"Storage_pre"] = storage.values
+            #* add calculated storage values (normal space)
             output_df.loc[idx[tmrw,:],"Storage_pre_act"] = storage_act.values
+            #* add rolling terms
             output_df.loc[idx[tmrw, :], [
                 "Storage_roll7", "Release_roll7"]] = tmp.values       
 
