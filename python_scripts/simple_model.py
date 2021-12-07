@@ -162,10 +162,10 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
 
     X_scaled = combine_columns(X_scaled, groups, "compositegroup") 
     
-    X_scaled = X_scaled[~X_scaled.index.get_level_values(1).isin(change_names)]   
-    y_scaled = y_scaled[~y_scaled.index.get_level_values(1).isin(change_names)]
-    means = means[~means.index.isin(change_names)]
-    std = std[~std.index.isin(change_names)]
+    # X_scaled = X_scaled[~X_scaled.index.get_level_values(1).isin(change_names)]   
+    # y_scaled = y_scaled[~y_scaled.index.get_level_values(1).isin(change_names)]
+    # means = means[~means.index.isin(change_names)]
+    # std = std[~std.index.isin(change_names)]
     
 
     #* this introduces a intercept that varies monthly and between groups
@@ -388,7 +388,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         )
     )
 
-    output_dir = pathlib.Path(f"../results/agu_2021_runs/simple_model_temporal_validation")
+    output_dir = pathlib.Path(f"../results/agu_2021_runs/simple_model_temporal_validation_all_res")
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
@@ -657,6 +657,7 @@ def fit_release_storage_stepping(y_rel, y_sto, exog, groups, means, std, init_va
 
 @time_function
 def forecast_mixedLM_new(coefs, exog, means, std, group_col, actual_inflow, timelevel="all", tree=False):
+    II()
     # create output data frame
     output_df = pd.DataFrame(index=exog.index, 
                              columns=list(exog.columns) + ["Storage_act", "Release_act"],
@@ -1008,9 +1009,9 @@ def forecast_mixedLM_other_res(groups, unseen=True):
 if __name__ == "__main__":
     df = read_tva_data()
     # forecast_mixedLM_other_res(groups=["NaturalOnly", "RunOfRiver"])
-    scaled_MixedEffects(df, groups = ["NaturalOnly","RunOfRiver"],
+    scaled_MixedEffects(df, groups = ["NaturalOnly","RunOfRiver"])
                             # filter_groups={"NaturalOnly": "NaturalFlow"})
-                        filter_groups={"NaturalOnly":"ComboFlow"})
+                        # filter_groups={"NaturalOnly":"ComboFlow"})
     # Recorded Forecast Scores:
     # NaturalOnly, PrimaryType :             0.9643
     # NaturalOnly, RunOfRiver :              0.9646
