@@ -208,8 +208,7 @@ def find_plot_functions(namespace):
     :rtype: dict
     """
     plot_functions = filter(lambda x: x[:4] == "plot", namespace)
-    plot_name_dict = {"_".join(i.split("_")[1:]):i for i in plot_functions}
-    return plot_name_dict
+    return {"_".join(i.split("_")[1:]):i for i in plot_functions}
 
 
 def get_res_names(file):

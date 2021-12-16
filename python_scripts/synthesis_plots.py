@@ -58,8 +58,8 @@ def load_results(args):
     # treed_path = RESULTS_DIR / "synthesis" / "treed_model" / tfile
     # simple_path = RESULTS_DIR / "synthesis" / "simple_model" / sfile
     simple_path = RESULTS_DIR / "synthesis" / "simple_model" / "all_res_time_fit" / \
-        "NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7.pickle"
-    treed_path = RESULTS_DIR / "synthesis" / "treed_model" / "upstream_basic_td3_roll7_simple_tree" / "results.pickle"
+        "NaturalOnly-RunOfRiver_filter_ComboFlow_SIx_pre_std_swapped_res_roll7_wrel.pickle"
+    treed_path = RESULTS_DIR / "synthesis" / "treed_model" / "upstream_basic_td3_roll7_simple_tree_month_coefs" / "results.pickle"
     with open(treed_path.as_posix(), "rb") as f:
         treed_data = pickle.load(f)
     with open(simple_path.as_posix(), "rb") as f:
@@ -723,6 +723,146 @@ def plot_subleaf_tprobs(tree,simp,args):
 
     plt.show()
 
+def plot_tree_groups(tree, simp, args):
+    groups = tree["data"]["groups"]
+    g_labels = groups.unique()
+    g_labels.sort()
+    g_lab_mask = {j: i+1 for i, j in enumerate(g_labels)}
+    groups_masked = groups.apply(g_lab_mask.get)
+    groups_masked = groups_masked.reset_index().rename(
+        columns={"level_0":"Date", "level_1":"Reservoir", 0:"Leaf"}
+    )
+    groups_masked["Month"] = groups_masked["Date"].dt.month
+
+    sns.boxplot(data=groups_masked, x="Reservoir", y="Leaf")
+    
+    II()
+    plt.show()
+
+def plot_monthly_node_prob(tree,simp,args):
+    groups = tree["data"]["groups"]
+    g_labels = groups.unique()
+    g_labels.sort()
+    g_lab_mask = {j: i+1 for i, j in enumerate(g_labels)}
+    groups_masked = groups.apply(g_lab_mask.get)
+    counts = groups_masked.groupby(groups.index.get_level_values(0).month).value_counts()
+
+    counts = counts.unstack()
+
+    mtotal = counts.sum(axis=1)
+    ltotal = counts.sum(axis=0)
+    
+    # props = counts.divide(ltotal, axis=1).T * 100
+    props = counts.divide(mtotal, axis=0) * 100
+
+    fig = plt.figure()
+    fig.patch.set_alpha(0.0)
+    gs = fig.add_gridspec(ncols=2, nrows=1, width_ratios=[20, 1])
+    ax = fig.add_subplot(gs[0, 0])
+    leg_ax = fig.add_subplot(gs[0, 1])
+
+    props.plot(
+        ax=ax,
+        kind="bar",
+        stacked=True, 
+        # ylabel="Node Probability [%]", 
+        ylabel="P(Leaf|Month) [%]",
+        rot=0,
+        colormap="turbo")
+
+    props_sum = props.cumsum(axis=1)
+
+    for m, row in props.iterrows():
+        for l, value in row.items():
+            color = "white" if l in [1,8] else "black"
+            if value > 5:
+                x = m - 1
+                if l == 1:
+                    y = np.mean([0, props_sum.loc[m, l]])
+                else:
+                    y = np.mean([props_sum.loc[m,l-1], props_sum.loc[m, l]])
+                ax.text(x, y, f"{value:.0f}", ha="center", va="center", color=color)
+            
+    ax.set_xticklabels(calendar.month_abbr[1:])
+    # ax.set_xlabel("Leaf")
+    handles, labels = ax.get_legend_handles_labels()
+    ax.get_legend().remove()
+    leg_ax.legend(handles, labels, loc="center", title="Leaf")
+    leg_ax.set_axis_off()
+    plt.show()
+
+def plot_versus_model_split(tree, simp, args):
+    tva = read_tva_data(just_load=True)
+    tree_data = pd.DataFrame(
+        {
+            "actual":tree["data"]["y_train_rel_act"],
+            "model":tree["data"]["fitted_rel"].stack(),
+            "group":tree["data"]["groups"]
+        }
+    )
+    simp_data = simp["data"]["y_results"]
+    simp_data["group"] = tva["RunOfRiver"].apply({0:"StDam", 1:"ROR"}.get)
+    tree_data["bin"] = pd.qcut(tree_data["actual"], 3, labels=False)
+    joined = tree_data.append(simp_data).sort_index()
+    joined["model_type"] = joined["group"].apply(
+        lambda x: {"StDam":"Low RT", "ROR":"Low RT"}.get(x, "High RT")
+    )
+    fig, axes = plt.subplots(2,3)
+    axes = axes.flatten()
+    titles = ["Lower 1/3", "Middle 1/3", "Upper 1/3"]
+    cmap = sns.color_palette("mako")
+    title_fs = 16
+    label_fs = 14
+    for qbin in range(3):
+        title = titles[qbin]             
+        # Low RT reservoirs
+        ax = axes[qbin]
+        idx = ((joined["bin"] == qbin) & (joined["model_type"] == "Low RT"))
+        x = joined.loc[idx, "actual"]
+        y = joined.loc[idx, "model"]
+        ax.scatter(x, y, edgecolor="white", linewidths=0.3, color=cmap[2])
+        ax.tick_params(axis="both", labelsize=label_fs)
+        abline(0,1,ax=ax,c="r")
+        ax.set_title(f"Low RT ({title})", fontsize=title_fs)
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+
+        # high rt reservoirs
+        ax = axes[qbin+3]
+        idx = ((joined["bin"] == qbin) & (joined["model_type"] == "High RT"))
+        x = joined.loc[idx, "actual"]
+        y = joined.loc[idx, "model"]
+        ax.scatter(x, y, edgecolor="white", linewidths=0.3, color=cmap[2])
+        abline(0,1,ax=ax,c="r")
+        ax.set_title(f"High RT ({title})", fontsize=title_fs)
+        ax.tick_params(axis="both", labelsize=label_fs)
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+    
+    fig.text(0.02, 0.5, "Modeled Release [1000 acre-feet/day]",
+            ha="center", va="center", rotation=90, fontsize=title_fs)
+    fig.text(0.5, 0.02, "Observed Release [1000 acre-feet/day]", ha="center", fontsize=title_fs)
+    plt.subplots_adjust(
+        top=0.92,
+        bottom=0.095,
+        left=0.06,
+        right=0.94,
+        hspace=0.24,
+        wspace=0.2
+    )
+    plt.show()
+
+
+def rmse(df):
+    return np.sqrt(mean_squared_error(df["actual"], df["model"]))
+
+def rmse_pct(df):
+    return np.sqrt(mean_squared_error(df["actual"], df["model"])) \
+             / df["actual"].mean() * 100
+
+def nse(df):
+    return r2_score(df["actual"], df["model"])
+
 
 def main(namespace):
     plot_functions = find_plot_functions(namespace)
@@ -757,8 +897,10 @@ def parse_args(plot_functions):
 
 if __name__ == "__main__":
 # setup plotting environment
-    plt.style.use("ggplot")
-    sns.set_context("talk")
+    plt.style.use("seaborn-talk")
+    # sns.set_context("talk")
+    # plt.style.use("seaborn-paper")
+    sns.set_context("notebook")
     style_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 # paths

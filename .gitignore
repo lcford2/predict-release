@@ -19,3 +19,4 @@ missouri_data/acoe_data/pdf_to_csv_fixed/*
 !missouri_data/*.sh
 bwvenv/
 bwvenv/*
+results/agu_2021_runs/simple_model_spatial_validation_all_res_lvoneout/results.pickle
