@@ -2,6 +2,9 @@ import pickle
 import pathlib
 import sys
 import calendar
+from copy import deepcopy
+from datetime import timedelta, datetime
+
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
@@ -11,10 +14,6 @@ from sklearn.tree import (DecisionTreeRegressor, export_graphviz)
 from sklearn.ensemble import RandomForestRegressor
 from simple_model import (predict_mixedLM, forecast_mixedLM)
 from utils.timing_function import time_function
-from time import perf_counter as timer
-from copy import deepcopy
-from datetime import timedelta, datetime
-from IPython import embed as II
 
 @time_function
 def read_basin_data(basin: str) -> pd.DataFrame:
