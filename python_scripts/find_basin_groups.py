@@ -1,3 +1,4 @@
+import sys
 import pickle
 import pathlib
 import subprocess
@@ -62,10 +63,12 @@ def prep_seasonalities(mmeans):
     return seasonalities.astype(np.float64)
 
 
-def load_data():
-    basin = "colorado"
-    df = read_basin_data(basin)
-    meta = pd.read_csv("../group_res/colorado_meta.csv", index_col=0)
+def load_basin_meta_data(basin):
+    return pd.read_csv(f"../group_res/{basin}_meta.csv", index_col=0)
+
+def load_data(basin):
+    df = pd.concat(read_basin_data(b.lower()) for b in basin)
+    meta = pd.concat(load_basin_meta_data(b) for b in basin)
     reservoirs = meta.index
     df = df.loc[df.index.get_level_values(0).isin(reservoirs)]
     return df, meta
@@ -87,7 +90,6 @@ def make_model_data(df, meta, stdzed=False, normed=False, single_rows=False, sr_
     else:
         X = df.loc[:, df.columns != "release"]
         y = df["release"]
-
     mmeans = df.groupby([df.index.get_level_values(0),
                          df.index.get_level_values(1).month]).mean()
     seasonalities = prep_seasonalities(mmeans)
@@ -177,8 +179,8 @@ def check_feature_importance(x_frame, y, **kwargs):
     return ft_imp
 
 
-def plot_feature_importances():
-    df, meta = load_data()
+def plot_feature_importances(basin):
+    df, meta = load_data(basin)
     args = [
         ("Standardized Response", True, False, False),
         ("0-1 Normalized Response", False, True, False),
@@ -208,8 +210,8 @@ def plot_feature_importances():
     plt.tight_layout()
     plt.show()
 
-def plot_single_row_feature_importances():
-    df, meta = load_data()
+def plot_single_row_feature_importances(basin):
+    df, meta = load_data(basin)
     fig, ax = plt.subplots(1, 1)
     fig.patch.set_alpha(0.0)
 
@@ -232,10 +234,11 @@ def plot_single_row_feature_importances():
 
 
 
-def main():
-    # plot_feature_importances()
-    plot_single_row_feature_importances()
+def main(basin):
+    # plot_feature_importances(basin)
+    plot_single_row_feature_importances(basin)
 
 
 if __name__ == "__main__":
-    main()
+    basin = sys.argv[1:]
+    main(basin)
