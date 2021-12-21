@@ -209,7 +209,7 @@ def plot_time_series(actual, model, title, groups):
 
 
 if __name__ == "__main__":
-    old_results, train_results, test_results = load_results(norm=True)
+    old_results, train_results, test_results = load_results(norm=False)
     old_coefs, train_coefs, test_coefs = get_coefs(
         old_results, train_results, test_results
     )
@@ -242,6 +242,16 @@ if __name__ == "__main__":
     act_test_rel = test["Release"].unstack().loc[test_rel.index]
     act_test_sto = test["Storage"].unstack().loc[test_rel.index]
 
+    train_output = pd.DataFrame({
+        "Release_act":act_test_rel.stack(),
+        "Storage_act":act_test_sto.stack(),
+        "Release_simul":test_train_rel.stack(),
+        "Storage_simul":test_train_sto.stack()
+    })
+    from IPython import embed as II
+    II()
+    sys.exit()
+
     # train_rel_scores = get_scores(act_train_rel, train_rel)
     # train_sto_scores = get_scores(act_train_sto, train_sto)
     # test_rel_scores = get_scores(act_test_rel, test_rel)
@@ -255,6 +265,6 @@ if __name__ == "__main__":
     # plot_res_scores(act_test_sto, test_train_sto,
     #                 "Simulated Storage Performance", res_groups)
 
-    res_groups = res_groups.apply(group_map.get)
-    plot_time_series(act_test_rel, test_train_rel, "Release", res_groups)
-    plot_time_series(act_test_sto, test_train_sto, "Storage", res_groups)
+    # res_groups = res_groups.apply(group_map.get)
+    # plot_time_series(act_test_rel, test_train_rel, "Release", res_groups)
+    # plot_time_series(act_test_sto, test_train_sto, "Storage", res_groups)

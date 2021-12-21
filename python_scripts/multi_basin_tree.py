@@ -56,6 +56,8 @@ def read_basin_data(basin: str) -> pd.DataFrame:
         fpath = pathlib.Path(data_locs[basin]["ready"])
         df = pd.read_csv(fpath)
         df["datetime"] = pd.to_datetime(df["datetime"])
+        df = df.set_index(["site_name", "datetime"])
+        df = df.sort_index()
     else:
         raise NotImplementedError(f"No data available for basin {basin}")
     return df
