@@ -189,3 +189,10 @@ def flatten_2d_list(lst):
 
 def calc_bias(y_a, y_m):
     return np.mean(y_m) - np.mean(y_a)
+
+def swap_index_levels(df):
+    new_index = pd.MultiIndex.from_tuples(
+        (j,i) for i,j in df.index
+    )
+    df.index = new_index
+    return df

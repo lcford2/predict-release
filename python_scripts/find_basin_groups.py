@@ -12,6 +12,7 @@ from sklearn.ensemble import ExtraTreesRegressor
 from multi_basin_tree import (read_basin_data,
                               prep_data)
 from simple_model_simul import norm_array, unnorm_array
+from utils.helper_functions import swap_index_levels
 from IPython import embed as II
 
 
@@ -79,17 +80,22 @@ def make_multipurpose_col(meta):
     return meta
 
 
-def make_model_data(df, meta, stdzed=False, normed=False, single_rows=False, sr_var="Mean"):
+def make_model_data(df, meta, stdzed=False, normed=False,
+                    single_rows=False, storage=False, sr_var="Mean"):
     reservoirs = meta.index
+    if storage:
+        y_vars = ["release", "storage"]
+    else:
+        y_vars = "release"
     if stdzed:
         X, y, means, std = prep_data(df)
     elif normed:
         X = df.loc[:, df.columns != "release"]
-        y = df["release"]
+        y = df[y_vars]
         y = norm_array(y, y.min(), y.max())
     else:
         X = df.loc[:, df.columns != "release"]
-        y = df["release"]
+        y = df[y_vars]
     mmeans = df.groupby([df.index.get_level_values(0),
                          df.index.get_level_values(1).month]).mean()
     seasonalities = prep_seasonalities(mmeans)
@@ -136,6 +142,21 @@ def make_model_data(df, meta, stdzed=False, normed=False, single_rows=False, sr_
         x_frame = x_frame.drop("Primary_Purpose", axis=1)
 
     return x_frame, y
+
+def load_fitted_data(basins):
+    for b in basin:
+        if b == "TVA":
+            # results.append(pd.read_pickle(
+            #         "../results/agu_2021_runs/simul_model/"
+            #         "simul_test_rel_sto_output.pickle"
+            # ))
+            results = pd.read_pickle("../results/simul_model/sto_and_rel_results.pickle")
+        else:
+            raise NotImplementedError(
+                f"Load fitted data has not been implemented with basin {basin}"
+            )
+    return results
+
 
 
 def fit_multi_depth(x_frame, y, stdzed=False, max_depths=(3, 4, 5, 6)):
@@ -210,6 +231,56 @@ def plot_feature_importances(basin):
     plt.tight_layout()
     plt.show()
 
+def plot_feature_importances_residuals(basin):
+    df, meta = load_data(basin)
+    x_frame, y = make_model_data(df, meta,
+                                    stdzed=False,
+                                    normed=False,
+                                    single_rows=False,
+                                    storage=True)
+    fit_data = load_fitted_data(basin)
+    fit_data = fit_data["train"]
+    fit_data = swap_index_levels(fit_data)
+
+
+    means = fit_data.groupby(fit_data.index.get_level_values(0)).mean()
+    stds = fit_data.groupby(fit_data.index.get_level_values(0)).std()
+    fit_data["Storage_act"] = ((fit_data["Storage_act"].unstack().T - means["Storage_act"])
+                            / stds["Storage_act"]).T.stack()
+    fit_data["Storage_simul"] = ((fit_data["Storage_simul"].unstack().T - means["Storage_act"])
+                            / stds["Storage_act"]).T.stack()
+    fit_data["Release_act"] = ((fit_data["Release_act"].unstack().T - means["Release_act"])
+                            / stds["Release_act"]).T.stack()
+    fit_data["Release_simul"] = ((fit_data["Release_simul"].unstack().T - means["Release_act"])
+                                / stds["Release_act"]).T.stack()
+
+    y = y.loc[fit_data.index]
+    x_frame = x_frame.loc[fit_data.index]
+
+    fig, axes = plt.subplots(2, 1, sharex=True)
+    axes = axes.flatten()
+    fig.patch.set_alpha(0.0)
+
+    for ax, var in zip(axes,["Release", "Storage"]):
+
+        y_resid = fit_data[f"{var}_simul"] - y[var.lower()]
+
+        ft_imp_resid = check_feature_importance(x_frame, y_resid, n_estimators=100)
+
+        pd.Series(ft_imp_resid).plot.bar(ax=ax)
+        ax.set_xticks(ax.get_xticks())
+        ax.set_xticklabels(x_frame.columns, rotation=45, ha="right")
+        ax.set_title(f"{var} Residuals")
+
+    fig.text(0.02, 0.5, "Feature Importances",
+             ha="center",
+             va="center",
+             rotation=90)
+
+    plt.tight_layout()
+    plt.show()
+
+
 def plot_single_row_feature_importances(basin):
     df, meta = load_data(basin)
     fig, ax = plt.subplots(1, 1)
@@ -236,7 +307,8 @@ def plot_single_row_feature_importances(basin):
 
 def main(basin):
     # plot_feature_importances(basin)
-    plot_single_row_feature_importances(basin)
+    plot_feature_importances_residuals(basin)
+    # plot_single_row_feature_importances(basin)
 
 
 if __name__ == "__main__":
