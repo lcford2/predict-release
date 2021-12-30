@@ -3,6 +3,7 @@ import pickle
 import calendar
 import pathlib
 from time import perf_counter as timer
+from multiprocessing import Pool, cpu_count
 import pandas as pd
 import numpy as np
 import ctypes as ct
@@ -92,7 +93,7 @@ def load_library():
     lib.unnormalize.restype = ct.c_double
     return lib
 
-def simul_res(res_exog, coefs, means, std, lib, std_or_norm=0):
+def simul_res(res_exog, coefs, means, std, std_or_norm=0):
     # intercept = coefs["const"]
     # re_coefs = coefs[[
     #     "Release_pre", "Storage_pre", "Net Inflow",
@@ -110,30 +111,31 @@ def simul_res(res_exog, coefs, means, std, lib, std_or_norm=0):
     ts_len = res_exog.shape[0] - 6
     rel_out = np.zeros(ts_len, dtype="float64")
     sto_out = np.zeros(ts_len, dtype="float64")
-
-    lib.res_simul(intercepts, re_coefs,
-                  res_exog["Release_pre"].values,
-                  res_exog["Storage_pre"].values,
-                  res_exog["Net Inflow"].values,
-                  means["Release"],
-                  means["Storage"],
-                  means["Net Inflow"],
-                  means["Storage_Inflow_interaction"],
-                  std["Release"],
-                  std["Storage"],
-                  std["Net Inflow"],
-                  std["Storage_Inflow_interaction"],
-                  ts_len,
-                  res_exog["Release_pre"].max(),
-                  res_exog["Release_pre"].min(),
-                  res_exog["Storage_pre"].max(),
-                  res_exog["Storage_pre"].min(),
-                  res_exog["Net Inflow"].max(),
-                  res_exog["Net Inflow"].min(),
-                  res_exog["Storage_Inflow_interaction"].max(),
-                  res_exog["Storage_Inflow_interaction"].min(),
-                  std_or_norm,
-                  rel_out, sto_out)
+    lib = load_library()
+    simul_func = lib.res_simul
+    simul_func(intercepts, re_coefs,
+                res_exog["Release_pre"].values,
+                res_exog["Storage_pre"].values,
+                res_exog["Net Inflow"].values,
+                means["Release"],
+                means["Storage"],
+                means["Net Inflow"],
+                means["Storage_Inflow_interaction"],
+                std["Release"],
+                std["Storage"],
+                std["Net Inflow"],
+                std["Storage_Inflow_interaction"],
+                ts_len,
+                res_exog["Release_pre"].max(),
+                res_exog["Release_pre"].min(),
+                res_exog["Storage_pre"].max(),
+                res_exog["Storage_pre"].min(),
+                res_exog["Net Inflow"].max(),
+                res_exog["Net Inflow"].min(),
+                res_exog["Storage_Inflow_interaction"].max(),
+                res_exog["Storage_Inflow_interaction"].min(),
+                std_or_norm,
+                rel_out, sto_out)
     return rel_out, sto_out
 
 def single_res_error(coefs, res_exog, act_rel, means, std, lib):
@@ -152,7 +154,7 @@ def norm_array(arr, arr_min, arr_max):
 def unnorm_array(arr, arr_min, arr_max):
     return (arr * (arr_max - arr_min)) + arr_min
 
-def multi_res_error(coefs, X, act_rel, act_sto, means, std, lib, coef_index, rel_and_sto=False, std_or_norm=0):
+def multi_res_error(coefs, X, act_rel, act_sto, means, std, coef_index, rel_and_sto=False, std_or_norm=0):
     error = 0
     idx = pd.IndexSlice
 
@@ -165,7 +167,8 @@ def multi_res_error(coefs, X, act_rel, act_sto, means, std, lib, coef_index, rel
                                      res_coefs,
                                      res_means,
                                      res_std,
-                                     lib,
+                                     # lib,
+                                     # simul_func,
                                      std_or_norm)
         if np.isnan(rel_out).sum() > 0 or np.isnan(sto_out).sum():
             # double error when number are not real.
@@ -233,7 +236,12 @@ def filter_groups_out(df, filter_groups):
         df = df.loc[df[key] == inverse_groupnames[key][value],:]
     return df
 
-def fit_simul_res(df, groups, filter_groups=None, scaler="mine"):
+def my_minimize(args):
+    func = args[0]
+    init_params = args[1]
+    return minimize(func, init_params, args=args[2:])
+
+def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
     for_groups = df.loc[:,groups]
     fraction_names = ["Fraction_Storage",
                       "Fraction_Net Inflow"]
@@ -311,14 +319,7 @@ def fit_simul_res(df, groups, filter_groups=None, scaler="mine"):
         exog_df = X_train.copy()
         label = "train"
 
-    lib = load_library()
     idx = pd.IndexSlice
-    res = "Kentucky"
-    res_exog = exog_df.loc[idx[:,res], exog_terms]
-    res_means = means.loc[res]
-    res_std = std.loc[res]
-    res_group = groups.loc[res]
-    res_coefs = init_params[res_group]
     coef_order = [
         "const",
         "Release_pre", "Storage_pre", "Net Inflow",
@@ -326,7 +327,6 @@ def fit_simul_res(df, groups, filter_groups=None, scaler="mine"):
         "Release_roll7", "Storage_roll7", "Inflow_roll7",
         *calendar.month_abbr[1:]
     ]
-    res_coefs = res_coefs.loc[coef_order]
 
     coef_map = {
         'NaturalFlow-StorageDam': 0,
@@ -346,20 +346,83 @@ def fit_simul_res(df, groups, filter_groups=None, scaler="mine"):
     #     res_means, res_std, lib)
     # )
 
-    std_or_norm = 1
+    std_or_norm = 0
     sn_label = "std" if std_or_norm == 0 else "norm"
 
-    result = minimize(multi_res_error, all_res_coefs, args=(
-        exog_df.loc[:,exog_terms], df.loc[exog_df.index, "Release"],
-        df.loc[exog_df.index, "Storage"],
-        means, std, lib, coef_index, True, std_or_norm
-    ))
+    N_trials = 50
+    n_param = len(all_res_coefs)
+
+    prange = 1
+    trial_coefs = [
+        np.random.rand(n_param) * prange * np.random.choice([-1,1], n_param)
+        for i in range(N_trials)
+    ]
+
+    arg_sets = [
+        (
+            multi_res_error,
+            trial_coefs[i],
+            exog_df.loc[:,exog_terms],
+            df.loc[exog_df.index, "Release"],
+            df.loc[exog_df.index, "Storage"],
+            means,
+            std,
+            # lib,
+            # simul_func,
+            coef_index,
+            True,
+            std_or_norm
+        ) for i in range(N_trials)
+    ]
+
+
+    with Pool(processes=N_trials) as pool:
+        pool_results = pool.map_async(my_minimize, arg_sets)
+        print(pool_results)
+        results = pool_results.get()
+
+    with open("../results/simul_model/multi_trial.pickle", "wb") as f:
+        pickle.dump(results, f)
+
+    sys.exit()
+    # result = minimize(multi_res_error, all_res_coefs, args=(
+    #     exog_df.loc[:,exog_terms], df.loc[exog_df.index, "Release"],
+    #     df.loc[exog_df.index, "Storage"],
+    #     means, std, lib, coef_index, True, std_or_norm
+    # ))
 
     new_coefs = {}
     for group, i in coef_map.items():
         new_coefs[group] = result.x[i*20:(i+1)*20]
     new_coefs = pd.DataFrame(new_coefs, index=coef_order)
 
+    rel_output, sto_output = get_simulated_release(
+        exog_df.loc[:, exog_terms],
+        new_coefs,
+        groups,
+        means,
+        std,
+        # lib,
+        simul_func,
+        std_or_norm
+    )
+    act_release = df["Release"].unstack().loc[rel_output.index]
+    act_storage = df["Storage"].unstack().loc[sto_output.index]
+    rel_scores = get_scores(act_release, rel_output)
+    sto_scores = get_scores(act_storage, sto_output)
+    # print("Release Train Scores")
+    # print(rel_scores.mean())
+    # print("Storage Train Scores")
+    # print(sto_scores.mean())
+
+    train_out = pd.DataFrame({
+        "Release_act":act_release.stack(),
+        "Storage_act":act_storage.stack(),
+        "Release_simul":rel_output.stack(),
+        "Storage_simul":sto_output.stack()
+    })
+
+    exog_df = X_test.copy()
     rel_output, sto_output = get_simulated_release(
         exog_df.loc[:, exog_terms],
         new_coefs,
@@ -373,12 +436,21 @@ def fit_simul_res(df, groups, filter_groups=None, scaler="mine"):
     act_storage = df["Storage"].unstack().loc[sto_output.index]
     rel_scores = get_scores(act_release, rel_output)
     sto_scores = get_scores(act_storage, sto_output)
-    print(rel_scores.mean())
-    print(sto_scores.mean())
+    # print("Release Test Scores")
+    # print(rel_scores.mean())
+    # print("Storage Test Scores")
+    # print(sto_scores.mean())
 
-    output = {"new_coefs":new_coefs, "results":result}
+    test_out = pd.DataFrame({
+        "Release_act":act_release.stack(),
+        "Storage_act":act_storage.stack(),
+        "Release_simul":rel_output.stack(),
+        "Storage_simul":sto_output.stack()
+    })
+    output = {"new_coefs":new_coefs, "results":result,
+              "train":train_out, "test":test_out}
 
-    with open(f"../results/agu_2021_runs/simul_model/{label}_sto_and_rel_results_{sn_label}.pickle", "wb") as f:
+    with open(f"../results/simul_model/sto_and_rel_results.pickle", "wb") as f:
         pickle.dump(output, f)
 
 def get_simulated_release(exog, coefs, groups, means, std, lib=None, std_or_norm=0):
@@ -394,7 +466,7 @@ def get_simulated_release(exog, coefs, groups, means, std, lib=None, std_or_norm
         res_mean = means.loc[res]
         res_std = std.loc[res]
         res_rel, res_sto = simul_res(
-            res_exog, res_coef, res_mean, res_std, lib, std_or_norm
+            res_exog, res_coef, res_mean, res_std, std_or_norm
         )
         rel_output[res] = pd.Series(
             res_rel,
@@ -882,6 +954,8 @@ def combine_columns(df, columns, new_name, sep="-"):
     return df
 
 
+LIB = load_library()
+SIMUL_FUNC = LIB.res_simul
 
 if __name__ == "__main__":
     df = read_tva_data()
@@ -889,4 +963,4 @@ if __name__ == "__main__":
     # scaled_MixedEffects(df, groups = ["NaturalOnly","RunOfRiver"])
                             # filter_groups={"NaturalOnly": "NaturalFlow"})
                         # filter_groups={"NaturalOnly":"ComboFlow"})
-    fit_simul_res(df, groups=["NaturalOnly", "RunOfRiver"])
+    fit_simul_res(df, SIMUL_FUNC, groups=["NaturalOnly", "RunOfRiver"])
