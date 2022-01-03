@@ -1,14 +1,11 @@
+# ignore basic shell scripts and notebook data
 */**/*.sh
 */**/.ipynb_checkpoints
 */**/.ipynb_checkpoints/*
-!lower_col_data/get_raw_data_files.sh
-data_from_dol/hess_formatted_data
 **/__pycache__/**
-python_scripts/graps/bin/*
-python_scripts/graps/json-fortran
-python_scripts/graps/json-fortran/*
-plotly_config.json
-python_scripts/sry_python.code-workspace
+
+# ignore large data files
+data_from_dol/hess_formatted_data
 upper_colorado_data/hydrodata_data/upper_col_data.pickle
 missouri_data/acoe_data/pdf_data
 missouri_data/acoe_data/pdf_data/*
@@ -16,10 +13,28 @@ missouri_data/acoe_data/pdf_to_csv
 missouri_data/acoe_data/pdf_to_csv/*
 missouri_data/acoe_data/pdf_to_csv_fixed
 missouri_data/acoe_data/pdf_to_csv_fixed/*
-!missouri_data/*.sh
+results/agu_2021_runs/simple_model_spatial_validation_all_res_lvoneout/results.pickle
+
+# ignore binaries and libraries
+python_scripts/graps/bin/*
+python_scripts/graps/json-fortran
+python_scripts/graps/json-fortran/*
+c_res_simul/lib/*
+c_res_simul/obj/*
+c_res_simul/queue/libqueue.so
+c_res_simul/queue/queue.o
+
+# hpc specific files
 bwvenv/
 bwvenv/*
-results/agu_2021_runs/simple_model_spatial_validation_all_res_lvoneout/results.pickle
 sry-env/
 sry-env/*
 python_scripts/sim_param_fit.*
+
+# various config files
+python_scripts/sry_python.code-workspace
+plotly_config.json
+
+# do not ignore these files
+!missouri_data/*.sh
+!lower_col_data/get_raw_data_files.sh
