@@ -20,3 +20,5 @@ missouri_data/acoe_data/pdf_to_csv_fixed/*
 bwvenv/
 bwvenv/*
 results/agu_2021_runs/simple_model_spatial_validation_all_res_lvoneout/results.pickle
+sry-env/
+sry-env/*
