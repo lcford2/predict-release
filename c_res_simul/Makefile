@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Werror -Wall -g
-DIRLOC=$${HOME}/predict-release/c_res_simul
+DIRLOC=$(shell pwd)
 LIBFLAGS=-I$(DIRLOC)/include -L$(DIRLOC)/lib -Wl,-rpath=$(DIRLOC)/lib -lqueue
 LDFLAGS=-shared
 OPTFLAGS=-Ofast
