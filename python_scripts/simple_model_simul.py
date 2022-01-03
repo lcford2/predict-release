@@ -349,7 +349,7 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
     std_or_norm = 0
     sn_label = "std" if std_or_norm == 0 else "norm"
 
-    N_trials = 50
+    N_trials = 28
     n_param = len(all_res_coefs)
 
     prange = 1
@@ -381,8 +381,12 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
         print(pool_results)
         results = pool_results.get()
 
+    with open("../results/simul_model/multi_trial.pickle", "rb") as f:
+        old_results = pickle.load(f)
+
+    old_results.extend(results)
     with open("../results/simul_model/multi_trial.pickle", "wb") as f:
-        pickle.dump(results, f)
+        pickle.dump(old_results, f)
 
     sys.exit()
     # result = minimize(multi_res_error, all_res_coefs, args=(
