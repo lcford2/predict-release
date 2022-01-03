@@ -1,8 +1,13 @@
-import sys import pickle
+import sys
+import pickle
 import calendar
 import pathlib
 from time import perf_counter as timer
 from multiprocessing import Pool, cpu_count
+from datetime import timedelta, datetime
+from collections import defaultdict
+from itertools import combinations
+
 import pandas as pd
 import numpy as np
 import ctypes as ct
@@ -12,12 +17,11 @@ from statsmodels.regression.mixed_linear_model import MixedLMParams
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.preprocessing import StandardScaler
 from scipy.optimize import minimize
+
 from utils.helper_functions import (read_tva_data, scale_multi_level_df,
                               read_all_res_data, find_max_date_range)
 from utils.timing_function import time_function
-from datetime import timedelta, datetime
-from collections import defaultdict
-from itertools import combinations
+
 from IPython import embed as II
 
 group_names = {
@@ -92,7 +96,7 @@ def load_library():
     lib.unnormalize.restype = ct.c_double
     return lib
 
-def simul_res(res_exog, coefs, means, std, std_or_norm=0):
+def simul_res(res_exog, coefs, month_coefs, means, std, std_or_norm=0):
     # intercept = coefs["const"]
     # re_coefs = coefs[[
     #     "Release_pre", "Storage_pre", "Net Inflow",
@@ -101,7 +105,7 @@ def simul_res(res_exog, coefs, means, std, std_or_norm=0):
     # ]].values
     intercept = coefs[0]
     re_coefs  = coefs[1:-12]
-    month_coefs = coefs[-12:]
+    # month_coefs = coefs[-12:]
 
     intercepts = np.array([intercept + month_coefs[i-1]
                            for i in res_exog.index.get_level_values(0).month],
@@ -153,17 +157,19 @@ def norm_array(arr, arr_min, arr_max):
 def unnorm_array(arr, arr_min, arr_max):
     return (arr * (arr_max - arr_min)) + arr_min
 
-def multi_res_error(coefs, X, act_rel, act_sto, means, std, coef_index, rel_and_sto=False, std_or_norm=0):
+def multi_res_error(coefs, month_coefs, X, act_rel, act_sto, means, std, coef_index, rel_and_sto=False, std_or_norm=0):
     error = 0
     idx = pd.IndexSlice
 
     for res, index in coef_index.items():
         res_coefs = coefs[index[0]:index[1]]
+        res_month_coefs = month_coefs[int(index[0]/8)*12:int(index[1]/8)*12]
         res_exog = X.loc[idx[:,res],:]
         res_means = means.loc[res]
         res_std = std.loc[res]
         rel_out, sto_out = simul_res(res_exog,
                                      res_coefs,
+                                     res_month_coefs,
                                      res_means,
                                      res_std,
                                      # lib,
@@ -238,7 +244,8 @@ def filter_groups_out(df, filter_groups):
 def my_minimize(args):
     func = args[0]
     init_params = args[1]
-    return minimize(func, init_params, args=args[2:])
+    return minimize(func, init_params, args=args[2:], method="Nelder-Mead",
+                    options={"maxiter":5000, "maxfev":10000})
 
 def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
     for_groups = df.loc[:,groups]
@@ -324,7 +331,7 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
         "Release_pre", "Storage_pre", "Net Inflow",
         "Storage_Inflow_interaction",
         "Release_roll7", "Storage_roll7", "Inflow_roll7",
-        *calendar.month_abbr[1:]
+        # *calendar.month_abbr[1:]
     ]
     nprm = len(coef_order)
     coef_map = {
@@ -339,6 +346,11 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
         *init_params.loc[coef_order,"ComboFlow-StorageDam"].values,
         *init_params.loc[coef_order,"ComboFlow-RunOfRiver"].values
     ]
+    all_res_month_coefs = [
+        *init_params.loc[calendar.month_abbr[1:],"NaturalFlow-StorageDam"].values,
+        *init_params.loc[calendar.month_abbr[1:],"ComboFlow-StorageDam"].values,
+        *init_params.loc[calendar.month_abbr[1:],"ComboFlow-RunOfRiver"].values,
+    ]
 
     # result = minimize(single_res_error, res_coefs.values, args=(
     #     res_exog, df.loc[res_exog.index, "Release"].values[6:],
@@ -348,7 +360,7 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
     std_or_norm = 0
     sn_label = "std" if std_or_norm == 0 else "norm"
 
-    N_trials = 28
+    N_trials = 26
     n_param = len(all_res_coefs)
 
     prange = 1
@@ -361,6 +373,7 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
         (
             multi_res_error,
             trial_coefs[i],
+            all_res_month_coefs,
             exog_df.loc[:,exog_terms],
             df.loc[exog_df.index, "Release"],
             df.loc[exog_df.index, "Storage"],
@@ -374,17 +387,21 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
         ) for i in range(N_trials)
     ]
 
-
     with Pool(processes=N_trials) as pool:
         pool_results = pool.map_async(my_minimize, arg_sets)
         print(pool_results)
         results = pool_results.get()
 
-    with open("../results/simul_model/multi_trial.pickle", "rb") as f:
-        old_results = pickle.load(f)
+
+    file = "../results/simul_model/multi_trial_nelder-mead.pickle"
+    try:
+        with open(file, "rb") as f:
+            old_results = pickle.load(f)
+    except FileNotFoundError as e:
+        old_results = []
 
     old_results.extend(results)
-    with open("../results/simul_model/multi_trial.pickle", "wb") as f:
+    with open(file, "rb") as f:
         pickle.dump(old_results, f)
 
     sys.exit()
@@ -402,6 +419,7 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
     rel_output, sto_output = get_simulated_release(
         exog_df.loc[:, exog_terms],
         new_coefs,
+        month_coefs,
         groups,
         means,
         std,
@@ -429,6 +447,7 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
     rel_output, sto_output = get_simulated_release(
         exog_df.loc[:, exog_terms],
         new_coefs,
+        month_coefs,
         groups,
         means,
         std,
@@ -456,7 +475,7 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
     with open(f"../results/simul_model/sto_and_rel_results.pickle", "wb") as f:
         pickle.dump(output, f)
 
-def get_simulated_release(exog, coefs, groups, means, std, lib=None, std_or_norm=0):
+def get_simulated_release(exog, coefs, month_coefs, groups, means, std, lib=None, std_or_norm=0):
     if lib == None:
         lib = load_library()
     resers = exog.index.get_level_values(1).unique()
@@ -466,10 +485,11 @@ def get_simulated_release(exog, coefs, groups, means, std, lib=None, std_or_norm
     for res in resers:
         res_exog = exog.loc[idx[:,res],:]
         res_coef = coefs[groups.loc[res]].values
+        res_month_coef = month_coefs[groups.loc[res]].values
         res_mean = means.loc[res]
         res_std = std.loc[res]
         res_rel, res_sto = simul_res(
-            res_exog, res_coef, res_mean, res_std, std_or_norm
+            res_exog, res_coef, res_month_coef, res_mean, res_std, std_or_norm
         )
         rel_output[res] = pd.Series(
             res_rel,
