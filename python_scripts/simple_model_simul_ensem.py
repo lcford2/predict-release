@@ -365,8 +365,8 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
              "ComboFlow-StorageDam",
              "ComboFlow-RunOfRiver"]
     if ensem_fit:
-        # N_trials = 26
-        N_trials = 1
+        N_trials = 26
+        # N_trials = 1
         n_param = len(all_res_coefs)
 
         prange = 1
