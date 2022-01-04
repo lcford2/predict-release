@@ -12,8 +12,8 @@ all: $(TARGET_LIB)
 
 $(TARGET_LIB): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^
-	cp $(TARGET_LIB) ../lib
-	cp queue.h ../include
+	cp $(TARGET_LIB) ../lib/$(TARGET_LIB)
+	cp queue.h ../include/queue.h
 
 $(SRCS:.c=.d):%.d:%.c
 	$(CC) $(CFLAGS) -MM $< >$@
