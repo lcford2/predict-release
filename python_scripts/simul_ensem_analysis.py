@@ -2,19 +2,27 @@ import sys
 import pathlib
 import pickle
 import calendar
+import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from check_simul import plot_res_scores, plot_time_series
+
 plt.style.use("ggplot")
 sns.set_context("talk")
 
-def load_results():
-    with open("../results/simul_model/multi_trial.pickle", "rb") as f:
-        results = pickle.load(f)
-
-    return results
+def load_results(method="nelder-mead"):
+    if method == "nelder-mead":
+        with open("../results/simul_model/multi_trial_nelder-mead.pickle", "rb") as f:
+            results = pickle.load(f)
+    else:
+        with open("../results/simul_model/multi_trial.pickle", "rb") as f:
+            results = pickle.load(f)
+    with open("../results/simul_model/best_ensem_results.pickle", "rb") as f:
+        ts_results = pickle.load(f)
+    return results, ts_results
 
 def extract_final_error(results):
     return [i.fun for i in results]
@@ -22,7 +30,7 @@ def extract_final_error(results):
 def extract_final_params(results):
     return [i.x for i in results]
 
-def format_params(params):
+def format_params(params, months=False):
     group_order = ["HRT", "LRT", "ROR"]
     param_order = [
         "const",
@@ -33,8 +41,9 @@ def format_params(params):
         "Release_roll7",
         "Storage_roll7",
         "Inflow_roll7",
-        *calendar.month_abbr[1:]
     ]
+    if months:
+        param_order.extend(calendar.month_abbr[1:])
 
     nprms = len(param_order)
     coefs = {}
@@ -58,13 +67,38 @@ def melt_and_merge_params(params):
     return pd.concat(new_params)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Analyze and plot results from simulation optimization with random starting parameters"
+    )
+    parser.add_argument("-m", "--method", action="store", default="nelder-mead",
+                        choices=["nelder-mead", "bfgs"], dest="method",
+                        help="The optimization method used for the results to be analyzed.")
+    parser.add_argument("--months", action="store_true", default=False, dest="months",
+                        help="Indicates if monthly intercepts were fit or not.")
+    parser.add_argument("-D", "--data-set", action="store", default="test",
+                        choices=["train", "test"], dest="data_set",
+                        help="Indicate which data set should be plotted.")
+    parser.add_argument("-V", "--var", action="store", default="release",
+                        choices=["release", "storage"], dest="var",
+                        help="What variable should be plotted.")
+    return parser.parse_args()
+
 def main():
-    results = load_results()
+    args = parse_args()
+    results, ts_results = load_results(method=args.method)
+    res_groups = pd.read_pickle("../pickles/tva_res_groups.pickle")
     final_error = extract_final_error(results)
     final_params = extract_final_params(results)
-    formatted_params = [format_params(i) for i in final_params]
-    from IPython import embed as II
-    II()
+    formatted_params = [format_params(i, months=args.months) for i in final_params]
+    sns.set_context("paper")
+
+    plot_time_series(
+        ts_results[args.data_set][f"{args.var.capitalize()}_act"].unstack(),
+        ts_results[args.data_set][f"{args.var.capitalize()}_simul"].unstack(),
+        f"Simulated {args.var.capitalize()}({args.data_set.capitalize()}ing Set:Best Params)",
+        res_groups
+    )
 
 if __name__ == "__main__":
     main()
