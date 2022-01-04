@@ -50,4 +50,4 @@ export OMP_NUM_THREADS=56   # this is 1 thread/core; may want to start lower
 source ../sry-env/bin/activate
 
 # Launch OpenMP code...
-python simple_model_simul.py        # Do not use ibrun or any other MPI launcher
+python simple_model_simul_ensem.py        # Do not use ibrun or any other MPI launcher
