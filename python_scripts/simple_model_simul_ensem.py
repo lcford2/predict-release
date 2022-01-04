@@ -360,120 +360,127 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
     std_or_norm = 0
     sn_label = "std" if std_or_norm == 0 else "norm"
 
-    N_trials = 26
-    n_param = len(all_res_coefs)
+    ensem_fit = True
+    order = ["NaturalFlow-StorageDam",
+             "ComboFlow-StorageDam",
+             "ComboFlow-RunOfRiver"]
+    if ensem_fit:
+        N_trials = 26
+        # N_trials = 1
+        n_param = len(all_res_coefs)
 
-    prange = 1
-    trial_coefs = [
-        np.random.rand(n_param) * prange * np.random.choice([-1,1], n_param)
-        for i in range(N_trials)
-    ]
+        prange = 1
+        trial_coefs = [
+            np.random.rand(n_param) * prange * np.random.choice([-1,1], n_param)
+            for i in range(N_trials)
+        ]
+        group_results = {}
+        for group in order:
+            group_res = groups[groups == group].index
+            start, stop = coef_index[group_res[0]]
+            group_exog = exog_df.loc[exog_df.index.get_level_values(1).isin(group_res),:]
+            arg_sets = [
+                (
+                    multi_res_error,
+                    trial_coefs[i][start:stop],
+                    all_res_month_coefs,
+                    group_exog.loc[:,exog_terms],
+                    df.loc[group_exog.index, "Release"],
+                    df.loc[group_exog.index, "Storage"],
+                    means.loc[group_res],
+                    std.loc[group_res],
+                    {res:(0,nprm) for res in group_res},
+                    True,
+                    std_or_norm
+                ) for i in range(N_trials)
+            ]
 
-    arg_sets = [
-        (
-            multi_res_error,
-            trial_coefs[i],
-            all_res_month_coefs,
-            exog_df.loc[:,exog_terms],
-            df.loc[exog_df.index, "Release"],
-            df.loc[exog_df.index, "Storage"],
+            with Pool(processes=N_trials) as pool:
+                pool_results = pool.map_async(my_minimize, arg_sets)
+                results = pool_results.get()
+            group_results[group] = results
+
+        file = "../results/simul_model/multi_trial_nelder-mead_group_specific.pickle"
+        try:
+            with open(file, "rb") as f:
+                old_results = pickle.load(f)
+        except FileNotFoundError as e:
+            old_results = {i:[] for i in order}
+
+        for group in order:
+            old_results[group].extend(group_results[group])
+        with open(file, "wb") as f:
+            pickle.dump(old_results, f)
+
+        sys.exit()
+    else:
+        with open("../results/simul_model/multi_trial_nelder-mead.pickle", "rb") as f:
+            results = pickle.load(f)
+
+        final_error = [i.fun for i in results]
+        final_params = [i.x for i in results]
+        best_params = final_params[np.argmin(final_error)]
+        new_coefs = {}
+        for group, i in coef_map.items():
+            new_coefs[group] = best_params[i*nprm:(i+1)*nprm]
+        new_coefs = pd.DataFrame(new_coefs, index=coef_order)
+        month_coefs = init_params.loc[calendar.month_abbr[1:]]
+
+        rel_output, sto_output = get_simulated_release(
+            exog_df.loc[:, exog_terms],
+            new_coefs,
+            month_coefs,
+            groups,
             means,
             std,
-            # lib,
-            # simul_func,
-            coef_index,
-            True,
             std_or_norm
-        ) for i in range(N_trials)
-    ]
+        )
+        act_release = df["Release"].unstack().loc[rel_output.index]
+        act_storage = df["Storage"].unstack().loc[sto_output.index]
+        rel_scores = get_scores(act_release, rel_output)
+        sto_scores = get_scores(act_storage, sto_output)
+        print(f"Rel Train Score:")
+        print(rel_scores.mean())
+        print(f"Sto Train Score:")
+        print(sto_scores.mean())
 
-    with Pool(processes=N_trials) as pool:
-        pool_results = pool.map_async(my_minimize, arg_sets)
-        print(pool_results)
-        results = pool_results.get()
+        train_out = pd.DataFrame({
+            "Release_act":act_release.stack(),
+            "Storage_act":act_storage.stack(),
+            "Release_simul":rel_output.stack(),
+            "Storage_simul":sto_output.stack()
+        })
 
+        exog_df = X_test.copy()
+        rel_output, sto_output = get_simulated_release(
+            exog_df.loc[:, exog_terms],
+            new_coefs,
+            month_coefs,
+            groups,
+            means,
+            std,
+            std_or_norm
+        )
+        act_release = df["Release"].unstack().loc[rel_output.index]
+        act_storage = df["Storage"].unstack().loc[sto_output.index]
+        rel_scores = get_scores(act_release, rel_output)
+        sto_scores = get_scores(act_storage, sto_output)
+        print(f"Rel Train Score:")
+        print(rel_scores.mean())
+        print(f"Sto Train Score:")
+        print(sto_scores.mean())
 
-    file = "../results/simul_model/multi_trial_nelder-mead.pickle"
-    try:
-        with open(file, "rb") as f:
-            old_results = pickle.load(f)
-    except FileNotFoundError as e:
-        old_results = []
+        test_out = pd.DataFrame({
+            "Release_act":act_release.stack(),
+            "Storage_act":act_storage.stack(),
+            "Release_simul":rel_output.stack(),
+            "Storage_simul":sto_output.stack()
+        })
+        output = {"new_coefs":new_coefs, "month_coefs":month_coefs, #"results":result,
+                "train":train_out, "test":test_out}
 
-    old_results.extend(results)
-    with open(file, "rb") as f:
-        pickle.dump(old_results, f)
-
-    sys.exit()
-    # result = minimize(multi_res_error, all_res_coefs, args=(
-    #     exog_df.loc[:,exog_terms], df.loc[exog_df.index, "Release"],
-    #     df.loc[exog_df.index, "Storage"],
-    #     means, std, lib, coef_index, True, std_or_norm
-    # ))
-
-    new_coefs = {}
-    for group, i in coef_map.items():
-        new_coefs[group] = result.x[i*nprm:(i+1)*nprm]
-    new_coefs = pd.DataFrame(new_coefs, index=coef_order)
-
-    rel_output, sto_output = get_simulated_release(
-        exog_df.loc[:, exog_terms],
-        new_coefs,
-        month_coefs,
-        groups,
-        means,
-        std,
-        # lib,
-        simul_func,
-        std_or_norm
-    )
-    act_release = df["Release"].unstack().loc[rel_output.index]
-    act_storage = df["Storage"].unstack().loc[sto_output.index]
-    rel_scores = get_scores(act_release, rel_output)
-    sto_scores = get_scores(act_storage, sto_output)
-    # print("Release Train Scores")
-    # print(rel_scores.mean())
-    # print("Storage Train Scores")
-    # print(sto_scores.mean())
-
-    train_out = pd.DataFrame({
-        "Release_act":act_release.stack(),
-        "Storage_act":act_storage.stack(),
-        "Release_simul":rel_output.stack(),
-        "Storage_simul":sto_output.stack()
-    })
-
-    exog_df = X_test.copy()
-    rel_output, sto_output = get_simulated_release(
-        exog_df.loc[:, exog_terms],
-        new_coefs,
-        month_coefs,
-        groups,
-        means,
-        std,
-        lib,
-        std_or_norm
-    )
-    act_release = df["Release"].unstack().loc[rel_output.index]
-    act_storage = df["Storage"].unstack().loc[sto_output.index]
-    rel_scores = get_scores(act_release, rel_output)
-    sto_scores = get_scores(act_storage, sto_output)
-    # print("Release Test Scores")
-    # print(rel_scores.mean())
-    # print("Storage Test Scores")
-    # print(sto_scores.mean())
-
-    test_out = pd.DataFrame({
-        "Release_act":act_release.stack(),
-        "Storage_act":act_storage.stack(),
-        "Release_simul":rel_output.stack(),
-        "Storage_simul":sto_output.stack()
-    })
-    output = {"new_coefs":new_coefs, "results":result,
-              "train":train_out, "test":test_out}
-
-    with open(f"../results/simul_model/sto_and_rel_results.pickle", "wb") as f:
-        pickle.dump(output, f)
+        with open(f"../results/simul_model/best_ensem_results.pickle", "wb") as f:
+            pickle.dump(output, f)
 
 def get_simulated_release(exog, coefs, month_coefs, groups, means, std, lib=None, std_or_norm=0):
     if lib == None:

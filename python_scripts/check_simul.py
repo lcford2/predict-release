@@ -23,11 +23,8 @@ sns.set_context("paper")
 plt.style.use("ggplot")
 
 
-TVA = read_tva_data(just_load=False)
-
 TFSIZE = 16
 LFSIZE = 14
-
 
 def plot_coefs(coefs_old, coefs_train, coefs_test):
     fig, axes = plt.subplots(3, 1, sharex=True, sharey=True)
@@ -209,6 +206,8 @@ def plot_time_series(actual, model, title, groups):
 
 
 if __name__ == "__main__":
+    TVA = read_tva_data(just_load=False)
+
     old_results, train_results, test_results = load_results(norm=False)
     old_coefs, train_coefs, test_coefs = get_coefs(
         old_results, train_results, test_results
