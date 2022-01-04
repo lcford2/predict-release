@@ -1,4 +1,5 @@
-import sys import pickle
+import sys
+import pickle
 import calendar
 import pathlib
 from time import perf_counter as timer
