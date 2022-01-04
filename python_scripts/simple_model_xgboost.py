@@ -18,6 +18,7 @@ from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.preprocessing import StandardScaler
 from scipy.optimize import minimize
 import xgboost as xgb
+from mpi4py import MPI
 
 from utils.helper_functions import (read_tva_data, scale_multi_level_df,
                               read_all_res_data, find_max_date_range)
@@ -617,34 +618,50 @@ def boosted_training(df, groups, filter_groups=None, scaler="mine"):
     grid = list(product(depths, etas, gammas,
                         subsamples, lambdas, alphas,
                         num_rounds))
+    grid_size = len(grid)
+    chunk_size = int(grid_size / 12)
     output = []
+    outputpath = pathlib.Path("../results/xgboost/grid_search.pickle")
     time1 = timer()
-    for i in np.random.choice(range(len(grid)), size=10, replace=False):
-        sparams = grid[i]
-        param = {
-            "max_depth": sparams[0],
-            "eta": sparams[1],
-            "gamma":sparams[2],
-            "subsample":sparams[3],
-            "lambda":sparams[4],
-            "alpha":sparams[5],
-            "objective":"reg:squarederror",
-            "nthread":cpu_count(),
-            "eval_metric":"rmse"
-        }
-        num_round = sparams[6]
-        bst = xgb.train(param, dtrain, num_round)
-        training = bst.predict(dtrain)
-        testing = bst.predict(dtest)
-        train_score = r2_score(y_train, training)
-        test_score = r2_score(y_test, testing)
-        output.append(
-            (i, train_score, test_score)
-        )
-    time2 = timer()
+    for i in range(9,12):
+        print(f"\nWorking on Chunk {i+1} of 12")
+        print(f"Elapsed Time: {timer() - time1:.3f} seconds")
+        for sparams in grid[i*chunk_size:(i+1)*chunk_size]:
+            param = {
+                "max_depth": sparams[0],
+                "eta": sparams[1],
+                "gamma":sparams[2],
+                "subsample":sparams[3],
+                "lambda":sparams[4],
+                "alpha":sparams[5],
+                "objective":"reg:squarederror",
+                "nthread":cpu_count(),
+                "eval_metric":"rmse",
+                "tree_method":"gpu_hist"
+            }
+            num_round = sparams[6]
+            try:
+                bst = xgb.train(param, dtrain, num_round)
+                training = bst.predict(dtrain)
+                testing = bst.predict(dtest)
+                train_score = r2_score(y_train, training)
+                test_score = r2_score(y_test, testing)
+                output.append(
+                   (train_score, test_score)
+                )
+            except:
+                output.append((np.nan, np.nan))
+        
+        if outputpath.exists():
+            with open(outputpath.as_posix(), "rb") as f:
+                results = pickle.load(f)
+        else:
+            results = {"grid":grid, "results":[]}
 
-    II()
-    sys.exit()
+        results["results"].extend(output)
+
+        with open(outputpath.as_posix(), "wb") as f:
+            pickle.dump({"grid":grid,"results":output}, f)
 
 def change_group_names(df, groups, names):
     for group in groups:
