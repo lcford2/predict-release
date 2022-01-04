@@ -34,7 +34,7 @@
 #SBATCH -n 1               # Total # of mpi tasks (should be 1 for OpenMP)
 #SBATCH -t 02:00:00        # Run time (hh:mm:ss)
 #SBATCH --mail-type=all    # Send email at begin and end of job
-#SBATCH --mail-user=lcford2@tacc.utexas.edu
+#SBATCH --mail-user=lcford2@ncsu.edu
 #SBATCH -A ECS21018        # Project/Allocation name (req'd if you have more than 1)
 
 # Any other commands must follow all #SBATCH directives...
