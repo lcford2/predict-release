@@ -401,7 +401,7 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
         old_results = []
 
     old_results.extend(results)
-    with open(file, "rb") as f:
+    with open(file, "wb") as f:
         pickle.dump(old_results, f)
 
     sys.exit()
