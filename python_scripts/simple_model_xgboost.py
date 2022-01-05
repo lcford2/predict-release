@@ -18,7 +18,6 @@ from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.preprocessing import StandardScaler
 from scipy.optimize import minimize
 import xgboost as xgb
-from mpi4py import MPI
 
 from utils.helper_functions import (read_tva_data, scale_multi_level_df,
                               read_all_res_data, find_max_date_range)
@@ -606,62 +605,136 @@ def boosted_training(df, groups, filter_groups=None, scaler="mine"):
                          label=y_train)
     dtest = xgb.DMatrix(X_test.loc[:, exog_terms + interaction_terms],
                          label=y_test)
+    best_train_params = {
+        "max_depth": 4,
+        "eta": 0.2,
+        "gamma": 6,
+        "subsample": 1,
+        "lambda": 1,
+        "alpha": 1,
+        "objective":"reg:squarederror",
+        "nthread":cpu_count(),
+        "eval_metric":"rmse",
+        "tree_method":"hist"
+    }
+    best_train_num_round = 350
 
-    depths = np.arange(3, 9)
-    etas = np.arange(0, 0.7, 0.1) # learning rate
-    gammas = np.arange(0, 11, 2) # min split loss
-    subsamples = [0.5, 0.75, 1]
-    lambdas = [1, 1.5, 2]
-    alphas = [0, 0.5, 1]
-    num_rounds = np.arange(50,400,50)
+    best_test_params = {
+        "max_depth": 3,
+        "eta": 0.4,
+        "gamma": 6,
+        "subsample": 1,
+        "lambda": 2,
+        "alpha": 1,
+        "objective":"reg:squarederror",
+        "nthread":cpu_count(),
+        "eval_metric":"rmse",
+        "tree_method":"hist"
+    }
+    best_test_num_round = 150
 
-    grid = list(product(depths, etas, gammas,
-                        subsamples, lambdas, alphas,
-                        num_rounds))
-    grid_size = len(grid)
-    chunk_size = int(grid_size / 12)
-    output = []
-    outputpath = pathlib.Path("../results/xgboost/grid_search.pickle")
-    time1 = timer()
-    for i in range(9,12):
-        print(f"\nWorking on Chunk {i+1} of 12")
-        print(f"Elapsed Time: {timer() - time1:.3f} seconds")
-        for sparams in grid[i*chunk_size:(i+1)*chunk_size]:
-            param = {
-                "max_depth": sparams[0],
-                "eta": sparams[1],
-                "gamma":sparams[2],
-                "subsample":sparams[3],
-                "lambda":sparams[4],
-                "alpha":sparams[5],
-                "objective":"reg:squarederror",
-                "nthread":cpu_count(),
-                "eval_metric":"rmse",
-                "tree_method":"gpu_hist"
-            }
-            num_round = sparams[6]
-            try:
-                bst = xgb.train(param, dtrain, num_round)
-                training = bst.predict(dtrain)
-                testing = bst.predict(dtest)
-                train_score = r2_score(y_train, training)
-                test_score = r2_score(y_test, testing)
-                output.append(
-                   (train_score, test_score)
-                )
-            except:
-                output.append((np.nan, np.nan))
-        
-        if outputpath.exists():
-            with open(outputpath.as_posix(), "rb") as f:
-                results = pickle.load(f)
-        else:
-            results = {"grid":grid, "results":[]}
+    bst_train = xgb.train(best_train_params, dtrain, best_train_num_round)
+    bst_test = xgb.train(best_test_params, dtrain, best_test_num_round)
 
-        results["results"].extend(output)
+    train_train_preds = bst_train.predict(dtrain)
+    train_test_preds = bst_train.predict(dtest)
+    test_train_preds = bst_test.predict(dtrain)
+    test_test_preds = bst_test.predict(dtest)
 
-        with open(outputpath.as_posix(), "wb") as f:
-            pickle.dump({"grid":grid,"results":output}, f)
+    train_out = pd.DataFrame({"Release_act":y_train.values,
+                              "Release_trprms":train_train_preds,
+                              "Release_teprms":test_train_preds},
+                             index=y_train.index)
+
+    test_out = pd.DataFrame({"Release_act":y_test.values,
+                             "Release_trprms":train_test_preds,
+                             "Release_teprms":test_test_preds},
+                             index=y_test.index)
+    for col in train_out.columns:
+        train_out[col] = (train_out[col].unstack() * std["Release"] + means["Release"]).stack()
+        test_out[col] = (test_out[col].unstack() * std["Release"] + means["Release"]).stack()
+
+    trtr_scores = get_scores(train_out["Release_act"].unstack(), train_out["Release_trprms"].unstack())
+    trte_scores = get_scores(train_out["Release_act"].unstack(), train_out["Release_teprms"].unstack())
+    tetr_scores = get_scores(train_out["Release_act"].unstack(), train_out["Release_trprms"].unstack())
+    tete_scores = get_scores(train_out["Release_act"].unstack(), train_out["Release_teprms"].unstack())
+
+    output = {
+        "train":{
+            "params":best_train_params,
+            "num_round":best_train_num_round,
+            "results":train_out,
+        },
+        "test":{
+            "params":best_test_params,
+            "num_round":best_test_num_round,
+            "results":test_out
+        },
+        "scores":{
+            "trtr":trtr_scores,
+            "trte":trte_scores,
+            "tetr":tetr_scores,
+            "tete":tete_scores,
+        }
+    }
+    with open("../results/xgboost/best_params_results.pickle", "wb") as f:
+        pickle.dump(output, f)
+
+    # depths = np.arange(3, 9)
+    # etas = np.arange(0, 0.7, 0.1) # learning rate
+    # gammas = np.arange(0, 11, 2) # min split loss
+    # subsamples = [0.5, 0.75, 1]
+    # lambdas = [1, 1.5, 2] # might could go higher here, the best training params maximize this value
+    # alphas = [0, 0.5, 1] # same deal here as the lambdas
+    # num_rounds = np.arange(50,400,50)
+
+    # grid = list(product(depths, etas, gammas,
+    #                     subsamples, lambdas, alphas,
+    #                     num_rounds))
+    # grid_size = len(grid)
+    # chunk_size = int(grid_size / 12)
+    # output = []
+    # outputpath = pathlib.Path("../results/xgboost/grid_search.pickle")
+    # time1 = timer()
+    # for i in range(9,12):
+    #     print(f"\nWorking on Chunk {i+1} of 12")
+    #     print(f"Elapsed Time: {timer() - time1:.3f} seconds")
+    #     for sparams in grid[i*chunk_size:(i+1)*chunk_size]:
+    #         param = {
+    #             "max_depth": sparams[0],
+    #             "eta": sparams[1],
+    #             "gamma":sparams[2],
+    #             "subsample":sparams[3],
+    #             "lambda":sparams[4],
+    #             "alpha":sparams[5],
+    #             "objective":"reg:squarederror",
+    #             "nthread":cpu_count(),
+    #             "eval_metric":"rmse",
+    #             "tree_method":"gpu_hist"
+    #         }
+    #         num_round = sparams[6]
+    #         try:
+    #             bst = xgb.train(param, dtrain, num_round)
+    #             training = bst.predict(dtrain)
+    #             testing = bst.predict(dtest)
+    #             train_score = r2_score(y_train, training)
+    #             test_score = r2_score(y_test, testing)
+    #             output.append(
+    #                (train_score, test_score)
+    #             )
+    #         except:
+    #             output.append((np.nan, np.nan))
+
+    #     if outputpath.exists():
+    #         with open(outputpath.as_posix(), "rb") as f:
+    #             results = pickle.load(f)
+    #     else:
+    #         results = {"grid":grid, "results":[]}
+
+    #     results["results"].extend(output)
+
+    #     with open(outputpath.as_posix(), "wb") as f:
+    #         pickle.dump({"grid":grid,"results":output}, f)
 
 def change_group_names(df, groups, names):
     for group in groups:
