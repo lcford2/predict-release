@@ -222,8 +222,8 @@ if __name__ == "__main__":
     res_groups = find_res_groups(train)
     group_map = {
         "ComboFlow-RunOfRiver": "ROR",
-        "ComboFlow-StorageDam": "HRT",
-        "NaturalFlow-StorageDam": "LRT",
+        "ComboFlow-StorageDam": "LRT",
+        "NaturalFlow-StorageDam": "HRT",
     }
 
     train_rel, train_sto = get_simulated_release(
