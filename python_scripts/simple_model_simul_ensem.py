@@ -104,7 +104,8 @@ def simul_res(res_exog, coefs, month_coefs, means, std, std_or_norm=0):
     #     "Release_roll7", "Storage_roll7", "Inflow_roll7"
     # ]].values
     intercept = coefs[0]
-    re_coefs  = coefs[1:-12]
+    # re_coefs  = coefs[1:-12]
+    re_coefs = coefs[1:]
     # month_coefs = coefs[-12:]
 
     intercepts = np.array([intercept + month_coefs[i-1]
@@ -414,12 +415,24 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
 
         sys.exit()
     else:
-        with open("../results/simul_model/multi_trial_nelder-mead.pickle", "rb") as f:
+        with open("../results/simul_model/multi_trial_nelder-mead_group_specific.pickle", "rb") as f:
             results = pickle.load(f)
 
-        final_error = [i.fun for i in results]
-        final_params = [i.x for i in results]
-        best_params = final_params[np.argmin(final_error)]
+        # final_error = [i.fun for i in results]
+        # final_params = [i.x for i in results]
+        # best_params = final_params[np.argmin(final_error)]
+
+        best_lrt = np.argmin(i.fun for i in results["ComboFlow-StorageDam"])
+        best_hrt = np.argmin(i.fun for i in results["NaturalFlow-StorageDam"])
+        best_ror = np.argmin(i.fun for i in results["ComboFlow-RunOfRiver"])
+        best_lrt_params = results["ComboFlow-StorageDam"][best_lrt].x
+        best_hrt_params = results["NaturalFlow-StorageDam"][best_hrt].x
+        best_ror_params = results["ComboFlow-RunOfRiver"][best_ror].x
+        best_params = [
+            *best_hrt_params,
+            *best_lrt_params,
+            *best_ror_params
+        ]
         new_coefs = {}
         for group, i in coef_map.items():
             new_coefs[group] = best_params[i*nprm:(i+1)*nprm]
@@ -440,9 +453,9 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
         rel_scores = get_scores(act_release, rel_output)
         sto_scores = get_scores(act_storage, sto_output)
         print(f"Rel Train Score:")
-        print(rel_scores.mean())
+        print(rel_scores)
         print(f"Sto Train Score:")
-        print(sto_scores.mean())
+        print(sto_scores)
 
         train_out = pd.DataFrame({
             "Release_act":act_release.stack(),
@@ -465,10 +478,10 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
         act_storage = df["Storage"].unstack().loc[sto_output.index]
         rel_scores = get_scores(act_release, rel_output)
         sto_scores = get_scores(act_storage, sto_output)
-        print(f"Rel Train Score:")
-        print(rel_scores.mean())
-        print(f"Sto Train Score:")
-        print(sto_scores.mean())
+        print(f"Rel Test Score:")
+        print(rel_scores)
+        print(f"Sto Test Score:")
+        print(sto_scores)
 
         test_out = pd.DataFrame({
             "Release_act":act_release.stack(),
@@ -479,7 +492,7 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
         output = {"new_coefs":new_coefs, "month_coefs":month_coefs, #"results":result,
                 "train":train_out, "test":test_out}
 
-        with open(f"../results/simul_model/best_ensem_results.pickle", "wb") as f:
+        with open(f"../results/simul_model/best_ensem_results_group_specific.pickle", "wb") as f:
             pickle.dump(output, f)
 
 def get_simulated_release(exog, coefs, month_coefs, groups, means, std, lib=None, std_or_norm=0):
