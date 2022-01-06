@@ -362,7 +362,7 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
     std_or_norm = 0
     sn_label = "std" if std_or_norm == 0 else "norm"
 
-    ensem_fit = True
+    ensem_fit = False
     order = ["NaturalFlow-StorageDam",
              "ComboFlow-StorageDam",
              "ComboFlow-RunOfRiver"]

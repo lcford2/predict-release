@@ -15,7 +15,7 @@ sns.set_context("talk")
 
 def load_results(method="nelder-mead"):
     if method == "nelder-mead":
-        with open("../results/simul_model/multi_trial_nelder-mead.pickle", "rb") as f:
+       with open("../results/simul_model/multi_trial_nelder-mead_group_specific.pickle", "rb") as f:
             results = pickle.load(f)
     else:
         with open("../results/simul_model/multi_trial.pickle", "rb") as f:
@@ -88,11 +88,13 @@ def main():
     args = parse_args()
     results, ts_results = load_results(method=args.method)
     res_groups = pd.read_pickle("../pickles/tva_res_groups.pickle")
-    final_error = extract_final_error(results)
-    final_params = extract_final_params(results)
-    formatted_params = [format_params(i, months=args.months) for i in final_params]
-    sns.set_context("paper")
-
+    # final_error = extract_final_error(results)
+    # final_params = extract_final_params(results)
+    # formatted_params = [format_params(i, months=args.months) for i in final_params]
+    # sns.set_context("paper")
+    from IPython import embed as II
+    II()
+    sys.exit()
     plot_time_series(
         ts_results[args.data_set][f"{args.var.capitalize()}_act"].unstack(),
         ts_results[args.data_set][f"{args.var.capitalize()}_simul"].unstack(),

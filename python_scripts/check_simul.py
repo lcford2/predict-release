@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from utils.helper_functions import read_tva_data
-from plot_helpers import determine_grid_size
+from plot_helpers import determine_grid_size, abline
 from simple_model_simul import (
     combine_columns,
     change_group_names,
@@ -204,6 +204,29 @@ def plot_time_series(actual, model, title, groups):
     fig.tight_layout()
     plt.show()
 
+def plot_one_to_one(actual, model, title, groups):
+    res = actual.columns
+    gs = determine_grid_size(res.size)
+    fig, axes = plt.subplots(*gs, figsize=(19, 10))
+    axes = axes.flatten()
+    fig.patch.set_alpha(0.0)
+
+    for res, ax in zip(res, axes):
+        # ax.plot(actual.index, actual[res], label="Actual")
+        # ax.plot(actual.index, model[res], label="Simul")
+        ax.scatter(actual[res], model[res])
+        abline(0,1,ax=ax,c="b")
+        ax.set_title(f"{res} [{groups[res]}]")
+        handles, labels = ax.get_legend_handles_labels()
+
+    axes[-1].set_axis_off()
+    axes[-1].legend(handles, labels, loc="center", prop={"size": 16})
+
+    fig.text(
+        0.02, 0.5, f"{title}", va="center", ha="center", rotation=90, fontsize=TFSIZE
+    )
+    fig.tight_layout()
+    plt.show()
 
 if __name__ == "__main__":
     TVA = read_tva_data(just_load=False)

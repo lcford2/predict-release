@@ -605,6 +605,7 @@ def boosted_training(df, groups, filter_groups=None, scaler="mine"):
                          label=y_train)
     dtest = xgb.DMatrix(X_test.loc[:, exog_terms + interaction_terms],
                          label=y_test)
+
     best_train_params = {
         "max_depth": 4,
         "eta": 0.2,
@@ -656,8 +657,8 @@ def boosted_training(df, groups, filter_groups=None, scaler="mine"):
 
     trtr_scores = get_scores(train_out["Release_act"].unstack(), train_out["Release_trprms"].unstack())
     trte_scores = get_scores(train_out["Release_act"].unstack(), train_out["Release_teprms"].unstack())
-    tetr_scores = get_scores(train_out["Release_act"].unstack(), train_out["Release_trprms"].unstack())
-    tete_scores = get_scores(train_out["Release_act"].unstack(), train_out["Release_teprms"].unstack())
+    tetr_scores = get_scores(test_out["Release_act"].unstack(), test_out["Release_trprms"].unstack())
+    tete_scores = get_scores(test_out["Release_act"].unstack(), test_out["Release_teprms"].unstack())
 
     output = {
         "train":{
@@ -680,17 +681,20 @@ def boosted_training(df, groups, filter_groups=None, scaler="mine"):
     with open("../results/xgboost/best_params_results.pickle", "wb") as f:
         pickle.dump(output, f)
 
-    # depths = np.arange(3, 9)
-    # etas = np.arange(0, 0.7, 0.1) # learning rate
-    # gammas = np.arange(0, 11, 2) # min split loss
-    # subsamples = [0.5, 0.75, 1]
-    # lambdas = [1, 1.5, 2] # might could go higher here, the best training params maximize this value
-    # alphas = [0, 0.5, 1] # same deal here as the lambdas
-    # num_rounds = np.arange(50,400,50)
+    depths = np.arange(3,9)
+    etas = np.arange(0,0.7,0.1)
+    gammas = np.arange(0,11,2)
+    subsamples = [0.5, 0.75, 1]
+    lambdas = [1,1.5,2]
+    alphas = [0,0.5,1]
+    num_rounds = np.arange(50,400,50)
 
-    # grid = list(product(depths, etas, gammas,
-    #                     subsamples, lambdas, alphas,
-    #                     num_rounds))
+    grid = list(product(depths, etas, gammas,
+                        subsamples, lambdas, alphas,
+                        num_rounds))
+
+    II()
+
     # grid_size = len(grid)
     # chunk_size = int(grid_size / 12)
     # output = []
@@ -714,14 +718,15 @@ def boosted_training(df, groups, filter_groups=None, scaler="mine"):
     #         }
     #         num_round = sparams[6]
     #         try:
-    #             bst = xgb.train(param, dtrain, num_round)
-    #             training = bst.predict(dtrain)
-    #             testing = bst.predict(dtest)
-    #             train_score = r2_score(y_train, training)
-    #             test_score = r2_score(y_test, testing)
-    #             output.append(
-    #                (train_score, test_score)
-    #             )
+                # bst = xgb.train(param, dtrain, num_round)
+                # training = bst.predict(dtrain)
+                # bst = xgb.train(param, dtest, num_round)
+                # testing = bst.predict(dtest)
+                # train_score = r2_score(y_train, training)
+                # test_score = r2_score(y_test, testing)
+                # output.append(
+                #    (train_score, test_score)
+                # )
     #         except:
     #             output.append((np.nan, np.nan))
 
