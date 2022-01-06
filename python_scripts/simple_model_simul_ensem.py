@@ -245,8 +245,9 @@ def filter_groups_out(df, filter_groups):
 def my_minimize(args):
     func = args[0]
     init_params = args[1]
-    return minimize(func, init_params, args=args[2:])#, method="Nelder-Mead",
-                    #options={"maxiter":5000, "maxfev":10000})
+    return minimize(func, init_params, args=args[2:], method="Nelder-Mead",
+                    options={"maxiter":10000, "maxfev":15000})
+
 
 def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
     for_groups = df.loc[:,groups]
@@ -401,7 +402,7 @@ def fit_simul_res(df, simul_func, groups, filter_groups=None, scaler="mine"):
                 results = pool_results.get()
             group_results[group] = results
 
-        file = "../results/simul_model/multi_trial_group_specific.pickle"
+        file = "../results/simul_model/multi_trial_nelder-mead_group_specific.pickle"
         try:
             with open(file, "rb") as f:
                 old_results = pickle.load(f)
