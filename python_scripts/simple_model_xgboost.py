@@ -536,12 +536,15 @@ def boosted_training(df, groups, filter_groups=None, scaler="mine"):
         df.loc[:,"Net Inflow"])
     
     scaled_df, means, std = scale_multi_level_df(df)
+    mins = df.groupby(df.index.get_level_values(1))[["Release", "Storage"]].min()
+    maxs = df.groupby(df.index.get_level_values(1))[["Release", "Storage"]].max()
+
     X_scaled = scaled_df.loc[:, ["Storage_pre", "Net Inflow", "Release_pre",
                                     "Storage_Inflow_interaction",
                                     "Storage_Release_interaction",
                                     "Release_Inflow_interaction",
                                     "Release_roll7", "Release_roll14", "Storage_roll7",
-                                    "Storage_roll14", "Inflow_roll7", "Inflow_roll14"] 
+                                    "Storage_roll14", "Inflow_roll7", "Inflow_roll14"]
                             ]
     y_scaled = scaled_df.loc[:, "Release"]
 
@@ -593,11 +596,16 @@ def boosted_training(df, groups, filter_groups=None, scaler="mine"):
     X_train = X_train.rename(columns=name_map)
 
     # train model
-    interaction_terms = ["Storage_Inflow_interaction"]
+    interaction_terms = ["Storage_Inflow_interaction",
+                         # "Storage_Release_interaction",
+                         # "Release_Inflow_interaction"
+                         ]
         
     exog_terms = [
         "Net Inflow", "Storage_pre", "Release_pre",
         "Storage_roll7",  "Inflow_roll7", "Release_roll7",
+        # "Storage_roll14",  "Inflow_roll14", "Release_roll14",
+        # "HRT", "LRT", "ROR"
     ]
 
 
@@ -693,8 +701,12 @@ def boosted_training(df, groups, filter_groups=None, scaler="mine"):
                         subsamples, lambdas, alphas,
                         num_rounds))
 
-    II()
-
+    boosted_simulation(bst_test,
+                       X_test.loc[:, exog_terms + interaction_terms],
+                       means,
+                       std,
+                       maxs,
+                       mins)
     # grid_size = len(grid)
     # chunk_size = int(grid_size / 12)
     # output = []
@@ -741,6 +753,102 @@ def boosted_training(df, groups, filter_groups=None, scaler="mine"):
     #     with open(outputpath.as_posix(), "wb") as f:
     #         pickle.dump({"grid":grid,"results":output}, f)
 
+def boosted_simulation(bst, exog, means, std, maxs, mins):
+    reservoirs = exog.index.get_level_values(1).unique()
+    all_res_output = []
+    idx = pd.IndexSlice
+
+    ttime1 = timer()
+    for res in reservoirs:
+        time1 = timer()
+        res_exog = exog.loc[idx[:,res],:]
+        res_means = means.loc[res]
+        res_std = std.loc[res]
+        res_maxs = maxs.loc[res]
+        res_mins = mins.loc[res]
+        output = res_bstd_simulation(bst, res_exog, res_means, res_std, res_maxs, res_mins)
+        all_res_output.append(output)
+        time2 = timer()
+        print(f"Res: {res: <20} took {time2 - time1:.3f} seconds")
+    ttime2 = timer()
+    print(f"Total Time: {ttime2 - ttime1:.3f} seconds")
+    all_res_output = pd.concat(all_res_output).sort_index()
+    all_res_output = all_res_output.loc[idx[datetime(2010,1,1):,:],:]
+    with open("../results/xgboost/simul_test_results.pickle", "wb") as f:
+        pickle.dump(all_res_output, f)
+
+
+def res_bstd_simulation(bst, res_exog, res_means, res_std, res_maxs, res_mins):
+    output = pd.DataFrame(columns=["Release", "Storage", "Net Inflow"], index=res_exog.index)
+    start_date = res_exog.index.get_level_values(0).values[0]
+    end_date = res_exog.index.get_level_values(0).values[-1]
+    week_out = start_date + np.timedelta64(8, "D")
+
+    idx = pd.IndexSlice
+    intermediate_values = res_exog.loc[idx[:week_out,:],
+                                       ["Storage_pre", "Release_pre"]]
+    intermediate_values[["Storage", "Release"]] = intermediate_values[["Storage_pre", "Release_pre"]].shift(-1)
+
+    td1 = np.timedelta64(1, "D")
+    td2 = np.timedelta64(2, "D")
+    td6 = np.timedelta64(6, "D")
+    td7 = np.timedelta64(7, "D")
+    output[["Storage", "Release"]] = intermediate_values.loc[idx[
+            start_date+td1:week_out-td1],["Storage", "Release"]]
+    output["Net Inflow"] = res_exog.loc[:, "Net Inflow"]
+
+    output["Release"] = output["Release"] * res_std["Release"] + res_means["Release"]
+    output["Storage"] = output["Storage"] * res_std["Storage"] + res_means["Storage"]
+    output["Net Inflow"] = output["Net Inflow"] * res_std["Net Inflow"] + res_means["Net Inflow"]
+
+    simul_period = pd.date_range(week_out, end_date)
+
+    for date in simul_period:
+        exog = pd.DataFrame({
+            "Net Inflow":(output.loc[idx[date,:],"Net Inflow"].values[0] -
+                          res_means["Net Inflow"]) / res_std["Net Inflow"],
+            "Storage_pre":(output.loc[idx[date-td1,:],"Storage"].values[0] -
+                           res_means["Storage"]) / res_std["Storage"],
+            "Release_pre":(output.loc[idx[date-td1,:],"Release"].values[0] -
+                           res_means["Release"]) / res_std["Release"],
+            "Storage_roll7":(output.loc[idx[date-td7:date-td1], "Storage"].mean() -
+                             res_means["Storage_roll7"]) / res_std["Storage_roll7"],
+            "Inflow_roll7":(output.loc[idx[date-td6:date], "Net Inflow"].mean() -
+                             res_means["Inflow_roll7"]) / res_std["Inflow_roll7"],
+            "Release_roll7":(output.loc[idx[date-td7:date-td1], "Release"].mean() -
+                             res_means["Release_roll7"]) / res_std["Release_roll7"],
+            # "HRT":res_exog.loc[idx[date,:],"HRT"].values[0],
+            # "LRT":res_exog.loc[idx[date,:],"LRT"].values[0],
+            # "ROR":res_exog.loc[idx[date,:],"ROR"].values[0],
+        }, index=[0])
+        exog["Storage_Inflow_interaction"] = exog["Storage_pre"] * exog["Net Inflow"]
+        # exog["Storage_Release_interaction"] = exog["Storage_pre"] * exog["Release_pre"]
+        # exog["Release_Inflow_interaction"] = exog["Release_pre"] * exog["Net Inflow"]
+
+        dtrain = xgb.DMatrix(exog)
+        release = bst.predict(dtrain)[0]
+        release_act = release * res_std["Release"] + res_means["Release"]
+
+        # check release bounds
+        if release_act < res_mins["Release"]:
+            release_act = res_mins["Release"]
+        if release_act > res_maxs["Release"]:
+            release_act = res_maxs["Release"]
+
+        storage_act = output.loc[idx[date-td1,:],"Storage"].values[0] + \
+                      output.loc[idx[date,:],"Net Inflow"].values[0] - \
+                      release_act
+
+        # check storage bounds
+        if storage_act < res_mins["Storage"]:
+            storage_act = res_mins["Storage"]
+        if storage_act > res_maxs["Storage"]:
+            storage_act = res_maxs["Storage"]
+
+        output.loc[date, ["Storage", "Release"]] = [storage_act, release_act]
+    return output
+
+    
 def change_group_names(df, groups, names):
     for group in groups:
         df[group] = [names[group][i] for i in df[group]]
