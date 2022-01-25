@@ -93,14 +93,19 @@ def main():
     # formatted_params = [format_params(i, months=args.months) for i in final_params]
     sns.set_context("paper")
     from IPython import embed as II
-    # II()
+    II()
     # sys.exit()
-    plot_time_series(
-        ts_results[args.data_set][f"{args.var.capitalize()}_act"].unstack(),
-        ts_results[args.data_set][f"{args.var.capitalize()}_simul"].unstack(),
-        f"Simulated {args.var.capitalize()}({args.data_set.capitalize()}ing Set:Best Params)",
-        res_groups
-    )
+    # plot_time_series(
+    #     ts_results[args.data_set][f"{args.var.capitalize()}_act"].unstack(),
+    #     ts_results[args.data_set][f"{args.var.capitalize()}_simul"].unstack(),
+    #     f"Simulated {args.var.capitalize()}({args.data_set.capitalize()}ing Set:Best Params)",
+    #     res_groups
+    # )
+    # plot_res_scores(
+    #     ts_results[args.data_set][f"{args.var.capitalize()}_act"].unstack(),
+    #     ts_results[args.data_set][f"{args.var.capitalize()}_simul"].unstack(),
+    #     f"{args.var.capitalize()} Scores",
+    #     res_groups)
 
 if __name__ == "__main__":
     main()

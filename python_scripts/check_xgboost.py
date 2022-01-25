@@ -179,11 +179,19 @@ if __name__ == "__main__":
     results["Release_act"] = TVA.loc[results.index, "Release"]
     results["Storage_act"] = TVA.loc[results.index, "Storage"]
 
-    plot_time_series(results["Release_act"].unstack(),
+    # plot_time_series(results["Release_act"].unstack(),
+    #                  results["Release"].unstack(),
+    #                  "XGBoost Release Simulation",
+    #                  res_groups)
+    # plot_time_series(results["Storage_act"].unstack(),
+    #                  results["Storage"].unstack(),
+    #                  "XGBoost Storage Simulation",
+    #                  res_groups)
+    plot_res_scores(results["Release_act"].unstack(),
                      results["Release"].unstack(),
                      "XGBoost Release Simulation",
                      res_groups)
-    plot_time_series(results["Storage_act"].unstack(),
+    plot_res_scores(results["Storage_act"].unstack(),
                      results["Storage"].unstack(),
                      "XGBoost Storage Simulation",
                      res_groups)
