@@ -1,0 +1,5404 @@
+{
+    "ABIQUIU LAKE": [
+        [
+            "20060",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "20055",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "ABQWATERUSERS INCLUDES USERS IN ALBUQUERQUE AND BERNALILLO COUNTY": [
+        [
+            "19518",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "ACEQUIA MADRE": [
+        [
+            "24497",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "AH-SHI-SLE-PAH WASH NEAR KIMBETO  NM": [
+        [
+            "1464",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ALFALFA RUN BL FRUITGROWERS  DELIVERIES": [
+        [
+            "14490",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "AMERICAN CANAL AT EL PASO": [
+        [
+            "19161",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "19180",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "ANIMAS RIVER AT DURANGO  CO.": [
+        [
+            "1591",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1365",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ANIMAS RIVER AT FARMINGTON  NM": [
+        [
+            "1452",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ANIMAS RIVER AT HOWARDSVILLE  CO.": [
+        [
+            "1425",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ANIMAS RIVER AT SILVERTON  CO.": [
+        [
+            "1426",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ANIMAS RIVER AT TALL TIMBER RESORT NEAR ROCKWOOD": [
+        [
+            "1433",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ANIMAS RIVER BELOW AZTEC  NM": [
+        [
+            "3857",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ANIMAS RIVER BELOW DPP": [
+        [
+            "19150",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ANIMAS RIVER BELOW SILVERTON  CO": [
+        [
+            "1431",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ANIMAS RIVER NEAR CEDAR HILL  N. MEX.": [
+        [
+            "1362",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ARREY CANAL": [
+        [
+            "24242",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "AVALON RESERVOIR": [
+        [
+            "23451",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "20821",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "20923",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ]
+    ],
+    "AZOTEA TUNNEL OUTLET NEAR CHAMA  NM": [
+        [
+            "2414",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "2380",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BEAR RIVER ABOVE RESERVOIR  NEAR WOODRUFF  UT": [
+        [
+            "3887",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BEAR RIVER AT BORDER  WY": [
+        [
+            "3895",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BEAR RIVER AT EVANSTON  WY": [
+        [
+            "3885",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BEAR RIVER AT IDAHO-UTAH STATE LINE  ID": [
+        [
+            "3899",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BEAR RIVER AT PESCADERO  ID": [
+        [
+            "3897",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BEAR RIVER BELOW SMITHS FORK  NEAR COKEVILLE  WY": [
+        [
+            "3893",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BEAR RIVER NEAR CORINNE  UT": [
+        [
+            "3907",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BEAR RIVER NEAR UTAH-WY STATE LINE  WY": [
+        [
+            "3883",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BEAVER RIVER NEAR BEAVER  UT": [
+        [
+            "4007",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BIG BRUSH CREEK ABV RED FLEET RES  NR VERNAL  UT": [
+        [
+            "3795",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BIG CREEK NEAR RANDOLPH  UT": [
+        [
+            "3889",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BIG SANDY RESERVOIR": [
+        [
+            "19017",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "2365",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "19013",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "19014",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "19016",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1805",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1885",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "BIG SANDY RIVER ABOVE BIG SANDY RESERVOIR NEAR FARSON": [
+        [
+            "1381",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BIG SANDY RIVER AT GASSON BRIDGE  NR EDEN  WY": [
+        [
+            "3777",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BLACK RIVER ABOVE MALAGA  NM": [
+        [
+            "3623",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BLACK RIVER AT MALAGA  NM": [
+        [
+            "23406",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "20833",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BLACK SPRINGS WASH NR MEXICAN SPRINGS  N MEX": [
+        [
+            "1467",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BLACKS FORK AT LITTLE AMERICA": [
+        [
+            "1595",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1372",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BLACKS FORK NEAR ROBERTSON  WY": [
+        [
+            "3779",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BLACKSMITH FORK NR HYRUM  UT": [
+        [
+            "3905",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BLANCO DIVERSION NEAR PAGOSA SPRINGS": [
+        [
+            "24256",
+            "TOTAL AVERAGE FLOW IN CFS-DAY"
+        ],
+        [
+            "20214",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "19735",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "BLUE MESA DAM  CLIMATE": [
+        [
+            "2415",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "BLUE MESA POWER PLANT": [
+        [
+            "2265",
+            "TOTAL ENERGY IN MWH"
+        ]
+    ],
+    "BLUE MESA RESERVOIR": [
+        [
+            "7600",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "14191",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1835",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "2259",
+            "VOLUME OF POWER RELEASES IN ACRE-FEET"
+        ],
+        [
+            "4147",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "1787",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1867",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "1915",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1857",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "1770",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ]
+    ],
+    "BLUE RIVER BELOW GREEN MOUNTAIN RESERVOIR  CO": [
+        [
+            "25428",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BLUE RIVER NEAR DILLON  CO.": [
+        [
+            "23360",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3671",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BOTTLE HOLLOW RESERVOIR  UTAH": [
+        [
+            "1819",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1899",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "BOULDER CREEK NEAR BOULDER  UT": [
+        [
+            "3855",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BRANTLEY LAKE": [
+        [
+            "24046",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "22017",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "22016",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1806",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "20924",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1886",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "BRUMLEY": [
+        [
+            "2373",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "BURNHAM WASH NR BURNHAM  NM": [
+        [
+            "1470",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BUTTE": [
+        [
+            "878",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "CABALLO RESERVOIR": [
+        [
+            "2681",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "2680",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "14327",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "2683",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "2682",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "14325",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "10111",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ]
+    ],
+    "CANON LARGO NR BLANCO NM": [
+        [
+            "1435",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CARLSBAD MAIN CANAL AT HEAD NEAR CARLSBAD  NM": [
+        [
+            "20825",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "3615",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CASIAS CREEK NEAR COSTILLA  NM": [
+        [
+            "3491",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CAUSEY RESERVOIR": [
+        [
+            "18995",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "24879",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "19005",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "19004",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "18996",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "19003",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1807",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1887",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "CEMENT CREEK AT SILVERTON  CO": [
+        [
+            "1427",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CENTERVILLE CREEK ABV. DIV NEAR CENTERVILLE  UT": [
+        [
+            "3939",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CHACO RIVER NEAR WATERFLOW   NM": [
+        [
+            "1472",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CHACO RIVER NR BURNHAM  NM": [
+        [
+            "1471",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CHACO WASH AT CHACO CANYON NATIONAL MONUMENT": [
+        [
+            "1461",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CHACO WASH NR PB AT BRIDGE AT CHACO NATL MON": [
+        [
+            "1463",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CHACO WASH NR STARLAKE TRADING POST  NM": [
+        [
+            "1458",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CHALK CREEK AT COALVILLE  UT": [
+        [
+            "3917",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CHERRY CREEK NEAR RED MESA  CO.": [
+        [
+            "1448",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CHINLE CREEK NEAR MEXICAN WATER  AZ": [
+        [
+            "3877",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CIMARRON RIVER BLW SQUAW CREEK AT CIMARRON": [
+        [
+            "20765",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CIMARRON RIVER NEAR CIMARRON  CO": [
+        [
+            "1347",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CITIZENS DITCH  NEW MEXICO": [
+        [
+            "3442",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CLOSED BASIN PROJECT CANAL NEAR ALAMOSA": [
+        [
+            "23990",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COAL CREEK NEAR CEDAR CITY  UT": [
+        [
+            "4009",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COCHETOPA CREEK BELOW ROCK CREEK  NEAR PARLIN  CO": [
+        [
+            "1348",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COCHITI EAST SIDE MAIN CANAL AT COCHITI": [
+        [
+            "20335",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "20352",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "COCHITI LAKE ": [
+        [
+            "19048",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "19050",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "19072",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "19046",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ]
+    ],
+    "COLORADO PLUS GREEN PLUS SAN JUAN (TEMP)": [
+        [
+            "1494",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO R BELOW BAKER GULCH  NR GRAND LAKE  CO.": [
+        [
+            "3637",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO R BL GRD VALLEY DIV NR PALISADE  CO": [
+        [
+            "3747",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER AT GLENWOOD SPRINGS  CO.": [
+        [
+            "1560",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1327",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER AT LEES FERRY  AZ.": [
+        [
+            "21883",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ],
+        [
+            "1578",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1344",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER AT WINDY GAP  NEAR GRANBY  CO.": [
+        [
+            "23359",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3651",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER BELOW GLEN CANYON DAM": [
+        [
+            "2381",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER BELOW GLENWOOD SPRINGS  CO.": [
+        [
+            "3737",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "7938",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "COLORADO RIVER NEAR CAMEO  CO.": [
+        [
+            "1561",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1328",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER NEAR CISCO  UT": [
+        [
+            "1567",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1332",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER NEAR COLORADO-UTAH STATE LINE": [
+        [
+            "1363",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER NEAR DOTSERO  CO.": [
+        [
+            "23365",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3719",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER NEAR GRANBY  CO.": [
+        [
+            "3639",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER NEAR KREMMLING  CO.": [
+        [
+            "23363",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3685",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CONEJOS RIVER NEAR MOGOTE": [
+        [
+            "23998",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COSTILLA CREEK ABOVE COSTILLA DAM  NM": [
+        [
+            "3489",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COSTILLA CREEK BELOW COSTILLA DAM  NM": [
+        [
+            "3495",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COSTILLA CREEK NEAR COSTILLA  NM": [
+        [
+            "3497",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COSTILLA CREEK NEAR GARCIA  CO": [
+        [
+            "3499",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COTTONWOOD CREEK NEAR LAKE ARTHUR  NM": [
+        [
+            "20867",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COTTONWOOD WASH NR BLANDING UTAH": [
+        [
+            "1492",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CRAWFORD RESERVOIR": [
+        [
+            "14453",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "14454",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "14452",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1820",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1900",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "CRYSTAL POWER PLANT": [
+        [
+            "2270",
+            "TOTAL ENERGY IN MWH"
+        ]
+    ],
+    "CRYSTAL RESERVOIR": [
+        [
+            "2260",
+            "VOLUME OF POWER RELEASES IN ACRE-FEET"
+        ],
+        [
+            "4155",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "14193",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "2269",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "7602",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1859",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "1917",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1844",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ],
+        [
+            "1869",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "1789",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1837",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ]
+    ],
+    "CRYSTAL RIVER AB AVALANCHE C  NEAR REDSTONE  CO.": [
+        [
+            "3731",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CRYSTAL RIVER BELOW CARBONDALE  CO.": [
+        [
+            "3733",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CURECANTI CREEK NEAR SAPINERO  CO": [
+        [
+            "1349",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CURRANT CREEK NEAR MONA  UT": [
+        [
+            "3945",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CURRANT CREEK RESERVOIR": [
+        [
+            "21266",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "19091",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "19087",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "19089",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "19088",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "19090",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1821",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1901",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "CURRANT CREEK RESERVOIR INFLOW FROM OPEN CHANNEL #1 (VAT TUNNEL)": [
+        [
+            "21279",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "21267",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "CURRANT TUNNEL DIVERSION TO STRAWBERRY AQUEDUCT": [
+        [
+            "19124",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1766",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DALLAS CREEK NEAR RIDGEWAY  CO": [
+        [
+            "2248",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DANIELS CREEK AT CHARLESTON  UTAH": [
+        [
+            "3965",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DARK CANYON AT CARLSBAD  NM": [
+        [
+            "20905",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DARK CANYON DRAW NEAR WHITES CITY  NM": [
+        [
+            "3619",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DAVIES DITCH  COLORADO": [
+        [
+            "14495",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DE-NA-ZIN WASH NR BISTI TRADING POST   NM": [
+        [
+            "1466",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DEER CREEK NEAR BOULDER  UTAH": [
+        [
+            "3853",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DEER CREEK RESERVOIR": [
+        [
+            "18915",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "19069",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "19070",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "18914",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "18913",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1842",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "4177",
+            "VOLUME OF POWER RELEASES IN ACRE-FEET"
+        ],
+        [
+            "1865",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "3457",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1822",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "18919",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1902",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "DEER CREEK RESERVOIR DIVERSIONS TO SALT LAKE AQUEDUCT": [
+        [
+            "19071",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "2132",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DELAWARE RIVER NR RED BLUFF  NM": [
+        [
+            "3629",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DIAMOND FORK ABOVE RED HOLLOW  NEAR THISTLE  UT": [
+        [
+            "3949",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DIRTY DEVIL R ABV POISON SP WASH NR HANKSVILLE  UT": [
+        [
+            "3847",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DOLORES RIVER AT BEDROCK  CO": [
+        [
+            "2510",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DOLORES RIVER AT DOLORES  COLORADO": [
+        [
+            "1382",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DOLORES RIVER BELOW MCPHEE RESERVOIR": [
+        [
+            "2749",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DOLORES RIVER BELOW RICO": [
+        [
+            "1383",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DOLORES RIVER BLO MCPHEE RESERVOIR  COLORADO": [
+        [
+            "1380",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DOLORES RIVER NEAR BEDROCK  CO": [
+        [
+            "2650",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DOLORES RIVER NEAR CISCO  UT": [
+        [
+            "1566",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1331",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DOLORES TUNNEL OUTLET NEAR DOLORES": [
+        [
+            "14561",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "2751",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "14557",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "DOVE CREEK CANAL BELOW GREAT CUT DIKE": [
+        [
+            "14558",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "2753",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DUCHESNE R AB UINTA R NEAR RANDLETT  UT.": [
+        [
+            "3809",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DUCHESNE RIVER AT MYTON  UT": [
+        [
+            "3807",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DUCHESNE RIVER NEAR RANDLETT  UT": [
+        [
+            "1572",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1338",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DUCHESNE RIVER NEAR TABIONA  UT": [
+        [
+            "3797",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DUCHESNE TUNNEL OUTLET": [
+        [
+            "24504",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1326",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DUNN CREEK NEAR PARK VALLEY  UT": [
+        [
+            "3989",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "DURANGO PUMPING PLANT": [
+        [
+            "19145",
+            "AVERAGE PUMPED FLOW TO RESERVOIR STORAGE IN CFS"
+        ]
+    ],
+    "EAGLE DRAW AT ARTESIA  NM": [
+        [
+            "20910",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "EAGLE RIVER BELOW GYPSUM  CO.": [
+        [
+            "3717",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "23364",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "EAST CANYON CREEK NEAR JEREMY RANCH  UTAH": [
+        [
+            "3927",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "EAST CANYON CREEK NEAR MORGAN  UT": [
+        [
+            "3929",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "EAST CANYON CREEK NR PARK CITY  UTAH": [
+        [
+            "3925",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "EAST CANYON RESERVOIR": [
+        [
+            "14283",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "14279",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "14282",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "14281",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1782",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1809",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1889",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "EAST FORK OF SMITHS FORK NEAR ROBERTSON  WY": [
+        [
+            "3781",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "EAST FORK SAN JUAN RIVER NR PAGOSA SPRINGS ": [
+        [
+            "1498",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "EAST FORK SEVIER RIVER NEAR KINGSTON  UT": [
+        [
+            "3995",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "EAST MANCOS RIVER NEAR MANCOS  CO.": [
+        [
+            "1450",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "EAST RIVER AT ALMONT  CO": [
+        [
+            "1588",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1350",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "EAST RIVER BL CEMENT CREEK NR CRESTED BUTTE  CO.": [
+        [
+            "3751",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "EASTSIDE CANAL": [
+        [
+            "24238",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ECHO RESERVOIR": [
+        [
+            "1810",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "18945",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "18943",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "18942",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "18944",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1890",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "1783",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ]
+    ],
+    "EDEN RESERVOIR": [
+        [
+            "21297",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "21295",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "2367",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1903",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "21296",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "1823",
+            "AVERAGE INFLOW IN CFS"
+        ]
+    ],
+    "EF SAN JUAN R AB SAND CREEK  NR PAGOSA SPGS ": [
+        [
+            "1396",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "EL VADO LAKE": [
+        [
+            "19626",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "ELEPHANT BUTTE RESERVOIR": [
+        [
+            "14466",
+            "AVERAGE WATER TEMPERATURE IN RESERVOIR IN F"
+        ],
+        [
+            "2687",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "2689",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "2688",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "2686",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "14323",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "14322",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "10112",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ]
+    ],
+    "ELK RIVER AT CLARK  CO.": [
+        [
+            "2746",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ELK RIVER NEAR MILNER  CO": [
+        [
+            "2231",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ELKHEAD CREEK ABOVE LONG GULCH  NEAR HAYDEN  CO": [
+        [
+            "3430",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ELKHEAD CREEK BELOW MAYNARD GULCH  NEAR CRAIG  CO": [
+        [
+            "3432",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ELVADO^RIOGRANDE": [
+        [
+            "19627",
+            "AVERAGE INFLOW IN CFS"
+        ]
+    ],
+    "EMBUDO CREEK AT DIXON  NM": [
+        [
+            "20252",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3515",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ESCALANTE RIVER NEAR ESCALANTE  UT": [
+        [
+            "3851",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FAJADA WASH AT CHACO CANYON NATL MON NM": [
+        [
+            "1460",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FALLS CREEK NEAR DURANGO  CO.": [
+        [
+            "1440",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FAUST CREEK NEAR VERNON  UT": [
+        [
+            "3981",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FERRON CREEK (UPPER STATION) NEAR FERRON  UT": [
+        [
+            "3837",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FISH CR AT UPPER STA NR STEAMBOAT SPRINGS  CO": [
+        [
+            "3791",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FISH CREEK ABOVE RESERVOIR  NEAR SCOFIELD  UT": [
+        [
+            "2222",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FLAMING GORGE POWER PLANT": [
+        [
+            "2266",
+            "TOTAL ENERGY IN MWH"
+        ]
+    ],
+    "FLAMING GORGE RESERVOIR": [
+        [
+            "2416",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "14198",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1861",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "2258",
+            "VOLUME OF POWER RELEASES IN ACRE-FEET"
+        ],
+        [
+            "1839",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "14197",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1791",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1773",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1871",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "1919",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ]
+    ],
+    "FLORIDA R BL FLOR FARMERS DITCH  NR DURANGO": [
+        [
+            "1445",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FLORIDA RIVER ABOVE LEMON RESERVOIR  NR BAYFIELD  CO": [
+        [
+            "1384",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FLORIDA RIVER AT BONDAD  CO.": [
+        [
+            "1447",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FLORIDA RIVER BELOW LEMON RESERVOIR  NR BAYFIELD": [
+        [
+            "1385",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FLORIDA RIVER NEAR DURANGO": [
+        [
+            "1444",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FLORIDA RIVER NEAR HERMOSA  CO.": [
+        [
+            "1443",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FONTENELLE CREEK NEAR HERSHLER RANCH  WY.": [
+        [
+            "2273",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FONTENELLE POWER PLANT": [
+        [
+            "2267",
+            "TOTAL ENERGY IN MWH"
+        ]
+    ],
+    "FONTENELLE RESERVOIR": [
+        [
+            "4159",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "2257",
+            "VOLUME OF POWER RELEASES IN ACRE-FEET"
+        ],
+        [
+            "1860",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "14199",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1838",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "1790",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "14200",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1772",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1918",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1870",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "FORT SUMNER IRRIGATION DISTRICT MAIN DRAIN": [
+        [
+            "23952",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FORT SUMNER MAIN CANAL NEAR FORT SUMNER  NM": [
+        [
+            "20824",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "3595",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FOUR MILE DRAW NEAR LAKEWOOD": [
+        [
+            "20836",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FREMONT RIVER NEAR BICKNELL  UT": [
+        [
+            "3841",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FREMONT RIVER NEAR CAINEVILLE  UT": [
+        [
+            "3843",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "FRUITGROWERS RESERVOIR": [
+        [
+            "14483",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "1904",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "14485",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "14484",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "7607",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1824",
+            "AVERAGE INFLOW IN CFS"
+        ]
+    ],
+    "FRYINGPAN RIVER NEAR RUEDI  CO.": [
+        [
+            "3727",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GALISTEO CREEK BELOW GALISTEO DAM  NM": [
+        [
+            "3545",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20354",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "GALISTEO RESERVOIR": [
+        [
+            "20603",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "GALLEGOS CANYON NR FARMINGTON  NM": [
+        [
+            "1500",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GALLINAS CREEK NEAR LOURDES": [
+        [
+            "20901",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GALLINAS CREEK NEAR MONTEZUMA  NM": [
+        [
+            "3583",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GALLINAS R NR COLONIAS  NM": [
+        [
+            "3585",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GALLO WASH AT CHACO NATIONAL MONUMENT  NM": [
+        [
+            "1462",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GLEN CANYON DAM POWER PLANT": [
+        [
+            "2305",
+            "TOTAL ENERGY IN MWH"
+        ]
+    ],
+    "GOVERNMENT HIGHLINE CANAL": [
+        [
+            "21213",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "21214",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "GRANITE CREEK NEAR CALLAO  UTAH": [
+        [
+            "3987",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GRASSY LAKE  CLIMATE SITE": [
+        [
+            "21204",
+            "AVERAGE WIND SPEED IN MI/HOUR"
+        ],
+        [
+            "21199",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "GREEN RIVER ABOVE FONTENELLE (LA BARGE)": [
+        [
+            "1371",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "18994",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "GREEN RIVER AT GREEN RIVER  UT": [
+        [
+            "1574",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1340",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GREEN RIVER AT WARREN BRIDGE": [
+        [
+            "1378",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GREEN RIVER BELOW FONTENELLE DAM  WY": [
+        [
+            "1568",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1333",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GREEN RIVER NEAR GREEN RIVER  WY": [
+        [
+            "1569",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1334",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GREEN RIVER NEAR GREENDALE  UT": [
+        [
+            "2517",
+            "AVERAGE WATER TEMPERATURE IN RESERVOIR IN F"
+        ],
+        [
+            "1570",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1335",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GREEN RIVER NEAR JENSEN  UTAH": [
+        [
+            "9786",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "1589",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1361",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GUNNISON RIVER AT BLUE MESA DAM CO": [
+        [
+            "1563",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3435",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GUNNISON RIVER AT CRYSTAL RESERVOIR CO": [
+        [
+            "1564",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3434",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GUNNISON RIVER AT DELTA  CO.": [
+        [
+            "1364",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GUNNISON RIVER BELOW GUNNISON TUNNEL": [
+        [
+            "1370",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GUNNISON RIVER BELOW REDLANDS DIVERSION": [
+        [
+            "2382",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GUNNISON RIVER NEAR GRAND JUNCTION  CO": [
+        [
+            "1565",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1330",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GUNNISON RIVER NEAR GUNNISON  CO": [
+        [
+            "1351",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GUNNISON TUNNEL AB LATERAL": [
+        [
+            "14356",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GUNNISON TUNNEL OUTLET": [
+        [
+            "1763",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2262",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "GUNNISON TUNNEL SOUTH CANAL": [
+        [
+            "14357",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "HAMMOND DITCH  NEW MEXICO": [
+        [
+            "3444",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "HAMS FORK BELOW POLE CREEK  NEAR FRONTIER  WY": [
+        [
+            "3783",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "HARTMAN DRAW AT CORTEZ  CO.": [
+        [
+            "1477",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "HENRYS FORK NEAR MANILA  UT": [
+        [
+            "3785",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20889",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HERMOSA CREEK NEAR HERMOSA  CO.": [
+        [
+            "1439",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "HERON RESERVOIR": [
+        [
+            "20793",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "19609",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "HUBBARD CREEK AT HIGHWAY 133 AT MOUTH NR BOWIE  CO": [
+        [
+            "21322",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3753",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "HUNTER CREEK NEAR ASPEN  CO.": [
+        [
+            "3725",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "HUNTER WASH AT BISTI TRADING POST  NM": [
+        [
+            "1468",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "HUNTINGTON NORTH RESERVOIR": [
+        [
+            "19044",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "19042",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "19039",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "19040",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "19043",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1825",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1905",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "HYRUM RESERVOIR": [
+        [
+            "18970",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "18977",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "18974",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "18979",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "18980",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "18981",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1826",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1906",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "IDARADO": [
+        [
+            "2369",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "JACKSON GULCH RESERVOIR": [
+        [
+            "19134",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "19137",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "19138",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "19133",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1884",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "1804",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1781",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ]
+    ],
+    "JEMEZ CANYON RESERVOIR": [
+        [
+            "20062",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "20057",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "JEMEZ RIVER NEAR JEMEZ  NM": [
+        [
+            "20365",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3549",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "JOES VALLEY RESERVOIR": [
+        [
+            "19057",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "19056",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "19054",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "4258",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "19052",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1801",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1881",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "JOES VALLEY RESERVOIR  CLIMATE": [
+        [
+            "21190",
+            "AVERAGE WIND SPEED IN MI/HOUR"
+        ],
+        [
+            "21081",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "JORDAN RIVER @ 1700 SOUTH @ SALT LAKE CITY  UT": [
+        [
+            "3975",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "JORDANELLE RESERVOIR": [
+        [
+            "21264",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "21271",
+            "VOLUME OF POWER RELEASES IN ACRE-FEET"
+        ],
+        [
+            "18938",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "18937",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "18936",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "18935",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1833",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "3456",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1913",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "JUNCTION CREEK NEAR DURANGO  CO.": [
+        [
+            "1441",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "KNIGHT DIVERSION INFLOW TO STARVATION RESERVOIR": [
+        [
+            "21125",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "21124",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LA PLATA RIVER AT COLORADO-NEW MEXICO STATE LINE": [
+        [
+            "1388",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LA PLATA RIVER AT HESPERUS  COLORADO": [
+        [
+            "1387",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LA PLATA RIVER AT LA PLATA  NM": [
+        [
+            "3859",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LA PLATA RIVER NEAR FARMINGTON  NM": [
+        [
+            "1454",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LA PLATA RIVER TRIB NR FARMINGTON  N MEX": [
+        [
+            "1453",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LAKE FORK AT GATEVIEW  CO": [
+        [
+            "1352",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LAKE NIGHTHORSE  ": [
+        [
+            "14616",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "14626",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "14617",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "14622",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "14625",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "14624",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "14620",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "LAKE POWELL": [
+        [
+            "4166",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "14203",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "2216",
+            "VOLUME OF POWER RELEASES IN ACRE-FEET"
+        ],
+        [
+            "1862",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "14202",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1774",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1920",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1872",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "1792",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1840",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ]
+    ],
+    "LAKE POWELL INFLOW (GREEN + COLORADO)": [
+        [
+            "1493",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LAKE SUMNER": [
+        [
+            "22019",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "22018",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1812",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "20921",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1892",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "LEASBURG CANAL": [
+        [
+            "24244",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LEHMAN CREEK NEAR BAKER  NV": [
+        [
+            "4011",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LEMON RESERVOIR": [
+        [
+            "14459",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "2471",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "14460",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1803",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1883",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "1780",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "14461",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ]
+    ],
+    "LIGHTNER CREEK NEAR DURANGO  CO.": [
+        [
+            "1442",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LIME CREEK NEAR SILVERTON  CO.": [
+        [
+            "1432",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LITTLE BEAR RIVER AT PARADISE  UT": [
+        [
+            "3901",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LITTLE COTTONWOOD NR ALTA UT": [
+        [
+            "3971",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LITTLE NAVAJO R BL OSO DIV DAM  NR CHROMO ": [
+        [
+            "1616",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1408",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LITTLE NAVAJO RIVER AT CHROMO  CO.": [
+        [
+            "1409",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LITTLE OSO DIVERSION NR CHROMO": [
+        [
+            "19736",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "20213",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "LITTLE SNAKE RIVER NEAR DIXON": [
+        [
+            "1497",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LITTLE SNAKE RIVER NEAR LILY  CO": [
+        [
+            "2364",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1337",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LITTLE SNAKE RIVER NEAR SLATER CO.": [
+        [
+            "2737",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOGAN RIVER ABOVE STATE DAM  NEAR LOGAN  UT": [
+        [
+            "3903",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LONE PINE CANAL BELOW GREAT CUT DIKE NEAR DOLORES": [
+        [
+            "25471",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "2755",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOS ESTEROS CREEK": [
+        [
+            "20866",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOS ESTEROS CREEK ABV SANTA ROSA LAKE": [
+        [
+            "20903",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOS ESTEROS CREEK TRIBUTARY": [
+        [
+            "20865",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOS PINOS RIVER AT IGNACIO  COLO.": [
+        [
+            "1422",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOS PINOS RIVER AT LA BOCA  CO.": [
+        [
+            "1423",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOS PINOS RIVER BLO VALLEC RES NR BAYFIELD  CO": [
+        [
+            "1389",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOS PINOS RIVER NEAR BAYFIELD  CO.": [
+        [
+            "1421",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOS PINOS RIVER NEAR IGANACIO  CO": [
+        [
+            "2647",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOS PINOS RIVER NEAR ORTIZ": [
+        [
+            "24000",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOST CANYON CREEK NEAR DOLORES  COLORADO": [
+        [
+            "1386",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOST CREEK NEAR CROYDEN  UTAH": [
+        [
+            "3921",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOST CREEK RESERVOIR": [
+        [
+            "18948",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "18946",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "18947",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "18949",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "3454",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1811",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1891",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "LOST LAKE": [
+        [
+            "20971",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "20968",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "20967",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "20969",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "20970",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ]
+    ],
+    "LOWER WILLOW CREEK ABOVE HERON RESERVOIR": [
+        [
+            "19464",
+            "AVERAGE OUTFLOW IN CFS"
+        ],
+        [
+            "20574",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20575",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "MANCOS RIVER AT JACKSON GULCH RES INLET CANAL (MANJACCO)- SOCDWR": [
+        [
+            "1765",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MANCOS RIVER BELOW JOHNSON CANYON NR CORTEZ ": [
+        [
+            "1474",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MANCOS RIVER NEAR CORTEZ  CO.": [
+        [
+            "1473",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MANCOS RIVER NEAR MANCOS  COLORADO": [
+        [
+            "1390",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MANCOS RIVER NEAR TOWAOC  CO.": [
+        [
+            "1475",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MANTI CREEK BELOW DUGWAY CREEK  NEAR MANTI  UT": [
+        [
+            "3999",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MCELMO CREEK ABOVE ALKALI CANYON  NR CORTEZ ": [
+        [
+            "1478",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MCELMO CREEK ABOVE TRAIL CANYON NEAR CORTEZ  CO": [
+        [
+            "3863",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MCELMO CREEK BELOW CORTEZ  CO.": [
+        [
+            "1482",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MCELMO CREEK NEAR COLORADO-UTAH STATE LINE": [
+        [
+            "1483",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MCELMO CREEK NEAR CORTEZ  CO.": [
+        [
+            "1481",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MCLEOD CREEK NEAR PARK CITY  UT": [
+        [
+            "3923",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MCPHEE RESERVOIR": [
+        [
+            "14556",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "2730",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "14555",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1785",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "14554",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1907",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "1827",
+            "AVERAGE INFLOW IN CFS"
+        ]
+    ],
+    "MEEKS CABIN RESERVOIR": [
+        [
+            "19001",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "18998",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "19000",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "18997",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1813",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1893",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "2366",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ]
+    ],
+    "MIDDLE FORK PIEDRA RIVER NEAR DYKE  CO.": [
+        [
+            "1413",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MIDDLE FORK PIEDRA RIVER NR PAGOSA SPRINGS ": [
+        [
+            "1412",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MIDDLE MANCOS RIVER NEAR MANCOS  CO.": [
+        [
+            "1451",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MILL CREEK BELOW SHELEY TUNNEL  NEAR MOAB  UTAH": [
+        [
+            "3773",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MINERAL CREEK ABOVE SILVERTON  CO.": [
+        [
+            "1428",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MINERAL CREEK AT SILVERTON  CO": [
+        [
+            "1430",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MINERAL CREEK NEAR SILVERTON  CO.": [
+        [
+            "1429",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MINNESOTA CREEK NEAR PAONIA": [
+        [
+            "21325",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "21320",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MONTEZUMA CREEK AT GOLF COURSE AT MONTICELLO": [
+        [
+            "1489",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MONTEZUMA VALLEY IRRIGATION DISTRICT CANAL": [
+        [
+            "14551",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "14559",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "MOON LAKE RESERVOIR": [
+        [
+            "14634",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "14636",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "14632",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "14637",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "14633",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1799",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1879",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "MORROW POINT RESERVOIR": [
+        [
+            "7601",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "4151",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "2261",
+            "VOLUME OF POWER RELEASES IN ACRE-FEET"
+        ],
+        [
+            "1858",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "1868",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "14195",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1771",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1788",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1843",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ],
+        [
+            "1916",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1836",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ]
+    ],
+    "MORROW POINT RESERVOIR POWER PLANT": [
+        [
+            "2268",
+            "TOTAL ENERGY IN MWH"
+        ]
+    ],
+    "MUD CREEK AT STATE HIGHWAY 32  NEAR CORTEZ ": [
+        [
+            "1479",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MUD CREEK BL WINTER QUARTERS CANYON AT SCOFIELD UT": [
+        [
+            "3831",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MUD CREEK NEAR CORTEZ  CO.": [
+        [
+            "1480",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MUDDY CREEK ABOVE PAONIA RESERVOIR NEAR PAONIA  CO": [
+        [
+            "2237",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MUDDY CREEK BELOW PAONIA NEAR SUMMERSET  CO": [
+        [
+            "2239",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MUDDY CREEK NEAR EMERY  UT": [
+        [
+            "3845",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MUDDY CRK BLW WOLFORD MTN RESER. NR KREMMLING  CO": [
+        [
+            "25426",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NAVAJO INDIAN IRRIGATION PROJECT": [
+        [
+            "2263",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1764",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NAVAJO R AT BANDED PEAK RANCH  NEAR CHROMO ": [
+        [
+            "1405",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NAVAJO RESERVOIR": [
+        [
+            "14206",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1841",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "1921",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "14204",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1873",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "1793",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1775",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ]
+    ],
+    "NAVAJO RIVER ABOVE CHROMO  CO.": [
+        [
+            "1406",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NAVAJO RIVER AT EDITH  CO.": [
+        [
+            "1410",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NAVAJO RIVER BL OSO DIVERSION DAM NR CHROMO ": [
+        [
+            "1615",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1407",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NAVAJO RIVER NEAR CHROMO  COLORADO": [
+        [
+            "1391",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NAVAJO WASH NEAR TOWAOC  CO": [
+        [
+            "1476",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NEW FORK NEAR BIG PINEY": [
+        [
+            "1369",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NEWTON RESERVOIR": [
+        [
+            "19065",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "19064",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "19062",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "19061",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "19063",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1828",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1908",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "NORTH CLEAR CREEK BELOW CONTINENTAL RESERVOIR": [
+        [
+            "24027",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NORTH CREEK ABV. RANGER STAT NR MONTICELLO ": [
+        [
+            "1487",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NORTH CREEK NEAR MONTICELLO  UT": [
+        [
+            "3865",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NORTH FLOODWAY CHANNEL NEAR ALAMEDA  NM": [
+        [
+            "20553",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3553",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NORTH FORK GUNNISON RIVER ABOVE MOUTH NEAR LAZEAR": [
+        [
+            "21310",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "21306",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NORTH FORK GUNNISON RIVER BELOW PAONIA  CO": [
+        [
+            "3757",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NORTH FORK GUNNISON RIVER BL LEROUX CR  NR HOTCHKISS  CO": [
+        [
+            "21309",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3759",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NORTH FORK GUNNISON RIVER NEAR SOMERSET": [
+        [
+            "1395",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "1603",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "NORTH LOST TRAIL": [
+        [
+            "2379",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "NORTH SEVEN RIVERS": [
+        [
+            "20868",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "NORTON DRAIN NEAR LA SAUCES": [
+        [
+            "24036",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "OGDEN RIVER BL PINEVIEW RES NEAR HUNTSVILLE  UT": [
+        [
+            "3935",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "14310",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "OHIO CREEK ABOVE MOUTH  NEAR GUNNISON CO": [
+        [
+            "2385",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "OHIO CREEK NEAR BALDWIN  CO": [
+        [
+            "1353",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ORCHARD MESA IRRIGATION DISTRICT ABOVE PALISADE": [
+        [
+            "21215",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "21216",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "OSO DIVERSION NEAR CHROMO": [
+        [
+            "19737",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "20212",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PAONIA RESERVOIR": [
+        [
+            "14479",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "14478",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "7604",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1814",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1894",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "14480",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ]
+    ],
+    "PARIA RIVER AT LEES FERRY  AZ": [
+        [
+            "1579",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1345",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PARIA RIVER NEAR KANAB  UTAH": [
+        [
+            "3881",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PARK CONE": [
+        [
+            "879",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "PECOS R AT DAMSITE 3 NR CARLSBAD  NM": [
+        [
+            "23411",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "20832",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20864",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER (KAISER CHANNEL) NEAR LAKEWOOD": [
+        [
+            "3611",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20863",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER AB SEVEN RIVERS NR LAKEWOOD  NM": [
+        [
+            "20909",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER AB. HUGGINS CR. NR. ROSWELL  NM": [
+        [
+            "20913",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER ABOVE ACME  NM": [
+        [
+            "20828",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER ABOVE CANON DEL UTA NEAR COLONIAS": [
+        [
+            "20902",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER ABOVE SANTA ROSA LAKE  NM": [
+        [
+            "3587",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER AT CARLSBAD": [
+        [
+            "20904",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER AT PIERCE CANYON CROSSING NEAR MALAGA": [
+        [
+            "20834",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER AT RED BLUFF  NM": [
+        [
+            "3627",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER AT SANTA ROSA  NM": [
+        [
+            "20916",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER BELOW AVALON DAM  NM": [
+        [
+            "3617",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER BELOW BRANTLEY DAM NEAR CARLSBAD  NM": [
+        [
+            "3613",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER BELOW DARK CANYON AT CARLSBAD  NM": [
+        [
+            "3621",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER BELOW FORT SUMNER  NM": [
+        [
+            "20915",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER BELOW MCMILLAN DAM  NM": [
+        [
+            "20908",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER BELOW SANTA ROSA DAM  NM": [
+        [
+            "3589",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER BELOW SUMNER DAM  NM": [
+        [
+            "3593",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER BELOW TAIBAN CREEK NEAR FORT SUMNER NM": [
+        [
+            "3597",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER BL. YESO ARROYO NR. FT. SUMNER  NM": [
+        [
+            "20914",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER NEAR ACME  NM": [
+        [
+            "20860",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ],
+        [
+            "3601",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER NEAR ANTON CHICO  NM": [
+        [
+            "3581",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER NEAR ARTESIA  NM": [
+        [
+            "20862",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ],
+        [
+            "3609",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER NEAR DUNLAP  NM": [
+        [
+            "3599",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER NEAR FORT SUMNER": [
+        [
+            "20827",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER NEAR HAGERMAN  NM": [
+        [
+            "20830",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER NEAR LAKE ARTHUR  NM": [
+        [
+            "20861",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ],
+        [
+            "20831",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER NEAR MALAGA  NM": [
+        [
+            "3625",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER NEAR PECOS  NM": [
+        [
+            "3579",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER NEAR PUERTO DE LUNA  NM": [
+        [
+            "20859",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ],
+        [
+            "3591",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PECOS RIVER PUMPER": [
+        [
+            "20882",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PICEANCE CREEK BL RYAN GULCH  NR RIO BLANCO  CO.": [
+        [
+            "3825",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PIEDRA R AT BRIDGE RNGR STA  NR PAGOSA SPGS ": [
+        [
+            "1414",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PIEDRA RIVER NEAR ARBOLES  CO.": [
+        [
+            "1418",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PIEDRA RIVER NEAR PIEDRA  CO.": [
+        [
+            "1417",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PINE CREEK ABOVE FREMONT LAKE  WY": [
+        [
+            "3775",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PINE CREEK NEAR ESCALANTE  UT": [
+        [
+            "3849",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PINEVIEW RESERVOIR": [
+        [
+            "1864",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "14306",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "14307",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "14304",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "14305",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "3455",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1815",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1895",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "PLATEAU CREEK NEAR CAMEO  CO.": [
+        [
+            "3745",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PORPHYRY CREEK": [
+        [
+            "880",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "PRICE RIVER AT WOODSIDE  UT": [
+        [
+            "3835",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PRICE RIVER NEAR WOODSIDE  UT": [
+        [
+            "2233",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PROVO RIVER AT PROVO  UT": [
+        [
+            "3967",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PROVO RIVER AT RIVER ROAD BRIDGE  NR HEBER CITY UT": [
+        [
+            "3955",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PROVO RIVER NEAR CHARLESTON  UT": [
+        [
+            "3961",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PROVO RIVER NEAR WOODLAND  UT": [
+        [
+            "3953",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PROVO RIVER NR HAILSTONE UTAH": [
+        [
+            "1329",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "QUARTZ CREEK NEAR OHIO CITY  CO": [
+        [
+            "1355",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RECAPTURE CR BL JOHNSON CR NR BLANDING UT.": [
+        [
+            "1491",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RECAPTURE CREEK NR BLANDING UT.": [
+        [
+            "1490",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RED BUTTE CREEK AT FORT DOUGLAS  NEAR SLC  UT": [
+        [
+            "3977",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RED FLEET RESERVOIR": [
+        [
+            "19115",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "19110",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "19111",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "19113",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "19114",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1829",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1909",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "RED RIVER BELOW FISH HATCHERY  NEAR QUESTA": [
+        [
+            "21847",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RED RIVER NEAR QUESTA  NM": [
+        [
+            "3503",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "REDLANDS CANAL NEAR GRAND JUNCTION": [
+        [
+            "21285",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "21286",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "RIDGWAY RESERVOIR": [
+        [
+            "1784",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "7605",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1817",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "14545",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "14544",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "14546",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1897",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "RIFLE CREEK BELOW RIFLE GAP RESERVOIR  CO": [
+        [
+            "23336",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "4170",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIFLE GAP RESERVOIR": [
+        [
+            "14497",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "14499",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "3459",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1830",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1910",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "14496",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "14498",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ]
+    ],
+    "RIO BLANCO NEAR PAGOSA SPRINGS  CO.": [
+        [
+            "1404",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "1403",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO BLANCO R BLO BLANCO DIV DAM  NR PAGOSA SP  CO": [
+        [
+            "1601",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1393",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO CHAMA ABOVE ABIQUIU RESERVOIR": [
+        [
+            "3523",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO CHAMA AT LA PUENTE  NM": [
+        [
+            "20226",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3519",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO CHAMA BELOW ABIQUIU DAM": [
+        [
+            "19130",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3525",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO CHAMA BELOW EL VADO DAM": [
+        [
+            "3521",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20231",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "RIO CHAMA NEAR CHAMITA  NM": [
+        [
+            "20230",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3529",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO FELIX AT OLD HWY BRD NR HAGERMAN  NM": [
+        [
+            "20911",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE AT ALBUQUERQUE": [
+        [
+            "3559",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "19186",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "RIO GRANDE AT CANUTILLO": [
+        [
+            "19029",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "19178",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "RIO GRANDE AT EL PASO (COURCHESNE BRIDGE)": [
+        [
+            "19179",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "2524",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE AT EMBUDO  NM": [
+        [
+            "20333",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3517",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE AT FORT QUITMAN  TEXAS": [
+        [
+            "2526",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "19182",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "RIO GRANDE AT HAYNOR'S BRIDGE NEAR RINCON": [
+        [
+            "19159",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "19024",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE AT OTOWI BRIDGE  NM": [
+        [
+            "19184",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "2523",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE AT SAN FELIPE  NM": [
+        [
+            "3547",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20275",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "RIO GRANDE AT THIRTY MILE BRIDGE NEAR CREEDE": [
+        [
+            "24030",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE AT WAGON WHEEL GAP": [
+        [
+            "24031",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE BELOW AMERICAN DAM NEAR EL PASO": [
+        [
+            "19181",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "19033",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE BELOW CABALLO DAM": [
+        [
+            "19183",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "10118",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE BELOW COCHITI DAM  NM": [
+        [
+            "3543",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "19185",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "RIO GRANDE BELOW ELEPHANT BUTTE DAM (USGS)": [
+        [
+            "2528",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE BELOW LEASBURG DIVERSION DAM": [
+        [
+            "19173",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "2530",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE BELOW MESILLA DIVERSION DAM": [
+        [
+            "19177",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "2532",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE BLW TAOS JUNCTION BRIDGE NEAR TAOS  NM": [
+        [
+            "20240",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3511",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE CONVEYANCE CHANNEL AT SAN MARCIAL  NM": [
+        [
+            "10122",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3573",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE FLOODWAY AT SAN ACACIA": [
+        [
+            "14465",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "14041",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE FLOODWAY AT SAN MARCIAL  NM": [
+        [
+            "3575",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "10123",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "RIO GRANDE NEAR CERRO  NM": [
+        [
+            "20241",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3501",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE NEAR DEL NORTE": [
+        [
+            "21845",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "21844",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO GRANDE NEAR LOBATOS": [
+        [
+            "20234",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20235",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "RIO HONDO AT DIAMOND A RANCH NR ROSWELL  NM": [
+        [
+            "3605",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO HONDO AT ROSWELL  NM": [
+        [
+            "20912",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO HONDO NEAR ROSWELL  NM": [
+        [
+            "3607",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO MORA NEAR TERRERO": [
+        [
+            "20900",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO NAMBE ABOVE NAMBE FALLS DAM NEAR NAMBE  NM": [
+        [
+            "3531",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20351",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "RIO NAMBE BELOW NAMBE FALLS DAM NEAR NAMBE  NM": [
+        [
+            "20572",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3533",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO OJO CALIENTE AT LA MADERA  NM": [
+        [
+            "20229",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3527",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO PENASCO AT DAYTON NEAR ARTESIA": [
+        [
+            "20835",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO PENASCO NEAR DUNKEN  NM": [
+        [
+            "20906",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO PENASCO NEAR HOPE  NM": [
+        [
+            "20907",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO PUEBLO DE TAOS BELOW LOS CORDOVAS  NM": [
+        [
+            "20237",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3509",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO PUEBLO DE TAOS NEAR TAOS  NM": [
+        [
+            "3505",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO PUEBLO NR PENASCO  NM": [
+        [
+            "3513",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "RIO PUERCO NEAR BERNARDO  NM": [
+        [
+            "3569",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20555",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "RIO RUIDOSO AT RUIDOSO  NM": [
+        [
+            "3603",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ROARING FORK RIVER AB DIFFICULT C NR ASPEN  CO.": [
+        [
+            "3721",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ROARING FORK RIVER AT GLENWOOD SPRINGS  CO.": [
+        [
+            "7939",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3735",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ROARING FORK RIVER NEAR ASPEN  CO.": [
+        [
+            "3723",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ROCK CREEK ABOVE SOUTH FORK NEAR HANNA  UTAH": [
+        [
+            "1499",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ROCK CREEK NEAR MOUNTAIN HOME  UT": [
+        [
+            "3799",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ROCKPORT RESERVOIR": [
+        [
+            "18941",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "7984",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "18940",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "18939",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "3453",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1816",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1896",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "ROCKY ARROYO AT HIGHWAY BRIDGE NEAR LAKEWOOD": [
+        [
+            "20869",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SALINA CREEK NEAR EMERY  UT": [
+        [
+            "3997",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SALT CREEK AT NEPHI  UTAH": [
+        [
+            "3943",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SALT CREEK NEAR OXFORD  CO.": [
+        [
+            "1446",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SALT CRK BLW NEPHI POWERPLANT DIV  NEAR NEPHI  UT": [
+        [
+            "3941",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN ANTONIO RIVER AT ORTIZ": [
+        [
+            "24003",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN JUAN R NR BLANCO NM": [
+        [
+            "1434",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN JUAN R NR FRUITLAND  NM": [
+        [
+            "1455",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN JUAN RIVER AT BLOOMFIELD  NM": [
+        [
+            "1436",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN JUAN RIVER AT FARMINGTON  NM": [
+        [
+            "1366",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN JUAN RIVER AT FOUR CORNERS NEAR TOWAOC": [
+        [
+            "1394",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN JUAN RIVER AT HAMMOND BR NR BLOOMFIELD N": [
+        [
+            "1437",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN JUAN RIVER AT PAGOSA SPRINGS": [
+        [
+            "1392",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN JUAN RIVER AT ROSA  N. MEX.": [
+        [
+            "1419",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN JUAN RIVER AT SHIPROCK  NM": [
+        [
+            "1367",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN JUAN RIVER NEAR ARCHULETA NM": [
+        [
+            "1576",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1342",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN JUAN RIVER NEAR BLUFF  UT": [
+        [
+            "1577",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1343",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN JUAN RIVER NEAR CARRACAS  CO.": [
+        [
+            "1411",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN MIGUEL RIVER AT URAVAN  CO": [
+        [
+            "2656",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN MIGUEL RIVER NEAR NUCLA  CO.": [
+        [
+            "3769",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN MIGUEL RIVER NEAR PLACERVILLE CO.": [
+        [
+            "2646",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAN RAFAEL RIVER NEAR GREEN RIVER  UT": [
+        [
+            "1575",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1341",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SAND GATE DIV FROM FT SUMNER CANAL AT FT SUMNER": [
+        [
+            "23404",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SANTA ROSA RESERVOIR": [
+        [
+            "20578",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "20919",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "20826",
+            "AVERAGE INFLOW IN CFS"
+        ]
+    ],
+    "SANTISTEVAN CREEK NEAR COSTILLA  NM": [
+        [
+            "3493",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SCHOFIELD PASS  CO": [
+        [
+            "881",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "SCOFIELD RESERVOIR": [
+        [
+            "14510",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "14507",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "14508",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "14509",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "14511",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1800",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1880",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "SEVIER RIVER AT HATCH  UT": [
+        [
+            "3991",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SEVIER RIVER BLW SAN PITCH RIVER  NR GUNNISON  UT": [
+        [
+            "4001",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SEVIER RIVER NEAR JUAB  UT": [
+        [
+            "4003",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SEVIER RIVER NEAR KINGSTON  UT": [
+        [
+            "3993",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SEVIER RIVER NEAR LYNNDYL  UT": [
+        [
+            "4005",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SHUMWAY ARROYO NEAR FRUITLAND   NM": [
+        [
+            "1456",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SHUMWAY ARROYO NEAR WATERFLOW  NM": [
+        [
+            "1457",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SILI MAIN CANAL (AT HEAD) AT COCHITI": [
+        [
+            "20580",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "20581",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "SILVER CREEK NEAR SILVER CREEK JUNCTION  UT": [
+        [
+            "3913",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SILVER JACK RESERVOIR": [
+        [
+            "14477",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "14476",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "7603",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1808",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "14475",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1888",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "SIXTH WATER CR AB SYAR TUNNEL  NR SPRINGVILLE  UT": [
+        [
+            "3947",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SLATER FORK NEAR SLATER CO.": [
+        [
+            "2733",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SLUMGULLION": [
+        [
+            "882",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "SMITH & MOREHOUSE RESERVOIR": [
+        [
+            "24994",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "24993",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "24989",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "24990",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "24988",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "24991",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ]
+    ],
+    "SMITHS FORK NEAR BORDER  WY": [
+        [
+            "3891",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SNAKE CREEK NEAR CHARLESTON  UT": [
+        [
+            "3963",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SOAP CREEK NEAR SAPINERO  CO": [
+        [
+            "1357",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SOUTH CREEK ABOVE RESERVOIR NEAR MONTICELLO": [
+        [
+            "1488",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SOUTH FORK OGDEN RIVER NEAR HUNTSVILLE  UTAH": [
+        [
+            "3933",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SOUTH FORK RIO GRANDE AT SOUTH FORK": [
+        [
+            "24034",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SOUTH SEVEN RIVERS NEAR LAKEWOOD": [
+        [
+            "20837",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SOUTH WILLOW CREEK NEAR GRANTSVILLE  UT": [
+        [
+            "3983",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SPANISH FORK AT CASTILLA  UT": [
+        [
+            "3951",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SPRING CREEK ABV DIVERSIONS  NR MONTICELLO ": [
+        [
+            "1486",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SPRING CREEK AT LA BOCA  CO.": [
+        [
+            "1424",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SPRING CREEK NEAR MONTICELLO  UT": [
+        [
+            "3867",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "STARVATION RESERVOIR": [
+        [
+            "21262",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "19103",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "19102",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "19099",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "19100",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "19101",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1798",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1878",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "STATELINE RESERVOIR": [
+        [
+            "19012",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "19008",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "19011",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "19009",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1818",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "2368",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1898",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "STEINAKER RESERVOIR": [
+        [
+            "19080",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "19079",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "19076",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "19078",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "19075",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1797",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1877",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "STRAWBERRY RESERVOIR (EXPANDED)": [
+        [
+            "19095",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "19092",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "19093",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1831",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "3458",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1911",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "19094",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ]
+    ],
+    "STRAWBERRY RESERVOIR DIVERSIONS TO SYAR TUNNEL": [
+        [
+            "19131",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1768",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "STRAWBERRY RESERVOIR INFLOW FROM OPEN CHANNEL #2 (WATER HOLLOW TUNNEL)": [
+        [
+            "21270",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "21281",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "STRAWBERRY RIVER NEAR DUCHESNE  UTAH": [
+        [
+            "3801",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "STRAWBERRY TUNNEL DIVERSION": [
+        [
+            "21282",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "21269",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SURFACE CREEK AT CEDAREDGE  CO.": [
+        [
+            "3763",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SURFACE CREEK NEAR CEDAREDGE  CO.": [
+        [
+            "3761",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SURPLUS CANAL @ SALT LAKE CITY  UT": [
+        [
+            "3973",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TAYLOR PARK RESERVOIR": [
+        [
+            "14192",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1914",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1834",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "1786",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1866",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "TAYLOR RIVER ABOVE TAYLOR PARK  CO": [
+        [
+            "2242",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TAYLOR RIVER AT ALMONT  CO": [
+        [
+            "1358",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TAYLOR RIVER BELOW TAYLOR PARK RESERVOIR  CO": [
+        [
+            "3425",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1359",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TEEC-NI-DI-TSO WASH NR BURNHAM  NM": [
+        [
+            "1469",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TENMILE CREEK BL NORTH TENMILE C  AT FRISCO  CO.": [
+        [
+            "3677",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "23362",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "TERROR CREEK AT MOUTH NEAR BOWIE  CO": [
+        [
+            "3755",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "21324",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "TOMICHI CREEK AT GUNNISON  CO": [
+        [
+            "1360",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TOMICHI CREEK AT PARLIN  CO": [
+        [
+            "1354",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TOMICHI CREEK AT SARGENTS  CO": [
+        [
+            "1356",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TOWAOC CANAL (EAST/WEST METER READOUTS)": [
+        [
+            "14548",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TOWAOC CANAL WEST CHANNEL": [
+        [
+            "14550",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TRIAL LAKE": [
+        [
+            "20958",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "20959",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "20962",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "20960",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "20961",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ]
+    ],
+    "TROUT CREEK NEAR CALLAO  UT": [
+        [
+            "3985",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TURKEY CREEK NEAR PAGOSA SPRINGS  CO.": [
+        [
+            "1402",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TYZACK DIVERSION AT RED FLEET": [
+        [
+            "19122",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "19123",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "U LATERAL CANAL BELOW GREAT CUT DIKE NEAR DOLORES": [
+        [
+            "2757",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "25472",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "UINTA RIVER AT RANDLETT  UT": [
+        [
+            "3815",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "UINTA RIVER BLW POWERPLANT DIVERSION NR NEOLA  UT": [
+        [
+            "3811",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "UNCOMPAHGRE RIVER AT COLONA  COLORADO": [
+        [
+            "1377",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "UNCOMPAHGRE RIVER AT DELTA  CO.": [
+        [
+            "1368",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "UNCOMPAHGRE RIVER BELOW RIDGEWAY RESERVOIR": [
+        [
+            "1375",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "UNCOMPAHGRE RIVER NEAR OLATHE": [
+        [
+            "1374",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "UNCOMPAHGRE RIVER NEAR OURAY  CO": [
+        [
+            "3765",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "UNCOMPAHGRE RIVER NEAR RIDGWAY  COLORADO": [
+        [
+            "1373",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "UNMEASURED GAINS BELOW GUNN TUNNEL TO GJ": [
+        [
+            "23408",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ]
+    ],
+    "UPPER STILLWATER RESERVOIR": [
+        [
+            "21121",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "19109",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "19107",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "19108",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "19106",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "19105",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1832",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1912",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "UPPER STILLWATER RESERVOIR DIVERSIONS TO STRAWBERRY AQUEDUCT": [
+        [
+            "19132",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1769",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "UTE DIVERSION (TOWAOC CANAL)": [
+        [
+            "14552",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "14560",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "VALLECITO CREEK NEAR BAYFIELD  CO.": [
+        [
+            "1420",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "VALLECITO RESERVOIR": [
+        [
+            "14450",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "2255",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "14205",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "2264",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1779",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "1802",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1882",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "VEGA RESERVOIR": [
+        [
+            "1795",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "14471",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "1875",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "14469",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ]
+    ],
+    "VERNON CREEK NEAR VERNON  UT": [
+        [
+            "3979",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "W FK SAN JUAN R AT W FK CAMPGR NR PAGOSA SPR": [
+        [
+            "1398",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WASHINGTON LAKE": [
+        [
+            "20980",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "20976",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "20977",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "20978",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "20979",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ]
+    ],
+    "WEBER - PROVO DIVERSION AT FRANCIS": [
+        [
+            "23063",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "23064",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "WEBER - PROVO DIVERSION AT OAKLEY": [
+        [
+            "23062",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "23061",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WEBER - PROVO DIVERSION NEAR WOODLAND  UT": [
+        [
+            "1325",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WEBER RIVER AT ECHO  UT": [
+        [
+            "3919",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WEBER RIVER AT GATEWAY  UT": [
+        [
+            "3931",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WEBER RIVER NEAR COALVILLE  UT": [
+        [
+            "3915",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WEBER RIVER NEAR OAKLEY  UT": [
+        [
+            "4255",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3909",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WEBER RIVER NEAR PLAIN CITY  UT": [
+        [
+            "3937",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WEBER RIVER NEAR WANSHIP  UT": [
+        [
+            "3911",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WEMINUCHE C NR BRDGE RA STA  NR PAGOSA SPGS ": [
+        [
+            "1416",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WEST CANYON CREEK NEAR CEDAR FORT  UT": [
+        [
+            "3969",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WEST FORK SAN JUAN RIVER NR PAGOSA SPRINGS ": [
+        [
+            "1401",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WEST MANCOS RIVER NEAR MANCOS  CO.": [
+        [
+            "1449",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WESTSIDE CANAL ": [
+        [
+            "24240",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WF SAN JUAN R AB BORNS LAKE NR PAGOSA SPGS ": [
+        [
+            "1397",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WHITE RIVER ABOVE COAL CREEK  NEAR MEEKER  CO.": [
+        [
+            "3819",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WHITE RIVER BELOW BOISE CREEK  NEAR RANGELY  CO.": [
+        [
+            "19191",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3829",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WHITE RIVER BELOW MEEKER  CO": [
+        [
+            "3823",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WHITE RIVER BELOW NORTH ELK CREEK NEAR BUFORD  CO": [
+        [
+            "3817",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WHITE RIVER BL TABBYUNE C NEAR SOLDIER SUMMIT  UT": [
+        [
+            "3833",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WHITE RIVER NEAR MEEKER  CO.": [
+        [
+            "3821",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WHITE RIVER NEAR WATSON  UT": [
+        [
+            "1573",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1339",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WHITEROCKS RIVER NEAR WHITEROCKS  UT": [
+        [
+            "3813",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WILLARD BAY RESERVOIR": [
+        [
+            "18954",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "18955",
+            "VOLUME OF INFLOW IN ACRE-FEET"
+        ],
+        [
+            "18952",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "18950",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "18951",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "1796",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1876",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ]
+    ],
+    "WILLIAMS C NR BRIDGE RA STA  NR PAGOSA SPGS ": [
+        [
+            "1415",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WILLIAMS FORK BELOW WILLIAMS FORK RESERVOIR  CO": [
+        [
+            "25424",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WINDY PASS CR NR PAGOSA SPR  CO.": [
+        [
+            "1400",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WOLF CR AT WOLF CR CAMPGR NR PAGOSA SPR  CO.": [
+        [
+            "1501",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WOLF CREEK NEAR PAGOSA SPRINGS  CO.": [
+        [
+            "1399",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "YAMPA RIVER - MAYBELL PLUS LILY": [
+        [
+            "1596",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1379",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "YAMPA RIVER ABOVE ELKHEAD CREEK NEAR HAYDEN  CO": [
+        [
+            "14532",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "YAMPA RIVER ABOVE STAGECOACH RESERVOIR  CO.": [
+        [
+            "3787",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "YAMPA RIVER AT DEERLODGE PARK  COLORADO": [
+        [
+            "22002",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "23054",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "1376",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "YAMPA RIVER AT STEAMBOAT SPRINGS": [
+        [
+            "1496",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "YAMPA RIVER BELOW CRAIG  CO": [
+        [
+            "2232",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "YAMPA RIVER BELOW STAGECOACH RESERVOIR  CO": [
+        [
+            "3789",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "YAMPA RIVER NEAR MAYBELL  CLIMATE": [
+        [
+            "20789",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "YAMPA RIVER NEAR MAYBELL  CO": [
+        [
+            "1336",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "1571",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "YELLOW CREEK NEAR WHITE RIVER  CO.": [
+        [
+            "3827",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "YELLOWSTONE R. AT BRIDGE CAMPGRND  NR ALTONAH  UT.": [
+        [
+            "3803",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "YELLOWSTONE RIVER NEAR ALTONAH  UTAH": [
+        [
+            "3805",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ]
+}
