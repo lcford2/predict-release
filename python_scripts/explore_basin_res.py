@@ -97,6 +97,73 @@ def plot_lag_corrs(data, meta, add_lags=7):
 
     plt.show()
 
+def plot_interaction_terms(data, meta, aggregate=False):
+    new_terms = [
+        ("release_pre", "storage_pre"),
+        ("release_pre", "inflow"),
+        ("release_pre", "release_L2"),
+        ("storage_pre", "storage_pre"),
+        ("release_pre", "release_pre"),
+        ("inflow", "inflow")
+    ]
+    term_map = {
+        "release_pre_x_storage_pre": r"$R_{t-1} \times S_{t-1}$",
+        "release_pre_x_inflow": r"$R_{t-1} \times I_{t}$",
+        "release_pre_x_release_L2": r"$R_{t-1} \times R_{t-2}$",
+        "storage_pre_x_storage_pre": r"$S_{t-1}^2$",
+        "release_pre_x_release_pre": r"$R_{t-1}^2$",
+        "inflow_x_inflow": r"$I_{t}^2$",
+        "storage_x_inflow": r"$S_{t-1} \times I_{t}$"
+    }
+    data["release_L2"] = data.groupby(
+        data.index.get_level_values(0)
+    )["release_pre"].shift(1)
+    data = data.dropna()
+    interactions = {}
+    for t1, t2 in new_terms:
+        name = f"{t1}_x_{t2}"
+        interactions[name] = data[t1] * data[t2]
+    int_df = pd.DataFrame.from_dict(interactions)
+    int_df["release"] = data["release"]
+    int_df["storage_x_inflow"] = data["storage_x_inflow"]
+    int_df = int_df[["storage_x_inflow"]+list(int_df.columns[:-1])]
+    corrs = int_df.groupby(
+        int_df.index.get_level_values(0)
+    ).corr()["release"].unstack().drop("release", axis=1)
+
+    x = range(corrs.columns.size)
+    int_vars = corrs.columns
+    if aggregate:
+        sns.set_context("talk")
+        corrs = corrs.melt(ignore_index=False).reset_index()
+        ax = sns.boxplot(data=corrs, x="variable", y="value")
+        ax.set_xticks(x)
+        ax.set_xticklabels([term_map.get(i) for i in int_vars],
+                           ha="center")
+        ax.set_ylabel("Corr with release")
+        ax.set_xlabel("")
+    else:
+        grid_size = determine_grid_size(corrs.index.size)
+        fig, axes = plt.subplots(*grid_size, sharex=True, sharey=True)
+        flat_axes = axes.flatten()
+        for res, ax in zip(corrs.index, flat_axes):
+            ax.bar(x, corrs.loc[res, :])
+            rt = meta.loc[res, "rts"]
+            ax.set_title(f"{res} [{rt:.0f}]")
+            ax.set_xticks(x)
+            if ax in axes[-1, :]:
+                ax.set_xticklabels([term_map.get(i) for i in corrs.columns],
+                                   ha="center", rotation=90, fontsize=16)
+            if ax in axes[:, 0]:
+                ax.set_ylabel("Corr with Release")
+
+        left_over = flat_axes.size - corrs.index.size
+        if left_over > 0:
+            for i in range(1, left_over + 1):
+                flat_axes[-i].set_axis_off()
+
+    plt.show()
+
 
 def main():
     basin = parse_args()
@@ -111,7 +178,10 @@ def main():
         data.index = new_index
     # spans = get_date_spans(data)
     # plot_timeline(spans)
-    plot_lag_corrs(data, meta, add_lags=14)
+    # plot_lag_corrs(data, meta, add_lags=14)
+    plot_interaction_terms(data, meta, True)
+
+
 
 if __name__ == "__main__":
     main()
