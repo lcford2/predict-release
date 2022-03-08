@@ -38,3 +38,4 @@ plotly_config.json
 # do not ignore these files
 !missouri_data/*.sh
 !lower_col_data/get_raw_data_files.sh
+!python_scripts/run_tclr_model.sh
