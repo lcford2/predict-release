@@ -251,7 +251,6 @@ def pipeline(args):
             response_name="release",
             tree_vars=X_vars_tree,
             reg_vars=X_vars
-
         )
 
         model.grow_tree()
@@ -271,7 +270,8 @@ def pipeline(args):
         fitted = model.predict()
         preds = model.predict(X_test)
         simuled = simulate_tclr_model(model, "model", X_test_act, means, std,
-                lower_bounds, upper_bounds, args.assim_freq)
+                                      X_vars_tree, X_vars, lower_bounds, upper_bounds,
+                                      args.assim_freq)
         simuled = simuled[["release", "storage"]].dropna()
     else:
         beta = np.linalg.inv(X_train.T @ X_train) @ (X_train.T @  y_train)
@@ -279,7 +279,8 @@ def pipeline(args):
         fitted = X_train @ beta
         preds = X_test @ beta
         simuled = simulate_tclr_model(beta, "beta", X_test_act, means, std,
-                lower_bounds, upper_bounds, args.assim_freq)
+                                      X_vars_tree, X_vars, lower_bounds, upper_bounds,
+                                      args.assim_freq)
         simuled = simuled[["release", "storage"]].dropna()
 
     fitted = pd.Series(fitted, index=X_train.index)
@@ -469,8 +470,8 @@ def pipeline(args):
     # subprocess.call(dot_command)
 
 
-
-def simulate_tclr_model(model, model_or_beta, X_act, means, std, lower_bounds, upper_bounds, assim_freq):
+def simulate_tclr_model(model, model_or_beta, X_act, means, std, X_vars,
+                        reg_vars, lower_bounds, upper_bounds, assim_freq):
 
     # I need to keep track of actual storage and release outputs
     # as well as rolling weekly mean storage and release outputs
@@ -504,10 +505,6 @@ def simulate_tclr_model(model, model_or_beta, X_act, means, std, lower_bounds, u
     track_df.loc[init_rolling.index,
                  ["storage_roll7", "release_roll7"]] = init_rolling.values
 
-    # variables to pull from track_df
-    X_loc_vars = ["storage_pre", "release_pre",
-                  "inflow", "storage_roll7", "release_roll7",
-                  "inflow_roll7"]
     # since all reservoirs have different temporal spans
     # we have to iterate through each reservoir independently
     from joblib import Parallel, delayed
@@ -516,7 +513,7 @@ def simulate_tclr_model(model, model_or_beta, X_act, means, std, lower_bounds, u
         outputdfs = Parallel(n_jobs=-1, verbose=11)(
             delayed(simul_reservoir)(
                 res, model, model_or_beta, X_act, means, std,
-                X_loc_vars, lower_bounds, upper_bounds,
+                X_vars, reg_vars, lower_bounds, upper_bounds,
                 assim_freq
             ) for res in resers)
     else:
@@ -524,14 +521,14 @@ def simulate_tclr_model(model, model_or_beta, X_act, means, std, lower_bounds, u
         for res in resers:
             outputdfs.append(
                 simul_reservoir(res, model, model_or_beta, X_act, means, std,
-                                X_loc_vars, lower_bounds, upper_bounds,
+                                X_vars, reg_vars, lower_bounds, upper_bounds,
                                 assim_freq)
             )
     return pd.concat(outputdfs)
 
 
 def simul_reservoir(res, model, model_or_beta, track_df, means, std, X_loc_vars,
-        lower_bounds, upper_bounds, assim_freq=None):
+                    reg_vars, lower_bounds, upper_bounds, assim_freq=None):
     idx = pd.IndexSlice
     rdf = track_df.loc[idx[res, :], :].copy(deep=True)
     # cut off initial 6 values as we do not have a roling release for those
@@ -547,13 +544,16 @@ def simul_reservoir(res, model, model_or_beta, track_df, means, std, X_loc_vars,
         assim_shift = 90
 
     start_date = dates[0]
+    if "const" in reg_vars:
+        cindex = reg_vars.index("const")
+        reg_vars = reg_vars[:cindex] + reg_vars[cindex+1:]
 
     for date in dates:
         # get values for today
         X_r = rdf.loc[idx[res, date], X_loc_vars]
         # standardize the values
 
-        X_r = (X_r - means.loc[res, X_loc_vars]) / std.loc[res, X_loc_vars]
+        X_r = (X_r - means.loc[res, reg_vars]) / std.loc[res, reg_vars]
         # add the interaction term
         X_r["storage_x_inflow"] = X_r["storage_pre"] * X_r["inflow"]
         # and the constant
