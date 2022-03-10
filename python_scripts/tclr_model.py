@@ -226,18 +226,32 @@ def pipeline(args):
     df["const"] = 1
     X_test_act = df.loc[test_index, X_vars]
     y_test_act = df.loc[test_index, "release"]
+    
+    add_tree_vars = ["rts", "max_sto"]
+    for tree_var in add_tree_vars:
+        train_values = [meta.loc[i, tree_var] for i in X_train.index.get_level_values(0)]
+        test_values = [meta.loc[i, tree_var] for i in X_test.index.get_level_values(0)]
+        X_train[tree_var] = train_values
+        X_test[tree_var] = test_values
+        X_test_act[tree_var] = test_values
+    
+    X_vars_tree = [*X_vars, *add_tree_vars]
 
     train_res = res_grouper.unique()
     test_res = train_res
-
+    
+    make_dot = False
     if max_depth > 0:
+        make_dot = True
         model = TreeComboLR(
             X_train,
             y_train,
             max_depth=max_depth,
-            feature_names=X_vars,
+            feature_names=X_vars_tree,
             response_name="release",
             tree_vars=X_vars_tree,
+            reg_vars=X_vars
+
         )
 
         model.grow_tree()
@@ -256,13 +270,17 @@ def pipeline(args):
 
         fitted = model.predict()
         preds = model.predict(X_test)
-        simuled = simulate_tclr_model(model, X_test_act, means, std, lower_bounds, upper_bounds)
+        simuled = simulate_tclr_model(model, "model", X_test_act, means, std,
+                lower_bounds, upper_bounds, args.assim_freq)
         simuled = simuled[["release", "storage"]].dropna()
     else:
         beta = np.linalg.inv(X_train.T @ X_train) @ (X_train.T @  y_train)
-        coefs = pd.Series(beta, index=X_vars),
+        coefs = pd.Series(beta, index=X_vars)
         fitted = X_train @ beta
         preds = X_test @ beta
+        simuled = simulate_tclr_model(beta, "beta", X_test_act, means, std,
+                lower_bounds, upper_bounds, args.assim_freq)
+        simuled = simuled[["release", "storage"]].dropna()
 
     fitted = pd.Series(fitted, index=X_train.index)
     preds = pd.Series(preds, index=X_test.index)
@@ -371,8 +389,8 @@ def pipeline(args):
 
     results["simmed_res_scores"] = simmed_res_scores
 
-    print(test_res_scores.to_markdown(floatfmt="0.3f"))
-    print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
+    # print(test_res_scores.to_markdown(floatfmt="0.3f"))
+    # print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
 
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
     quant_scores = pd.DataFrame(index=[0, 1, 2], columns=["NSE", "RMSE"])
@@ -400,7 +418,8 @@ def pipeline(args):
     foldername = "tclr_model"
     int_mod = "" if month_intercepts else "_no_ints"
     all_mod = "_all_res" if use_all else ""
-    foldername = foldername + int_mod + all_mod + f"_{max_depth}"
+    assim_mod = f"_{args.assim_freq}" if args.assim_freq else ""
+    foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
     folderpath = pathlib.Path("..", "results", "basin_eval", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
@@ -421,7 +440,8 @@ def pipeline(args):
 
     # export tree to graphviz file so it can be converted nicely
     # rotate_tree = True if max_depth > 3 else e
-    model.to_graphviz(folderpath / "tree.dot")
+    if make_dot:
+        model.to_graphviz(folderpath / "tree.dot")
 
     # setup output container for modeling information
     X_train["storage_pre"] = X["storage_pre"]
@@ -446,10 +466,11 @@ def pipeline(args):
         "-o",
         (folderpath/"tree.png").as_posix()
     ]
-    subprocess.call(dot_command)
+    # subprocess.call(dot_command)
 
 
-def simulate_tclr_model(model, X_act, means, std, lower_bounds, upper_bounds):
+
+def simulate_tclr_model(model, model_or_beta, X_act, means, std, lower_bounds, upper_bounds, assim_freq):
 
     # I need to keep track of actual storage and release outputs
     # as well as rolling weekly mean storage and release outputs
@@ -492,30 +513,41 @@ def simulate_tclr_model(model, X_act, means, std, lower_bounds, upper_bounds):
     from joblib import Parallel, delayed
     parallel = True
     if parallel:
-        outputdfs = Parallel(n_jobs=8, verbose=11)(
+        outputdfs = Parallel(n_jobs=-1, verbose=11)(
             delayed(simul_reservoir)(
-                res, model, track_df, means, std,
-                X_loc_vars, lower_bounds, upper_bounds
+                res, model, model_or_beta, X_act, means, std,
+                X_loc_vars, lower_bounds, upper_bounds,
+                assim_freq
             ) for res in resers)
     else:
         outputdfs = []
         for res in resers:
             outputdfs.append(
-                simul_reservoir(res, model, track_df, means, std,
-                                X_loc_vars, lower_bounds, upper_bounds)
+                simul_reservoir(res, model, model_or_beta, X_act, means, std,
+                                X_loc_vars, lower_bounds, upper_bounds,
+                                assim_freq)
             )
     return pd.concat(outputdfs)
 
 
-def simul_reservoir(res, model, track_df, means, std, X_loc_vars, lower_bounds, upper_bounds):
+def simul_reservoir(res, model, model_or_beta, track_df, means, std, X_loc_vars,
+        lower_bounds, upper_bounds, assim_freq=None):
     idx = pd.IndexSlice
     rdf = track_df.loc[idx[res, :], :].copy(deep=True)
     # cut off initial 6 values as we do not have a roling release for those
     dates = list(rdf.index.get_level_values(1).values)[6:]
     # need to identify the end date so we can know to stop adding values to track_df
     end_date = dates[-1]
-    # II()
-    # print(f"Solving {res} ({i+1}/{Nres}))")
+
+    if assim_freq == "weekly":
+        assim_shift = 7
+    elif assim_freq == "monthly":
+        assim_shift = 30 
+    elif assim_freq == "seasonally":
+        assim_shift = 90
+
+    start_date = dates[0]
+
     for date in dates:
         # get values for today
         X_r = rdf.loc[idx[res, date], X_loc_vars]
@@ -530,7 +562,10 @@ def simul_reservoir(res, model, track_df, means, std, X_loc_vars, lower_bounds, 
         X_r = X_r.loc[["const"] + X_loc_vars + ["storage_x_inflow"]]
 
         # reshape to a 2 d row vector
-        release = model.predict(X_r.values.reshape(1, X_r.size))[0]
+        if model_or_beta == "model":
+            release = model.predict(X_r.values.reshape(1, X_r.size))[0]
+        else:
+            release = X_r @ model
 
         # get release back to actual space
         release_act = release * std.loc[res, "release"] + means.loc[res, "release"]
@@ -561,17 +596,28 @@ def simul_reservoir(res, model, track_df, means, std, X_loc_vars, lower_bounds, 
                 tomorrow
             )
 
-            rdf.loc[idx[res, tomorrow], "storage_pre"] = storage
-            rdf.loc[idx[res, tomorrow], "release_pre"] = release_act
+            if assim_freq:
+                offset = ((date - start_date) / np.timedelta64(1, "D")) % assim_shift
+                if offset == 0:
+                    rdf.loc[idx[res, tomorrow], "storage_pre"] = track_df.loc[idx[res, date], "storage_pre"]
+                    rdf.loc[idx[res, tomorrow], "release_pre"] = track_df.loc[idx[res, date], "release_pre"]
+                else:
+                    rdf.loc[idx[res, tomorrow], "storage_pre"] = storage
+                    rdf.loc[idx[res, tomorrow], "release_pre"] = release_act
+            else:
+                rdf.loc[idx[res, tomorrow], "storage_pre"] = storage
+                rdf.loc[idx[res, tomorrow], "release_pre"] = release_act
+            # here we already updated the _pre values we can use the same logic to get rolling values
             rdf.loc[idx[res, tomorrow], "storage_roll7"] = rdf.loc[
                 idx[res, prev_seven], "storage_pre"].mean()
             rdf.loc[idx[res, tomorrow], "release_roll7"] = rdf.loc[
                 idx[res, prev_seven], "release_pre"].mean()
 
+
     return rdf
 
 
-def parse_args():
+def parse_args(arg_list=None):
     parser = argparse.ArgumentParser(
         description="Fit and test a TCLR model to specified data"
     )
@@ -596,7 +642,16 @@ def parse_args():
         help="Should monthly varying intercepts be included"
              "as regression variables? (default=False)"
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--assim_freq",
+        default=None,
+        choices=("weekly", "monthly", "seasonally"),
+        help="Frequency at which to assimilate observed storage and release values"
+    )
+    if arg_list:
+        return parser.parse_args(arg_list)
+    else:
+        return parser.parse_args()
 
 
 if __name__ == "__main__":
