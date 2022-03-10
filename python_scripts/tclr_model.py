@@ -20,19 +20,19 @@ from utils.timing_function import time_function
 def read_basin_data(basin: str) -> pd.DataFrame:
     data_locs = {
         "upper_col": {
-            "ready": "../upper_colorado_data/model_ready_data/upper_col_data.csv",
+            "ready": "../upper_colorado_data/model_ready_data/upper_col_datae_net_inflow.csv",
             "raw": "../upper_colorado_data/hydrodata_data/req_upper_col_data.csv",
         },
         "pnw": {
-            "ready": "../pnw_data/model_ready_data/pnw_data.csv",
+            "ready": "../pnw_data/model_ready_data/pnw_data_net_inflow.csv",
             "raw": "../pnw_data/dam_data/*_data/*.csv",
         },
         "lower_col": {
-            "ready": "../lower_col_data/model_ready_data/lower_col_data.csv",
+            "ready": "../lower_col_data/model_ready_data/lower_col_data_net_inflow.csv",
             "raw": "../lower_col_data/lower_col_dam_data.csv",
         },
         "missouri": {
-            "ready": "../missouri_data/model_ready_data/missouri_data.csv",
+            "ready": "../missouri_data/model_ready_data/missouri_data_net_inflow.csv",
             "raw": "../missouri_data/hydromet_data/*.csv",
         },
         "tva": {"ready": "../csv/tva_model_ready_data.csv"},
@@ -51,12 +51,14 @@ def read_basin_data(basin: str) -> pd.DataFrame:
 
         df = ldf.append(udf)
         df = df.sort_index()
+        df = df.dropna()
     elif basin in data_locs:
         fpath = pathlib.Path(data_locs[basin]["ready"])
         df = pd.read_csv(fpath)
         df["datetime"] = pd.to_datetime(df["datetime"])
         df = df.set_index(["site_name", "datetime"])
         df = df.sort_index()
+        df = df.dropna()
     elif basin == "all":
         df = pd.DataFrame()
         for b in data_locs.keys():
@@ -65,6 +67,7 @@ def read_basin_data(basin: str) -> pd.DataFrame:
             bdf["datetime"] = pd.to_datetime(bdf["datetime"])
             bdf = bdf.set_index(["site_name", "datetime"])
             bdf = bdf.sort_index()
+            bdf = bdf.dropna()
             if df.empty:
                 df = bdf
             else:
