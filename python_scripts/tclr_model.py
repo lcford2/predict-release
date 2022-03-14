@@ -1,18 +1,17 @@
+import argparse
 import calendar
+import copy
+import glob
 import pathlib
 import pickle
 import subprocess
 from datetime import datetime, timedelta
-import glob
-import copy
-import argparse
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_squared_error, r2_score
 from IPython import embed as II
+from sklearn.metrics import mean_squared_error, r2_score
 from tclr import TreeComboLR
-
 from utils.timing_function import time_function
 
 
@@ -104,14 +103,14 @@ def prep_data(df):
     means = df.groupby(grouper).mean()
     std = df.groupby(grouper).std()
     columns = [
-            "release_pre",
-            "storage",
-            "storage_pre",
-            "inflow",
-            "release_roll7",
-            "inflow_roll7",
-            "storage_roll7",
-            "storage_x_inflow",
+        "release_pre",
+        "storage",
+        "storage_pre",
+        "inflow",
+        "release_roll7",
+        "inflow_roll7",
+        "storage_roll7",
+        "storage_x_inflow",
     ]
     X = std_data.loc[:, columns]
     y = std_data["release"]
@@ -229,7 +228,7 @@ def pipeline(args):
     df["const"] = 1
     X_test_act = df.loc[test_index, X_vars]
     y_test_act = df.loc[test_index, "release"]
-    
+
     add_tree_vars = ["rts", "max_sto"]
     for tree_var in add_tree_vars:
         train_values = [meta.loc[i, tree_var] for i in X_train.index.get_level_values(0)]
@@ -237,12 +236,12 @@ def pipeline(args):
         X_train[tree_var] = train_values
         X_test[tree_var] = test_values
         X_test_act[tree_var] = test_values
-    
+
     X_vars_tree = [*X_vars, *add_tree_vars]
 
     train_res = res_grouper.unique()
     test_res = train_res
-    
+
     make_dot = False
     if max_depth > 0:
         make_dot = True
@@ -253,7 +252,7 @@ def pipeline(args):
             feature_names=X_vars_tree,
             response_name="release",
             tree_vars=X_vars_tree,
-            reg_vars=X_vars
+            reg_vars=X_vars,
         )
 
         model.grow_tree()
@@ -272,21 +271,39 @@ def pipeline(args):
 
         fitted = model.predict()
         preds = model.predict(X_test)
-        simuled = simulate_tclr_model(model, "model", X_test_act, means, std,
-                                      X_vars_tree, X_vars, lower_bounds, upper_bounds,
-                                      args.assim_freq)
+        simuled = simulate_tclr_model(
+            model,
+            "model",
+            X_test_act,
+            means,
+            std,
+            X_vars_tree,
+            X_vars,
+            lower_bounds,
+            upper_bounds,
+            args.assim_freq,
+        )
         simuled = simuled[["release", "storage"]].dropna()
     else:
         X_train = X_train[X_vars]
         X_test = X_test[X_vars]
         X_test_act = X_test_act[X_vars]
-        beta = np.linalg.inv(X_train.T @ X_train) @ (X_train.T @  y_train)
+        beta = np.linalg.inv(X_train.T @ X_train) @ (X_train.T @ y_train)
         coefs = pd.Series(beta, index=X_vars)
         fitted = X_train @ beta
         preds = X_test @ beta
-        simuled = simulate_tclr_model(beta, "beta", X_test_act, means, std,
-                                      X_vars, X_vars, lower_bounds, upper_bounds,
-                                      args.assim_freq)
+        simuled = simulate_tclr_model(
+            beta,
+            "beta",
+            X_test_act,
+            means,
+            std,
+            X_vars,
+            X_vars,
+            lower_bounds,
+            upper_bounds,
+            args.assim_freq,
+        )
         simuled = simuled[["release", "storage"]].dropna()
 
     fitted = pd.Series(fitted, index=X_train.index)
@@ -358,7 +375,7 @@ def pipeline(args):
         "s_act_rmse": s_act_rmse,
         "s_bias": s_bias,
         "s_bias_month": s_bias_month,
-        "coefs": coefs
+        "coefs": coefs,
     }
 
     train_data = pd.DataFrame(dict(actual=y_train_act, model=fitted_act))
@@ -456,8 +473,10 @@ def pipeline(args):
         **results,
         quant_scores=quant_scores,
         data=dict(
-            X_train=X_train, test_data=test_data,
-            train_data=train_data, simmed_data=simmed_data# groups=groups,
+            X_train=X_train,
+            test_data=test_data,
+            train_data=train_data,
+            simmed_data=simmed_data,  # groups=groups,
         ),
     )
     # write the output dict to a pickle file
@@ -469,23 +488,34 @@ def pipeline(args):
     dot_command = [
         "dot",
         "-Tpng",
-        (folderpath/"tree.dot").as_posix(),
+        (folderpath / "tree.dot").as_posix(),
         "-o",
-        (folderpath/"tree.png").as_posix()
+        (folderpath / "tree.png").as_posix(),
     ]
     # subprocess.call(dot_command)
 
 
-def simulate_tclr_model(model, model_or_beta, X_act, means, std, X_vars,
-                        reg_vars, lower_bounds, upper_bounds, assim_freq):
+def simulate_tclr_model(
+    model,
+    model_or_beta,
+    X_act,
+    means,
+    std,
+    X_vars,
+    reg_vars,
+    lower_bounds,
+    upper_bounds,
+    assim_freq,
+):
 
     # I need to keep track of actual storage and release outputs
     # as well as rolling weekly mean storage and release outputs
     track_df = pd.DataFrame(
-        columns=["release", "storage"] + list(X_act.columns),
-        index=X_act.index
+        columns=["release", "storage"] + list(X_act.columns), index=X_act.index
     )
-    track_df[["const", "inflow", "inflow_roll7"]] = X_act[["const", "inflow", "inflow_roll7"]]
+    track_df[["const", "inflow", "inflow_roll7"]] = X_act[
+        ["const", "inflow", "inflow_roll7"]
+    ]
 
     # setup initial tracking information as well as find the start dates
     resers = track_df.index.get_level_values(0).unique()
@@ -495,46 +525,84 @@ def simulate_tclr_model(model, model_or_beta, X_act, means, std, X_vars,
         rdf = X_act.loc[idx[res, :], :]
         # rolling 7 day means so we need 7 days of actual values
         first_seven = rdf.index.get_level_values(1).values[:7]
-        track_df.loc[idx[res, first_seven],
-                     ["release_pre", "storage_pre"]] = X_act.loc[
-                         idx[res, first_seven], ["release_pre", "storage_pre"]]
+        track_df.loc[idx[res, first_seven], ["release_pre", "storage_pre"]] = X_act.loc[
+            idx[res, first_seven], ["release_pre", "storage_pre"]
+        ]
         start_dates[res] = first_seven[-1]
 
     # find the initial rolling release and storage values
-    init_rolling = track_df.groupby(
-        track_df.index.get_level_values(0))[
-            ["storage_pre", "release_pre"]].rolling(7).mean().dropna()
+    init_rolling = (
+        track_df.groupby(track_df.index.get_level_values(0))[
+            ["storage_pre", "release_pre"]
+        ]
+        .rolling(7)
+        .mean()
+        .dropna()
+    )
     # get a duplicate reservoir index after the above command
     init_rolling.index = init_rolling.index.droplevel(0)
 
     # add init rolling values to track df
-    track_df.loc[init_rolling.index,
-                 ["storage_roll7", "release_roll7"]] = init_rolling.values
+    track_df.loc[
+        init_rolling.index, ["storage_roll7", "release_roll7"]
+    ] = init_rolling.values
 
     # since all reservoirs have different temporal spans
     # we have to iterate through each reservoir independently
     from joblib import Parallel, delayed
+
     parallel = True
     if parallel:
         outputdfs = Parallel(n_jobs=-1, verbose=11)(
             delayed(simul_reservoir)(
-                res, model, model_or_beta, X_act, means, std,
-                X_vars, reg_vars, lower_bounds, upper_bounds,
-                assim_freq
-            ) for res in resers)
+                res,
+                model,
+                model_or_beta,
+                X_act,
+                means,
+                std,
+                X_vars,
+                reg_vars,
+                lower_bounds,
+                upper_bounds,
+                assim_freq,
+            )
+            for res in resers
+        )
     else:
         outputdfs = []
         for res in resers:
             outputdfs.append(
-                simul_reservoir(res, model, model_or_beta, X_act, means, std,
-                                X_vars, reg_vars, lower_bounds, upper_bounds,
-                                assim_freq)
+                simul_reservoir(
+                    res,
+                    model,
+                    model_or_beta,
+                    X_act,
+                    means,
+                    std,
+                    X_vars,
+                    reg_vars,
+                    lower_bounds,
+                    upper_bounds,
+                    assim_freq,
+                )
             )
     return pd.concat(outputdfs)
 
 
-def simul_reservoir(res, model, model_or_beta, track_df, means, std, X_loc_vars,
-                    reg_vars, lower_bounds, upper_bounds, assim_freq=None):
+def simul_reservoir(
+    res,
+    model,
+    model_or_beta,
+    track_df,
+    means,
+    std,
+    X_loc_vars,
+    reg_vars,
+    lower_bounds,
+    upper_bounds,
+    assim_freq=None,
+):
     idx = pd.IndexSlice
     rdf = track_df.loc[idx[res, :], :].copy(deep=True)
     # cut off initial 6 values as we do not have a roling release for those
@@ -545,7 +613,7 @@ def simul_reservoir(res, model, model_or_beta, track_df, means, std, X_loc_vars,
     if assim_freq == "weekly":
         assim_shift = 7
     elif assim_freq == "monthly":
-        assim_shift = 30 
+        assim_shift = 30
     elif assim_freq == "seasonally":
         assim_shift = 90
     elif assim_freq == "daily":
@@ -554,7 +622,7 @@ def simul_reservoir(res, model, model_or_beta, track_df, means, std, X_loc_vars,
     start_date = dates[0]
     if "const" in reg_vars:
         cindex = reg_vars.index("const")
-        reg_vars = reg_vars[:cindex] + reg_vars[cindex+1:]
+        reg_vars = reg_vars[:cindex] + reg_vars[cindex + 1 :]
 
     for date in dates:
         # get values for today
@@ -578,9 +646,11 @@ def simul_reservoir(res, model, model_or_beta, track_df, means, std, X_loc_vars,
         # get release back to actual space
         release_act = release * std.loc[res, "release"] + means.loc[res, "release"]
         # calculate storage from mass balance
-        storage = (rdf.loc[idx[res, date], "storage_pre"] +
-                   rdf.loc[idx[res, date], "inflow"] -
-                   release_act)
+        storage = (
+            rdf.loc[idx[res, date], "storage_pre"]
+            + rdf.loc[idx[res, date], "inflow"]
+            - release_act
+        )
         # keep storage and release within bounds
         if storage > upper_bounds.loc[res, "storage"]:
             storage = upper_bounds.loc[res, "storage"]
@@ -599,16 +669,17 @@ def simul_reservoir(res, model, model_or_beta, track_df, means, std, X_loc_vars,
         # if we are not at the last day, store values needed for tomorrow
         if date != end_date:
             tomorrow = date + np.timedelta64(1, "D")
-            prev_seven = pd.date_range(
-                tomorrow - np.timedelta64(6, "D"),
-                tomorrow
-            )
+            prev_seven = pd.date_range(tomorrow - np.timedelta64(6, "D"), tomorrow)
 
             if assim_freq:
                 offset = ((date - start_date) / np.timedelta64(1, "D")) % assim_shift
                 if offset == 0:
-                    rdf.loc[idx[res, tomorrow], "storage_pre"] = track_df.loc[idx[res, date], "storage_pre"]
-                    rdf.loc[idx[res, tomorrow], "release_pre"] = track_df.loc[idx[res, date], "release_pre"]
+                    rdf.loc[idx[res, tomorrow], "storage_pre"] = track_df.loc[
+                        idx[res, date], "storage_pre"
+                    ]
+                    rdf.loc[idx[res, tomorrow], "release_pre"] = track_df.loc[
+                        idx[res, date], "release_pre"
+                    ]
                 else:
                     rdf.loc[idx[res, tomorrow], "storage_pre"] = storage
                     rdf.loc[idx[res, tomorrow], "release_pre"] = release_act
@@ -617,10 +688,11 @@ def simul_reservoir(res, model, model_or_beta, track_df, means, std, X_loc_vars,
                 rdf.loc[idx[res, tomorrow], "release_pre"] = release_act
             # here we already updated the _pre values we can use the same logic to get rolling values
             rdf.loc[idx[res, tomorrow], "storage_roll7"] = rdf.loc[
-                idx[res, prev_seven], "storage_pre"].mean()
+                idx[res, prev_seven], "storage_pre"
+            ].mean()
             rdf.loc[idx[res, tomorrow], "release_roll7"] = rdf.loc[
-                idx[res, prev_seven], "release_pre"].mean()
-
+                idx[res, prev_seven], "release_pre"
+            ].mean()
 
     return rdf
 
@@ -633,28 +705,30 @@ def parse_args(arg_list=None):
         "basin",
         default=None,
         choices=["tva", "colorado", "pnw", "missouri", "all"],
-        help="What basin should be modeled"
+        help="What basin should be modeled",
     )
     parser.add_argument(
-        "-d", "--max_depth",
+        "-d",
+        "--max_depth",
         dest="max_depth",
         default=3,
         type=int,
-        help="How deep should the tree be allowed to go? (default=3)"
+        help="How deep should the tree be allowed to go? (default=3)",
     )
     parser.add_argument(
-        "-m", "--month_ints",
+        "-m",
+        "--month_ints",
         dest="month_ints",
         action="store_true",
         default=False,
         help="Should monthly varying intercepts be included"
-             "as regression variables? (default=False)"
+        "as regression variables? (default=False)",
     )
     parser.add_argument(
         "--assim_freq",
         default=None,
         choices=("weekly", "monthly", "seasonally", "daily"),
-        help="Frequency at which to assimilate observed storage and release values"
+        help="Frequency at which to assimilate observed storage and release values",
     )
     if arg_list:
         return parser.parse_args(arg_list)
