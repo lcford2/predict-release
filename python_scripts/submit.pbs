@@ -1,7 +1,7 @@
 #!/bin/bash
 ### set the number of nodes
 ### set the number of PEs per node
-#PBS -l nodes=4:ppn=1
+#PBS -l nodes=11:ppn=1
 
 ### set the wallclock time
 #PBS -l walltime=04:00:00
@@ -43,4 +43,7 @@ export OMP_NUM_THREADS=16
 
 # ./run_tclr_model.sh
 
-mpirun -n 10 -ppn 1 python run_tclr_model.py
+# NUM_CORES
+NUM_CORES=`wc -l < $PBS_NODEFILE`
+
+remora mpirun -n $NUM_CORES -ppn 1 python run_tclr_model.py

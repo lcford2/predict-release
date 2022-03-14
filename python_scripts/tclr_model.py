@@ -20,7 +20,7 @@ from utils.timing_function import time_function
 def read_basin_data(basin: str) -> pd.DataFrame:
     data_locs = {
         "upper_col": {
-            "ready": "../upper_colorado_data/model_ready_data/upper_col_datae_net_inflow.csv",
+            "ready": "../upper_colorado_data/model_ready_data/upper_col_data_net_inflow.csv",
             "raw": "../upper_colorado_data/hydrodata_data/req_upper_col_data.csv",
         },
         "pnw": {
@@ -277,12 +277,15 @@ def pipeline(args):
                                       args.assim_freq)
         simuled = simuled[["release", "storage"]].dropna()
     else:
+        X_train = X_train[X_vars]
+        X_test = X_test[X_vars]
+        X_test_act = X_test_act[X_vars]
         beta = np.linalg.inv(X_train.T @ X_train) @ (X_train.T @  y_train)
         coefs = pd.Series(beta, index=X_vars)
         fitted = X_train @ beta
         preds = X_test @ beta
         simuled = simulate_tclr_model(beta, "beta", X_test_act, means, std,
-                                      X_vars_tree, X_vars, lower_bounds, upper_bounds,
+                                      X_vars, X_vars, lower_bounds, upper_bounds,
                                       args.assim_freq)
         simuled = simuled[["release", "storage"]].dropna()
 
@@ -545,6 +548,8 @@ def simul_reservoir(res, model, model_or_beta, track_df, means, std, X_loc_vars,
         assim_shift = 30 
     elif assim_freq == "seasonally":
         assim_shift = 90
+    elif assim_freq == "daily":
+        assim_shift = 1
 
     start_date = dates[0]
     if "const" in reg_vars:
@@ -568,7 +573,7 @@ def simul_reservoir(res, model, model_or_beta, track_df, means, std, X_loc_vars,
         if model_or_beta == "model":
             release = model.predict(X_r.values.reshape(1, X_r.size))[0]
         else:
-            release = X_r @ model
+            release = X_r[reg_vars] @ model
 
         # get release back to actual space
         release_act = release * std.loc[res, "release"] + means.loc[res, "release"]
@@ -648,7 +653,7 @@ def parse_args(arg_list=None):
     parser.add_argument(
         "--assim_freq",
         default=None,
-        choices=("weekly", "monthly", "seasonally"),
+        choices=("weekly", "monthly", "seasonally", "daily"),
         help="Frequency at which to assimilate observed storage and release values"
     )
     if arg_list:
