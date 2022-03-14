@@ -282,6 +282,7 @@ def pipeline(args):
             lower_bounds,
             upper_bounds,
             args.assim_freq,
+            pd.Series(preds, index=X_test.index)
         )
         simuled = simuled[["release", "storage"]].dropna()
     else:
@@ -303,6 +304,7 @@ def pipeline(args):
             lower_bounds,
             upper_bounds,
             args.assim_freq,
+            pd.Series(preds, index=X_test.index)
         )
         simuled = simuled[["release", "storage"]].dropna()
 
@@ -506,6 +508,7 @@ def simulate_tclr_model(
     lower_bounds,
     upper_bounds,
     assim_freq,
+    preds
 ):
 
     # I need to keep track of actual storage and release outputs
@@ -551,7 +554,8 @@ def simulate_tclr_model(
     # we have to iterate through each reservoir independently
     from joblib import Parallel, delayed
 
-    parallel = True
+    # parallel = True
+    parallel = False
     if parallel:
         outputdfs = Parallel(n_jobs=-1, verbose=11)(
             delayed(simul_reservoir)(
@@ -585,6 +589,7 @@ def simulate_tclr_model(
                     lower_bounds,
                     upper_bounds,
                     assim_freq,
+                    preds
                 )
             )
     return pd.concat(outputdfs)
@@ -602,6 +607,7 @@ def simul_reservoir(
     lower_bounds,
     upper_bounds,
     assim_freq=None,
+    preds=None
 ):
     idx = pd.IndexSlice
     rdf = track_df.loc[idx[res, :], :].copy(deep=True)
@@ -622,7 +628,7 @@ def simul_reservoir(
     start_date = dates[0]
     if "const" in reg_vars:
         cindex = reg_vars.index("const")
-        reg_vars = reg_vars[:cindex] + reg_vars[cindex + 1 :]
+        reg_vars = reg_vars[:cindex] + reg_vars[cindex + 1:]
 
     for date in dates:
         # get values for today
@@ -642,6 +648,9 @@ def simul_reservoir(
             release = model.predict(X_r.values.reshape(1, X_r.size))[0]
         else:
             release = X_r[reg_vars] @ model
+
+        II()
+        sys.exit()
 
         # get release back to actual space
         release_act = release * std.loc[res, "release"] + means.loc[res, "release"]
