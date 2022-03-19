@@ -96,6 +96,16 @@ def get_basin_meta_data(basin: str):
     return meta
 
 
+def get_max_date_span(in_df):
+    df = pd.DataFrame()
+    df["date"] = in_df.index.get_level_values(1)
+    df["mask"] = 1
+    df.loc[df["date"] - np.timedelta64(1, "D") == df["date"].shift(), "mask"] = 0
+    df["mask"] = df["mask"].cumsum()
+    span = df.loc[df["mask"] == df["mask"].value_counts().idxmax(), "date"]
+    return (span.min(), span.max())
+
+
 @time_function
 def prep_data(df):
     grouper = df.index.get_level_values(0)
@@ -175,6 +185,19 @@ def pipeline(args):
         reservoirs = meta.index
     else:
         reservoirs = meta[meta["group"] == "high_rt"].index
+
+    idx = pd.IndexSlice
+    spans = {res: get_max_date_span(df.loc[idx[res,:], :]) for res in reservoirs}
+    
+    trimmed = []
+    for res, span in spans.items():
+        rdf = df.loc[idx[res, :], :]
+        rindex = rdf.index.get_level_values(1)
+        trimmed.append(rdf[
+            (rindex >= span[0]) &
+            (rindex <= span[1])
+        ])
+    df = pd.concat(trimmed).sort_index()
 
     res_grouper = df.index.get_level_values(0)
     df = df.loc[res_grouper.isin(reservoirs)]
@@ -281,8 +304,9 @@ def pipeline(args):
             X_vars,
             lower_bounds,
             upper_bounds,
-            args.assim_freq,
-            pd.Series(preds, index=X_test.index)
+            args.assim,
+            pd.Series(preds, index=X_test.index),
+            X_test
         )
         simuled = simuled[["release", "storage"]].dropna()
     else:
@@ -294,7 +318,7 @@ def pipeline(args):
         fitted = X_train @ beta
         preds = X_test @ beta
         simuled = simulate_tclr_model(
-            beta,
+            beta, 
             "beta",
             X_test_act,
             means,
@@ -303,14 +327,16 @@ def pipeline(args):
             X_vars,
             lower_bounds,
             upper_bounds,
-            args.assim_freq,
-            pd.Series(preds, index=X_test.index)
+            args.assim,
+            pd.Series(preds, index=X_test.index),
+            X_test
         )
         simuled = simuled[["release", "storage"]].dropna()
 
     fitted = pd.Series(fitted, index=X_train.index)
     preds = pd.Series(preds, index=X_test.index)
     simmed = simuled["release"]
+    
 
     y_train_act = (
         y_train.unstack().T * std.loc[train_res, "release"]
@@ -328,6 +354,7 @@ def pipeline(args):
         preds.unstack().T * std.loc[test_res, "release"] + means.loc[test_res, "release"]
     ).T.stack()
 
+        
     y_test_sim = y_test_act.loc[simmed.index]
 
     f_act_score = r2_score(y_train_act, fitted_act)
@@ -444,7 +471,7 @@ def pipeline(args):
     foldername = "tclr_model"
     int_mod = "" if month_intercepts else "_no_ints"
     all_mod = "_all_res" if use_all else ""
-    assim_mod = f"_{args.assim_freq}" if args.assim_freq else ""
+    assim_mod = f"_{args.assim}" if args.assim else ""
     foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
     folderpath = pathlib.Path("..", "results", "basin_eval", basin, foldername)
     # check if the directory exists and handle it
@@ -507,8 +534,9 @@ def simulate_tclr_model(
     reg_vars,
     lower_bounds,
     upper_bounds,
-    assim_freq,
-    preds
+    assim,
+    preds,
+    X_test
 ):
 
     # I need to keep track of actual storage and release outputs
@@ -553,9 +581,8 @@ def simulate_tclr_model(
     # since all reservoirs have different temporal spans
     # we have to iterate through each reservoir independently
     from joblib import Parallel, delayed
-
-    # parallel = True
-    parallel = False
+   
+    parallel = True 
     if parallel:
         outputdfs = Parallel(n_jobs=-1, verbose=11)(
             delayed(simul_reservoir)(
@@ -569,9 +596,10 @@ def simulate_tclr_model(
                 reg_vars,
                 lower_bounds,
                 upper_bounds,
-                assim_freq,
-            )
-            for res in resers
+                assim,
+                preds,
+                X_test
+            ) for res in resers
         )
     else:
         outputdfs = []
@@ -588,8 +616,9 @@ def simulate_tclr_model(
                     reg_vars,
                     lower_bounds,
                     upper_bounds,
-                    assim_freq,
-                    preds
+                    assim,
+                    preds,
+                    X_test
                 )
             )
     return pd.concat(outputdfs)
@@ -606,8 +635,9 @@ def simul_reservoir(
     reg_vars,
     lower_bounds,
     upper_bounds,
-    assim_freq=None,
-    preds=None
+    assim=None,
+    preds=None,
+    X_test=None
 ):
     idx = pd.IndexSlice
     rdf = track_df.loc[idx[res, :], :].copy(deep=True)
@@ -616,42 +646,51 @@ def simul_reservoir(
     # need to identify the end date so we can know to stop adding values to track_df
     end_date = dates[-1]
 
-    if assim_freq == "weekly":
+    if assim == "weekly":
         assim_shift = 7
-    elif assim_freq == "monthly":
+    elif assim == "monthly":
         assim_shift = 30
-    elif assim_freq == "seasonally":
+    elif assim == "seasonally":
         assim_shift = 90
-    elif assim_freq == "daily":
+    elif assim == "daily":
         assim_shift = 1
 
     start_date = dates[0]
     if "const" in reg_vars:
         cindex = reg_vars.index("const")
         reg_vars = reg_vars[:cindex] + reg_vars[cindex + 1:]
-
+  
     for date in dates:
         # get values for today
         X_r = rdf.loc[idx[res, date], X_loc_vars]
-        # standardize the values
-
-        X_r = (X_r - means.loc[res, reg_vars]) / std.loc[res, reg_vars]
         # add the interaction term
         X_r["storage_x_inflow"] = X_r["storage_pre"] * X_r["inflow"]
+        # grab actual rt and max_sto values if they exist
+        try:
+            rts, max_sto = X_r[["rts", "max_sto"]]
+            res_vars = True
+        except KeyError:
+            res_vars = False
+        # standardize the values
+        X_r = (X_r - means.loc[res, reg_vars]) / std.loc[res, reg_vars]
         # and the constant
         X_r["const"] = 1
-        # get values in order the model expects them
-        X_r = X_r.loc[["const"] + X_loc_vars + ["storage_x_inflow"]]
+        if res_vars:
+            X_r["max_sto"] = max_sto
+            X_r["rts"] = rts
 
         # reshape to a 2 d row vector
         if model_or_beta == "model":
-            release = model.predict(X_r.values.reshape(1, X_r.size))[0]
+            release = model.predict(X_r[model.feats].values.reshape(1, X_r.size))[0]
         else:
-            release = X_r[reg_vars] @ model
-
-        II()
-        sys.exit()
-
+            release = X_r[X_loc_vars] @ model
+        
+        # if abs(release - preds.loc[idx[res, date]]) > 0.000001:
+        #     print(res, date, release, preds.loc[idx[res, date]])
+        # if date - np.timedelta64(7, "D"):
+        #     sys.exit()
+        # else:
+        #     II()
         # get release back to actual space
         release_act = release * std.loc[res, "release"] + means.loc[res, "release"]
         # calculate storage from mass balance
@@ -666,9 +705,9 @@ def simul_reservoir(
         elif storage < lower_bounds.loc[res, "storage"]:
             storage = lower_bounds.loc[res, "storage"]
 
-        if release > upper_bounds.loc[res, "release"]:
+        if release_act > upper_bounds.loc[res, "release"]:
             release_act = upper_bounds.loc[res, "release"]
-        elif release < lower_bounds.loc[res, "release"]:
+        elif release_act < lower_bounds.loc[res, "release"]:
             release_act = lower_bounds.loc[res, "release"]
 
         # store calculated values
@@ -680,14 +719,14 @@ def simul_reservoir(
             tomorrow = date + np.timedelta64(1, "D")
             prev_seven = pd.date_range(tomorrow - np.timedelta64(6, "D"), tomorrow)
 
-            if assim_freq:
+            if assim:
                 offset = ((date - start_date) / np.timedelta64(1, "D")) % assim_shift
                 if offset == 0:
                     rdf.loc[idx[res, tomorrow], "storage_pre"] = track_df.loc[
-                        idx[res, date], "storage_pre"
+                        idx[res, tomorrow], "storage_pre"
                     ]
                     rdf.loc[idx[res, tomorrow], "release_pre"] = track_df.loc[
-                        idx[res, date], "release_pre"
+                        idx[res, tomorrow], "release_pre"
                     ]
                 else:
                     rdf.loc[idx[res, tomorrow], "storage_pre"] = storage
@@ -734,7 +773,7 @@ def parse_args(arg_list=None):
         "as regression variables? (default=False)",
     )
     parser.add_argument(
-        "--assim_freq",
+        "--assim",
         default=None,
         choices=("weekly", "monthly", "seasonally", "daily"),
         help="Frequency at which to assimilate observed storage and release values",

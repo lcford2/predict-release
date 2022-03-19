@@ -1,10 +1,10 @@
 #!/bin/bash
 ### set the number of nodes
 ### set the number of PEs per node
-#PBS -l nodes=11:ppn=1
+#PBS -l nodes=5:ppn=1
 
 ### set the wallclock time
-#PBS -l walltime=04:00:00
+#PBS -l walltime=08:00:00
 
 ### set the job name
 #PBS -N tclr_simul
@@ -46,4 +46,4 @@ export OMP_NUM_THREADS=16
 # NUM_CORES
 NUM_CORES=`wc -l < $PBS_NODEFILE`
 
-remora mpirun -n $NUM_CORES -ppn 1 python run_tclr_model.py
+remora mpirun -n $NUM_CORES  -ppn 1 python run_tclr_model.py
