@@ -39,3 +39,9 @@ plotly_config.json
 !missouri_data/*.sh
 !lower_col_data/get_raw_data_files.sh
 !python_scripts/run_tclr_model.sh
+
+# ignore qsub output
+python_scripts/qsub_output
+
+# large result files
+results/basin_eval/all
