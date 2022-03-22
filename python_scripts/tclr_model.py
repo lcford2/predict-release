@@ -492,7 +492,7 @@ def simulate_tclr_model(model, X_act, means, std, lower_bounds, upper_bounds):
     from joblib import Parallel, delayed
     parallel = True
     if parallel:
-        outputdfs = Parallel(n_jobs=8, verbose=11)(
+        outputdf = Parallel(n_jobs=-1, verbose=11)(
             delayed(simul_reservoir)(
                 res, model, track_df, means, std,
                 X_loc_vars, lower_bounds, upper_bounds
