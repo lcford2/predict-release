@@ -1,7 +1,7 @@
 #!/bin/bash
 ### set the number of nodes
 ### set the number of PEs per node
-#PBS -l nodes=5:ppn=1
+#PBS -l nodes=1:ppn=1
 
 ### set the wallclock time
 #PBS -l walltime=08:00:00
@@ -37,7 +37,7 @@ cd $PBS_O_WORKDIR
 
 ### NOTE: (the "in" file must exist for input)
 
-export OMP_NUM_THREADS=16
+# export OMP_NUM_THREADS=16
 
 # source activate mpi-env
 

@@ -253,27 +253,37 @@ def pipeline(args):
     # train_index = X[X.index.get_level_values(1) < datetime(2010, 1, 1)].index
     # test_index = X[X.index.get_level_values(1) >= datetime(2010, 1, 1)].index
     # train_index, test_index = split_train_test_index_by_res(X, prop=0.8)
-    
+   
     train_frac = args.train_prop
-    basin_count_train = (basin_counts * train_frac).round().astype(int)
-    basin_count_test = basin_counts - basin_count_train
+    np.random.seed(args.seed)
+    basin_split = True
+    if basin_split:
+        basin_count_train = (basin_counts * train_frac).round().astype(int)
+        basin_count_test = basin_counts - basin_count_train
 
-    if (basin_count_train == 0).any() or (basin_count_test == 0).any():
-        print(f"Train proportion of {train_frac} is invalid because there"
-                " are not enough training or testing reservoirs"
-              )
-    seed = 44
-    np.random.seed(seed)
-    basin_res = defaultdict(list)
-    for i, b in basins.items():
-        basin_res[b].append(i)
+        if (basin_count_train == 0).any() or (basin_count_test == 0).any():
+            print(f"Train proportion of {train_frac} is invalid because there"
+                    " are not enough training or testing reservoirs"
+                  )
+            import sys
+            sys.exit()
 
-    test_res = []
-    for b, c in basin_count_test.items():
-        test_res.extend(
-                np.random.choice(basin_res[b], c, replace=False)
-        )
-    train_res = [i for i in reservoirs if i not in test_res]
+        basin_res = defaultdict(list)
+        for i, b in basins.items():
+            basin_res[b].append(i)
+
+        test_res = []
+        for b, c in basin_count_test.items():
+            test_res.extend(
+                    np.random.choice(basin_res[b], c, replace=False)
+            )
+        train_res = [i for i in reservoirs if i not in test_res]
+    else:
+        count_train = int(train_frac * len(reservoirs))
+        count_test = len(reservoirs) - count_train
+        train_res = np.random.choice(reservoirs, count_train, replace=False)
+        test_res = [i for i in reservoirs if i not in train_res]
+
     train_index = df[df.index.get_level_values(0).isin(train_res)].index
     test_index = df[df.index.get_level_values(0).isin(test_res)].index
 
@@ -508,8 +518,9 @@ def pipeline(args):
     int_mod = "" if month_intercepts else "_no_ints"
     all_mod = "_all_res" if use_all else ""
     assim_mod = f"_{args.assim}" if args.assim else ""
-    foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS" + f"_{train_frac:.2f}"
-    folderpath = pathlib.Path("..", "results", "basin_eval", basin, foldername)
+    basin_mod = "_all-basin-split" if not basin_split else ""
+    foldername =  f"TD{max_depth}" + assim_mod + "_RT_MS" + f"_{train_frac:.2f}" + basin_mod + f"_{args.seed}"
+    folderpath = pathlib.Path("..", "results", "tclr_spatial_eval", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
         # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
@@ -534,22 +545,30 @@ def pipeline(args):
 
     # setup output container for modeling information
     X_train["storage_pre"] = X["storage_pre"]
-    output = dict(
-        **results,
-        quant_scores=quant_scores,
-        data=dict(
-            X_train=X_train,
-            test_data=test_data,
-            train_data=train_data,
-            simmed_data=simmed_data,  # groups=groups,
-        ),
-    )
+    # output = dict(
+    #     **results,
+    #     quant_scores=quant_scores,
+    #     data=dict(
+    #         X_train=X_train,
+    #         test_data=test_data,
+    #         train_data=train_data,
+    #         simmed_data=simmed_data,  # groups=groups,
+    #     ),
+    # )
+    output = {
+            "f_act_score": f_act_score,
+            "p_act_score": p_act_score,
+            "s_act_score": s_act_score,
+            "f_res_scores": train_res_scores,
+            "p_res_scores": test_res_scores,
+            "s_res_scores": simmed_res_scores
+    }
     # write the output dict to a pickle file
     with open((folderpath / "results.pickle").as_posix(), "wb") as f:
         pickle.dump(output, f, protocol=4)
 
     # write the random effects to a csv file for easy access
-    coefs.to_csv((folderpath / "random_effects.csv").as_posix())
+    # coefs.to_csv((folderpath / "random_effects.csv").as_posix())
     dot_command = [
         "dot",
         "-Tpng",
@@ -614,17 +633,13 @@ def simulate_tclr_model(
         init_rolling.index, ["storage_roll7", "release_roll7"]
     ] = init_rolling.values
 
-    resers = list(resers)
-    resers.remove("GCL")
-    resers = ["GCL", *resers]
-
     # since all reservoirs have different temporal spans
     # we have to iterate through each reservoir independently
     from joblib import Parallel, delayed
    
     parallel = True 
     if parallel:
-        outputdfs = Parallel(n_jobs=-1, verbose=11)(
+        outputdfs = Parallel(n_jobs=16, verbose=11)(
             delayed(simul_reservoir)(
                 res,
                 model,
