@@ -322,7 +322,7 @@ def pipeline(args):
             reg_vars=X_vars,
         )
 
-        model.grow_tree()
+        model.fit()
 
         params, groups = get_params_and_groups(X_train, model)
         groups_uniq = groups.unique()
