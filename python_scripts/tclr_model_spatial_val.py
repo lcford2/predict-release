@@ -255,7 +255,7 @@ def pipeline(args):
     # train_index, test_index = split_train_test_index_by_res(X, prop=0.8)
    
     train_frac = args.train_prop
-    np.random.seed(args.seed)
+    np.random.seed(0)
     basin_split = True
     if basin_split:
         basin_count_train = (basin_counts * train_frac).round().astype(int)
@@ -322,7 +322,7 @@ def pipeline(args):
             reg_vars=X_vars,
         )
 
-        model.grow_tree()
+        model.fit()
 
         params, groups = get_params_and_groups(X_train, model)
         groups_uniq = groups.unique()

@@ -322,7 +322,7 @@ def pipeline(args):
             reg_vars=X_vars,
         )
 
-        model.grow_tree()
+        model.fit()
 
         params, groups = get_params_and_groups(X_train, model)
         groups_uniq = groups.unique()
@@ -545,21 +545,21 @@ def pipeline(args):
 
     # setup output container for modeling information
     X_train["storage_pre"] = X["storage_pre"]
-    output = dict(
-        **results,
-        quant_scores=quant_scores,
-        data=dict(
-            X_train=X_train,
-            test_data=test_data,
-            train_data=train_data,
-            simmed_data=simmed_data,  # groups=groups,
-        ),
-    )
+    # output = dict(
+    #     **results,
+    #     quant_scores=quant_scores,
+    #     data=dict(
+    #         X_train=X_train,
+    #         test_data=test_data,
+    #         train_data=train_data,
+    #         simmed_data=simmed_data,  # groups=groups,
+    #     ),
+    # )
     output = {
             "f_act_score": f_act_score,
             "p_act_score": p_act_score,
             "s_act_score": s_act_score,
-            "f_res_scores": train_res_scores,
+            "f_res_scores": train_res_scores ,
             "p_res_scores": test_res_scores,
             "s_res_scores": simmed_res_scores
     }
