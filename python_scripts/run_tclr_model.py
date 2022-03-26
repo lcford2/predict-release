@@ -14,7 +14,7 @@ from tclr_model_random_spatial_val import parse_args, pipeline
 # arglist = [["all", "-d", "3", "--train_prop", str(i)] for i in train_props]
 
 arglist = [["all", "-d", "3", "--train_prop", "0.75", "--seed", str(i)] for i in range(1000)]
-arglist = arglist[:1]
+#arglist = arglist[:1]
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()

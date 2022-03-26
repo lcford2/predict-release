@@ -639,7 +639,7 @@ def simulate_tclr_model(
    
     parallel = True 
     if parallel:
-        outputdfs = Parallel(n_jobs=16, verbose=11)(
+        outputdfs = Parallel(n_jobs=8, verbose=11)(
             delayed(simul_reservoir)(
                 res,
                 model,
