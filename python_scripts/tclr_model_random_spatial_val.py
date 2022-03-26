@@ -322,7 +322,7 @@ def pipeline(args):
             reg_vars=X_vars,
         )
 
-        model.grow_tree()
+        model.fit()
 
         params, groups = get_params_and_groups(X_train, model)
         groups_uniq = groups.unique()
@@ -544,17 +544,17 @@ def pipeline(args):
         model.to_graphviz(folderpath / "tree.dot")
 
     # setup output container for modeling information
-    X_train["storage_pre"] = X["storage_pre"]
-    output = dict(
-        **results,
-        quant_scores=quant_scores,
-        data=dict(
-            X_train=X_train,
-            test_data=test_data,
-            train_data=train_data,
-            simmed_data=simmed_data,  # groups=groups,
-        ),
-    )
+#    X_train["storage_pre"] = X["storage_pre"]
+#    output = dict(
+#        **results,
+#        quant_scores=quant_scores,
+#        data=dict(
+#            X_train=X_train,
+#            test_data=test_data,
+#            train_data=train_data,
+#            simmed_data=simmed_data,  # groups=groups,
+#        ),
+#    )
     output = {
             "f_act_score": f_act_score,
             "p_act_score": p_act_score,
@@ -639,7 +639,7 @@ def simulate_tclr_model(
    
     parallel = True 
     if parallel:
-        outputdfs = Parallel(n_jobs=16, verbose=11)(
+        outputdfs = Parallel(n_jobs=8, verbose=11)(
             delayed(simul_reservoir)(
                 res,
                 model,

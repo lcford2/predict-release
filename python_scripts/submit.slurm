@@ -26,28 +26,31 @@
 
 #----------------------------------------------------
 
-#SBATCH -J sim_param_fit           # Job name
-#SBATCH -o sim_param_fit.o%j       # Name of stdout output file
-#SBATCH -e sim_param_fit.e%j       # Name of stderr error file
-#SBATCH -p small           # Queue (partition) name
-#SBATCH -N 1               # Total # of nodes (must be 1 for OpenMP)
-#SBATCH -n 1               # Total # of mpi tasks (should be 1 for OpenMP)
+#SBATCH -J tclr_random_spatial           # Job name
+#SBATCH -o slurm_out/tclr_random_spatial.o%j       # Name of stdout output file
+#SBATCH -e slurm_out/tclr_random_spatial.e%j       # Name of stderr error file
+#SBATCH -p normal           # Queue (partition) name
+#SBATCH -N 143               # Total # of nodes (must be 1 for OpenMP)
+#SBATCH -n 1000               # Total # of mpi tasks (should be 1 for OpenMP)
+#SBATCH -c 8		   # # of cpus per task
 #SBATCH -t 02:00:00        # Run time (hh:mm:ss)
 #SBATCH --mail-type=all    # Send email at begin and end of job
 #SBATCH --mail-user=lcford2@ncsu.edu
 #SBATCH -A ECS21018        # Project/Allocation name (req'd if you have more than 1)
 
+# load remora module
+module load remora/1.8.5
+
 # Any other commands must follow all #SBATCH directives...
 module list
-cd $HOME/predict-release/python_scripts
+cd $WORK/predict-release/python_scripts
 pwd
 date
 
 # Set thread count (default value is 1)...
-export OMP_NUM_THREADS=56   # this is 1 thread/core; may want to start lower
+export OMP_NUM_THREADS=8   # this is 1 thread/core; may want to start lower
 
 # activate python environment
 source ../sry-env/bin/activate
 
-# Launch OpenMP code...
-python simple_model_simul_ensem.py        # Do not use ibrun or any other MPI launcher
+remora ibrun python run_tclr_model.py
