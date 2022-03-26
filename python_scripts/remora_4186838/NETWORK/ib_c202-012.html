@@ -1,0 +1,66 @@
+<html> 
+<head> 
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script> 
+<script type="text/javascript"> 
+google.charts.load('current', {'packages':['line']}); 
+google.charts.setOnLoadCallback(drawChart); 
+function drawChart() { 
+var data = new google.visualization.DataTable(); 
+data.addColumn('number', 'Execution Time (s)'); 
+data.addColumn('number', 'Transmitted Packets'); 
+data.addColumn('number', 'Received Packets'); 
+data.addColumn('number', 'Transmitted Bytes'); 
+data.addColumn('number', 'Received Bytes'); 
+data.addRows([
+[0,13766,15256,693507,5346326,],
+[10,14679,15490,1014263,3536262,],
+[20,12893,14408,695383,4282050,],
+[31,48049,48902,725840,44933747,],
+[41,357,362,25908,73735,],
+[51,447,500,29678,102711,],
+[61,290,291,24850,17517,],
+[71,172,172,20179,12193,],
+[81,310,312,27012,17553,],
+[92,174,175,21131,11431,],
+[102,195602,195624,19565913,14465140,],
+[112,638,639,78741,41221,],
+[122,541,546,75340,37058,],
+[133,686,697,81011,42044,],
+[143,532,534,73090,36720,],
+[153,539,540,74856,36999,],
+[163,646,645,79111,41333,],
+[174,532,533,74387,36545,],
+[184,665,667,80708,43114,],
+[194,549,550,75148,38383,],
+[204,537,547,74381,38234,],
+[215,653,662,80676,41894,],
+[225,530,529,74771,36519,],
+[235,709,709,81169,43158,],
+[245,532,533,74505,36529,],
+[256,538,539,75265,36881,],
+[266,638,635,80164,40842,],
+[276,546,545,76134,36862,],
+[286,638,639,79140,41152,],
+[296,597,601,75674,63044,],
+]); 
+var options = {  
+chart: { 
+title: 'IB Stats', 
+}, 
+width: 1024,  
+height: 800,  
+axes: {  
+x: {  
+0: {side: 'top'}  
+}  
+},  
+ };  
+var chart = new google.charts.Line(document.getElementById('line_top_x'));  
+chart.draw(data, options);  
+}  
+</script>  
+</head>  
+<body>  
+  <div id="line_top_x"></div>  
+</body>  
+</html>  

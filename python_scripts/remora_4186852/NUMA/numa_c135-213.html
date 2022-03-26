@@ -1,0 +1,360 @@
+<html> 
+<head> 
+ 
+NUMA Remote Assigned Mem: These are pages(MB) that overflow to another node when local memory is full.<br/> 
+NUMA All Mem Assignments: MBytes assigned with2MB pages (red); MBytes with 4K pages (blue). <br/> 
+&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp Usually best if all assigned memory is with 2MB pages<br/> 
+&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp (a ~5% variation may exist, due to non instantaneous kernel updates).<br/> 
+NUMA Free: Total Free memory on all nodes (color areas show node portions).<br/> 
+NUMA Used: Total Used memory on all nodes (color areas show node portions).<br/> 
+ 
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script> 
+<script type="text/javascript"> 
+google.charts.load('current', {'packages':['corechart']}); 
+google.charts.setOnLoadCallback(drawHits); 
+google.charts.setOnLoadCallback(drawMiss); 
+google.charts.setOnLoadCallback(drawFree); 
+google.charts.setOnLoadCallback(drawUsed); 
+function drawHits() { 
+var data = new google.visualization.DataTable(); 
+data.addColumn('number', 'Execution Time (s)'); 
+data.addColumn('number', '4KB Pages');   
+data.addColumn('number', '2MB Pages');   
+data.addRows([
+[0,0,0,],
+[10,0,0,],
+[21,0,0,],
+[31,0,0,],
+[41,0,0,],
+[51,0,0,],
+[61,0,0,],
+[72,315,464,],
+[82,0,0,],
+[92,0,0,],
+[102,778,366,],
+[112,766,2130,],
+[122,1743,1696,],
+[133,1159,1818,],
+[143,1228,3296,],
+[153,451,1454,],
+[163,231,536,],
+[174,212,386,],
+[188,81,150,],
+[206,45,60,],
+[224,0,0,],
+[242,0,0,],
+[259,1026,114,],
+[273,3057,340,],
+[287,3873,616,],
+[302,1021,330,],
+[316,581,156,],
+[331,606,154,],
+[346,624,118,],
+[361,293,54,],
+[376,1263,200,],
+[391,726,106,],
+[406,98,18,],
+[420,467,72,],
+[435,1235,250,],
+[450,794,116,],
+[465,27,12,],
+[477,388,80,],
+[487,682,138,],
+[498,912,194,],
+[508,93,24,],
+[518,0,0,],
+[528,263,56,],
+[539,41,22,],
+[549,193,84,],
+[559,53,24,],
+[569,85,30,],
+[580,222,62,],
+[590,142,198,],
+[600,264,198,],
+[610,314,440,],
+[620,285,310,],
+[631,317,238,],
+[641,82,172,],
+[651,257,302,],
+[661,0,2,],
+[671,82,148,],
+[681,0,0,],
+]); 
+var options = {  
+title : 'NUMA All Memory Assignments', 
+vAxis: {title: 'Allocated (MB)'}, 
+hAxis: {title: 'Time (s)'}, 
+seriesType: 'bars', 
+bar: { groupWidth: '95%' }, 
+isStacked: true, 
+width: 800,  
+height: 600,  
+axes: {  
+x: {  
+0: {side: 'top'}  
+}  
+},  
+ };  
+ var chart = new google.visualization.ComboChart(document.getElementById('chart_miss')); 
+chart.draw(data, options);  
+}  
+function drawMiss() { 
+var data = new google.visualization.DataTable(); 
+data.addColumn('number', 'Execution Time (s)'); 
+data.addColumn('number', 'Node0');   
+data.addColumn('number', 'Node1');   
+data.addRows([
+[0,0,0,],
+[10,0,0,],
+[21,0,0,],
+[31,0,0,],
+[41,0,0,],
+[51,0,0,],
+[61,0,0,],
+[72,0,0,],
+[82,0,0,],
+[92,0,0,],
+[102,0,0,],
+[112,0,0,],
+[122,0,0,],
+[133,0,0,],
+[143,0,0,],
+[153,0,0,],
+[163,0,0,],
+[174,0,0,],
+[188,0,0,],
+[206,0,0,],
+[224,0,0,],
+[242,0,0,],
+[259,0,0,],
+[273,0,0,],
+[287,0,0,],
+[302,0,0,],
+[316,0,0,],
+[331,0,0,],
+[346,0,0,],
+[361,0,0,],
+[376,0,0,],
+[391,0,0,],
+[406,0,0,],
+[420,0,0,],
+[435,0,0,],
+[450,0,0,],
+[465,0,0,],
+[477,0,0,],
+[487,0,0,],
+[498,0,0,],
+[508,0,0,],
+[518,0,0,],
+[528,0,0,],
+[539,0,0,],
+[549,0,0,],
+[559,0,0,],
+[569,0,0,],
+[580,0,0,],
+[590,0,0,],
+[600,0,0,],
+[610,0,0,],
+[620,0,0,],
+[631,0,0,],
+[641,0,0,],
+[651,0,0,],
+[661,0,0,],
+[671,0,0,],
+[681,0,0,],
+]); 
+var options = {  
+title : 'NUMA Remote Assigned Memory (foreign)', 
+vAxis: {title: 'Remote Allocated (MB)'}, 
+hAxis: {title: 'Time (s)'}, 
+seriesType: 'bars', 
+bar: { groupWidth: '95%' }, 
+isStacked: true, 
+width: 800,  
+height: 600,  
+axes: {  
+x: {  
+0: {side: 'top'}  
+}  
+},  
+ };  
+ var chart = new google.visualization.ComboChart(document.getElementById('chart_hits')); 
+chart.draw(data, options);  
+}  
+function drawFree() { 
+var data = google.visualization.arrayToDataTable([  
+['Execution Time (s)' 
+, 'Node0'   
+, 'Node1'   
+], 
+[0,90962.54,94712.79,],
+[10,90963.18,94712.87,],
+[21,90961.39,94713.36,],
+[31,90962.05,94714.23,],
+[41,90961.46,94713.73,],
+[51,90962.01,94712.48,],
+[61,90541.60,94249.25,],
+[72,90456.14,94133.73,],
+[82,90400.36,94056.87,],
+[92,90366.36,94009.95,],
+[102,89911.35,93504.41,],
+[112,87758.19,90706.16,],
+[122,87659.96,90569.14,],
+[133,87225.93,89986.76,],
+[143,87130.00,89969.05,],
+[153,87248.55,90010.60,],
+[163,87219.49,90019.76,],
+[174,86190.70,89170.15,],
+[188,85531.43,88002.31,],
+[206,84698.21,87122.88,],
+[224,84356.26,86746.13,],
+[242,84033.68,86464.23,],
+[259,83760.70,86143.84,],
+[273,83317.06,85785.02,],
+[287,83060.41,85488.19,],
+[302,83037.61,85482.02,],
+[316,83008.00,85460.99,],
+[331,82992.09,85454.29,],
+[346,82979.36,85424.92,],
+[361,82911.23,85375.91,],
+[376,82875.37,85336.43,],
+[391,82835.12,85297.86,],
+[406,82809.18,85290.27,],
+[420,82804.45,85283.34,],
+[435,82796.86,85262.96,],
+[450,82793.03,85264.61,],
+[465,82782.05,85212.18,],
+[477,82756.06,85210.26,],
+[487,82789.27,85169.34,],
+[498,82813.07,85169.31,],
+[508,82883.09,85183.58,],
+[518,82896.69,85220.03,],
+[528,82905.05,85278.47,],
+[539,82903.89,85278.43,],
+[549,82915.82,85322.25,],
+[559,83054.24,85325.25,],
+[569,86279.64,85382.95,],
+[580,86281.49,87025.63,],
+[590,86294.62,87031.85,],
+[600,86714.93,89908.75,],
+[610,88317.88,89905.32,],
+[620,88317.73,90066.49,],
+[631,88316.63,91532.04,],
+[641,88317.70,91532.11,],
+[651,88318.20,91533.05,],
+[661,88318.63,91532.70,],
+[671,90738.35,94585.98,],
+[681,90740.04,94586.80,],
+]); 
+var options = {  
+title : 'NUMA Free', 
+vAxis: {title: 'MBs'}, 
+hAxis: {title: 'Time (s)'}, 
+isStacked: true, 
+width: 800,  
+height: 600,  
+axes: {  
+x: {  
+0: {side: 'top'}  
+}  
+},  
+ };  
+ var chart = new google.visualization.AreaChart(document.getElementById('chart_free')); 
+chart.draw(data, options);  
+}  
+function drawUsed() { 
+var data = google.visualization.arrayToDataTable([  
+['Execution Time (s)' 
+, 'Node0'   
+, 'Node1'   
+], 
+[0,3806.36,2033.21,],
+[10,3805.33,2034.12,],
+[21,3808.07,2033.11,],
+[31,3806.31,2032.82,],
+[41,3807.89,2033.87,],
+[51,3807.35,2034.11,],
+[61,4227.75,2496.85,],
+[72,4312.75,2612.73,],
+[82,4369.03,2689.70,],
+[92,4403.08,2736.62,],
+[102,4857.14,3241.56,],
+[112,7010.68,6040.31,],
+[122,7107.93,6177.32,],
+[133,7543.42,6759.71,],
+[143,7604.79,6777.48,],
+[153,7520.28,6736.40,],
+[163,7549.36,6739.36,],
+[174,8580.85,7576.34,],
+[188,9237.43,8744.64,],
+[206,10072.25,9624.13,],
+[224,10413.70,10001.48,],
+[242,10736.20,10281.82,],
+[259,11008.19,10602.63,],
+[273,11452.32,10960.95,],
+[287,11708.45,11258.93,],
+[302,11731.24,11266.07,],
+[316,11760.92,11285.50,],
+[331,11776.77,11292.82,],
+[346,11789.50,11322.70,],
+[361,11858.13,11371.23,],
+[376,11896.38,11410.44,],
+[391,11933.85,11448.46,],
+[406,11959.68,11455.74,],
+[420,11964.98,11463.62,],
+[435,11972.75,11483.51,],
+[450,11978.05,11481.86,],
+[465,11986.80,11535.38,],
+[477,12012.30,11536.21,],
+[487,11980.13,11577.13,],
+[498,11955.79,11577.15,],
+[508,11886.35,11562.39,],
+[518,11871.71,11526.44,],
+[528,11864.99,11467.99,],
+[539,11865.52,11468.04,],
+[549,11853.04,11424.80,],
+[559,11715.21,11421.21,],
+[569,8488.79,11363.52,],
+[580,8487.48,9720.34,],
+[590,8474.88,9714.62,],
+[600,8054.92,6837.23,],
+[610,6451.57,6840.66,],
+[620,6451.81,6681.18,],
+[631,6452.35,5213.93,],
+[641,6451.20,5213.86,],
+[651,6450.74,5213.41,],
+[661,6450.26,5213.76,],
+[671,4030.50,2161.12,],
+[681,4029.99,2159.18,],
+]); 
+var options = {  
+title : 'NUMA Used', 
+vAxis: {title: 'MBs'}, 
+hAxis: {title: 'Time (s)'}, 
+isStacked: true, 
+width: 800,  
+height: 600,  
+axes: {  
+x: {  
+0: {side: 'top'}  
+}  
+},  
+ };  
+ var chart = new google.visualization.AreaChart(document.getElementById('chart_used')); 
+chart.draw(data, options);  
+}  
+</script>  
+</head>  
+<body>  
+<table class='columns'>  
+<tr>  
+<td width='800' height='600'><div id='chart_hits' style='border: 1px solid; color: LightGray'></div></td>  
+<td width='800' height='600'><div id='chart_miss' style='border: 1px solid; color: LightGray'></div></td>  
+</tr> 
+ <tr> 
+<td width='800' height='600'><div id='chart_free' style='border: 1px solid; color: LightGray'></div></td>  
+<td width='800' height='600'><div id='chart_used' style='border: 1px solid; color: LightGray'></div></td>  
+</tr>  
+</table> 
+</body>  
+</html>  
