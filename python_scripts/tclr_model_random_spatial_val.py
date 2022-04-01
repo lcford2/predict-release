@@ -568,7 +568,7 @@ def pipeline(args):
         pickle.dump(output, f, protocol=4)
 
     # write the random effects to a csv file for easy access
-    # coefs.to_csv((folderpath / "random_effects.csv").as_posix())
+    coefs.to_csv((folderpath / "random_effects.csv").as_posix())
     dot_command = [
         "dot",
         "-Tpng",
