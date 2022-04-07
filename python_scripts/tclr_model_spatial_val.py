@@ -332,8 +332,6 @@ def pipeline(args):
         )
 
         time_function(model.fit)()
-        import sys
-        sys.exit()
 
         params, groups = get_params_and_groups(X_train, model)
         groups_uniq = groups.unique()
@@ -499,8 +497,8 @@ def pipeline(args):
 
     results["simmed_res_scores"] = simmed_res_scores
 
-    # print(test_res_scores.to_markdown(floatfmt="0.3f"))
-    # print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
+    print(test_res_scores.to_markdown(floatfmt="0.3f"))
+    print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
 
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
     quant_scores = pd.DataFrame(index=[0, 1, 2], columns=["NSE", "RMSE"])
