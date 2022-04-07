@@ -11,9 +11,6 @@ import seaborn as sns
 from IPython import embed as II
 #+end_src
 
-#+RESULTS:
-: None
-
 * Load data
 Data is stored in subdirectories within ~/home/lford/projects/predict-release/results/tclr_spatial_eval/all/~.
 Each subdirectory is tagged with the random seed used to generate the training and testing reservoir sets (0-999).
