@@ -4,8 +4,15 @@ import copy
 import glob
 import pathlib
 import pickle
+import os
 import subprocess
 from datetime import datetime, timedelta
+from multiprocessing import cpu_count
+
+CPUS = cpu_count()
+nprocs_per_job = 2
+njobs = int(CPUS / 2)
+os.environ["OMP_NUM_THREADS"] = str(nprocs_per_job)
 
 import numpy as np
 import pandas as pd
@@ -175,7 +182,11 @@ def pipeline(args):
 
     df = read_basin_data(basin)
     meta = get_basin_meta_data(basin)
-    meta = meta.drop("MCPHEE")
+    try:
+        meta = meta.drop("MCPHEE")
+    except KeyError:
+        # basin does not have MCPHEE in it
+        pass
 
     lower_bounds = df.groupby(df.index.get_level_values(0)).min()
     upper_bounds = df.groupby(df.index.get_level_values(0)).max()
@@ -276,6 +287,7 @@ def pipeline(args):
             response_name="release",
             tree_vars=X_vars_tree,
             reg_vars=X_vars,
+            njobs=njobs
         )
 
         model.fit()
@@ -442,8 +454,9 @@ def pipeline(args):
 
     results["simmed_res_scores"] = simmed_res_scores
 
-    # print(test_res_scores.to_markdown(floatfmt="0.3f"))
-    # print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
+    print(test_res_scores.to_markdown(floatfmt="0.3f"))
+    print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
+    print(f"{simmed_res_scores['NSE'].mean():.3f}", f"{simmed_res_scores['NSE'].std():.3f}")
 
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
     quant_scores = pd.DataFrame(index=[0, 1, 2], columns=["NSE", "RMSE"])
@@ -473,7 +486,8 @@ def pipeline(args):
     all_mod = "_all_res" if use_all else ""
     assim_mod = f"_{args.assim}" if args.assim else ""
     foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
-    folderpath = pathlib.Path("..", "results", "basin_eval", basin, foldername)
+    foldername = f"TD{max_depth}{assim_mod}_RT_MS"
+    folderpath = pathlib.Path("..", "results", "tclr_model", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
         # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
@@ -498,16 +512,24 @@ def pipeline(args):
 
     # setup output container for modeling information
     X_train["storage_pre"] = X["storage_pre"]
-    output = dict(
-        **results,
-        quant_scores=quant_scores,
-        data=dict(
-            X_train=X_train,
-            test_data=test_data,
-            train_data=train_data,
-            simmed_data=simmed_data,  # groups=groups,
-        ),
-    )
+    # output = dict(
+    #     **results,
+    #     quant_scores=quant_scores,
+    #     data=dict(
+    #         X_train=X_train,
+    #         test_data=test_data,
+    #         train_data=train_data,
+    #         simmed_data=simmed_data,  # groups=groups,
+    #     ),
+    # )
+    output = {
+            "f_act_score": f_act_score,
+            "p_act_score": p_act_score,
+            "s_act_score": s_act_score,
+            "f_res_scores": train_res_scores,
+            "p_res_scores": test_res_scores,
+            "s_res_scores": simmed_res_scores
+    }
     # write the output dict to a pickle file
     with open((folderpath / "results.pickle").as_posix(), "wb") as f:
         pickle.dump(output, f, protocol=4)
