@@ -532,7 +532,10 @@ def pipeline(args):
             "s_act_score": s_act_score,
             "f_res_scores": train_res_scores,
             "p_res_scores": test_res_scores,
-            "s_res_scores": simmed_res_scores
+            "s_res_scores": simmed_res_scores,
+            "train_data": train_data,
+            "test_data": test_data,
+            "simmed_data": simmed_data
     }
     # write the output dict to a pickle file
     with open((folderpath / "results.pickle").as_posix(), "wb") as f:
