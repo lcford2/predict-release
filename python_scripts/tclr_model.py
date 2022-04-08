@@ -13,6 +13,10 @@ CPUS = cpu_count()
 nprocs_per_job = 2
 njobs = int(CPUS / 2)
 os.environ["OMP_NUM_THREADS"] = str(nprocs_per_job)
+print("CPUS           = ", CPUS)
+print("NPROCS_PER_JOB = ", nprocs_per_job)
+print("NJOBS          = ", njobs)
+
 
 import numpy as np
 import pandas as pd
@@ -290,7 +294,7 @@ def pipeline(args):
             njobs=njobs
         )
 
-        model.fit()
+        time_function(model.fit)()
 
         params, groups = get_params_and_groups(X_train, model)
         groups_uniq = groups.unique()
@@ -454,8 +458,8 @@ def pipeline(args):
 
     results["simmed_res_scores"] = simmed_res_scores
 
-    print(test_res_scores.to_markdown(floatfmt="0.3f"))
-    print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
+# print(test_res_scores.to_markdown(floatfmt="0.3f"))
+# print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
     print(f"{simmed_res_scores['NSE'].mean():.3f}", f"{simmed_res_scores['NSE'].std():.3f}")
 
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
