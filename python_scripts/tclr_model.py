@@ -291,7 +291,8 @@ def pipeline(args):
             response_name="release",
             tree_vars=X_vars_tree,
             reg_vars=X_vars,
-            njobs=njobs
+            njobs=njobs,
+            method=args.method
         )
 
         time_function(model.fit)()
@@ -806,6 +807,12 @@ def parse_args(arg_list=None):
         default=None,
         choices=("weekly", "monthly", "seasonally", "daily"),
         help="Frequency at which to assimilate observed storage and release values",
+    )
+    parser.add_argument(
+        "-M",
+        "--method",
+        default="Nelder-Mead",
+        help="Optimization algorithm to use for fitting the TCLR model."
     )
     if arg_list:
         return parser.parse_args(arg_list)
