@@ -491,7 +491,7 @@ def pipeline(args):
     all_mod = "_all_res" if use_all else ""
     assim_mod = f"_{args.assim}" if args.assim else ""
     foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
-    foldername = f"TD{max_depth}{assim_mod}_RT_MS"
+    foldername = f"TD{max_depth}{assim_mod}_RT_MS_{args.method}"
     folderpath = pathlib.Path("..", "results", "tclr_model", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
