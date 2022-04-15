@@ -103,7 +103,7 @@ def get_basin_meta_data(basin: str):
     meta = pd.DataFrame()
     for file in files:
         fmeta = pd.read_pickle(file)
-        meta = fmeta if meta.empty else meta.append(fmeta)
+        meta = fmeta if meta.empty else pd.concat([meta, fmeta])
     return meta
 
 
@@ -683,6 +683,10 @@ def simul_reservoir(
         assim_shift = 30
     elif assim == "seasonally":
         assim_shift = 90
+    elif assim == "semi-annually":
+    	assim_shift = 180
+    elif assim == "yearly":
+    	assim_shift = 365
     elif assim == "daily":
         assim_shift = 1
 
@@ -806,7 +810,14 @@ def parse_args(arg_list=None):
     parser.add_argument(
         "--assim",
         default=None,
-        choices=("weekly", "monthly", "seasonally", "daily"),
+        choices=(
+            "daily", 
+            "weekly",
+            "monthly",
+            "seasonally", 
+            "semi-annually", 
+            "yearly"
+        ),
         help="Frequency at which to assimilate observed storage and release values",
     )
     parser.add_argument(
