@@ -1,5 +1,5 @@
 from mpi4py import MPI
-from tclr_model_random_spatial_val import parse_args, pipeline
+from tclr_model import parse_args, pipeline
 
 # arglist = [["all", "-d", str(i), "--assim_freq", "weekly"] for i in range(0,11)]
 # arglist.extend([["all", "-d", str(i), "--assim_freq", "seasonally"] for i in range(0,11)])
@@ -7,13 +7,13 @@ from tclr_model_random_spatial_val import parse_args, pipeline
 # arglist.extend([["all", "-d", str(i), "--assim_freq", "daily"] for i in range(0,11)])
 # arglist.extend([["all", "-d", str(i)] for i in range(0,11)])
    
-# arglist = [["all", "-d", "3", "--assim_freq", i] for i in ["weekly", "monthly", "seasonally", "daily"]]
-# arglist.append(["all", "-d", "3"])
+arglist = [["all", "-d", "4", "--assim", i] for i in ["daily", "weekly", "monthly", "seasonally", "semi-annually", "yearly"]]
+arglist.append(["all", "-d", "4"])
 
 # train_props = [i / 100 for i in range(25, 91, 5)]
 # arglist = [["all", "-d", "3", "--train_prop", str(i)] for i in train_props]
 
-arglist = [["all", "-d", "3", "--train_prop", "0.75", "--seed", str(i)] for i in range(1000)]
+#arglist = [["all", "-d", "3", "--train_prop", "0.75", "--seed", str(i)] for i in range(1000)]
 #arglist = arglist[:1]
 
 comm = MPI.COMM_WORLD
