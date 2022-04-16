@@ -331,14 +331,16 @@ def pipeline(args):
         nhrt_res = y_train_hrt.index.get_level_values(0).unique().size
 
         if nror_res < 2 or nlrt_res < 2 or nhrt_res < 2:
-            return max(*y_train_ror, *y_train_lrt, *y_train_hrt)*2
+            # return max(*y_train_ror, *y_train_lrt, *y_train_hrt)*2
+            return 5
 
         try:
             ror_params = linear_model(X_train_ror, y_train_ror)
             lrt_params = linear_model(X_train_lrt, y_train_lrt)
             hrt_params = linear_model(X_train_hrt, y_train_hrt)
         except np.linalg.LinAlgError:
-            return max(*y_train_ror, *y_train_lrt, *y_train_hrt)*2
+            # return max(*y_train_ror, *y_train_lrt, *y_train_hrt)*2
+            return 5
 
         ror_train = X_train_ror @ ror_params
         lrt_train = X_train_lrt @ lrt_params
@@ -347,15 +349,22 @@ def pipeline(args):
         ror_score = np.sqrt(mean_squared_error(y_train_ror, ror_train))
         lrt_score = np.sqrt(mean_squared_error(y_train_lrt, lrt_train))
         hrt_score = np.sqrt(mean_squared_error(y_train_hrt, hrt_train))
-        return ror_score + lrt_score + hrt_score
+        # NRES = nror_res + nlrt_res + nhrt_res
+        nobs_ror = X_train_ror.shape[0]
+        nobs_lrt = X_train_lrt.shape[0]
+        nobs_hrt = X_train_hrt.shape[0]
+        nobs = nobs_ror + nobs_lrt + nobs_hrt
+        # return (nror_res * ror_score + nlrt_res * lrt_score + nhrt_res * hrt_score) / NRES
+        return (nobs_ror * ror_score + nobs_lrt * lrt_score + nobs_hrt * hrt_score) / nobs
 
     b_low = meta["rts"].min()
     b_high = meta["rts"].max()
     ror_cuts = np.random.randint(low=1, high=b_high/2, size=2000)
     lrt_cuts = np.random.randint(low=ror_cuts, high=b_high, size=2000)
+    X_train_trim = X_train.loc[:, X_vars]
     scores = Parallel(n_jobs=-1, verbose=11)(
         delayed(find_best_cuts)(
-            c, X_train, y_train, meta
+            c, X_train_trim, y_train, meta
         ) for c in zip(ror_cuts, lrt_cuts)
     )
     # scores = [find_best_cuts(c, X_train, y_train, meta) for c in zip(ror_cuts, lrt_cuts)]
