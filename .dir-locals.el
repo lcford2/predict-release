@@ -3,5 +3,7 @@
 
 ((nil . ((conda-project-env-path . "sry-env"))))
 ((python-mode . ((flycheck-disabled-checkers . (python-mypy python-flake8)))))
+(with-eval-after-load 'lsp-mode
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\results\\"))
 
 ;; ((nil . ()))

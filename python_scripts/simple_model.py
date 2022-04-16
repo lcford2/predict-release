@@ -131,6 +131,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
             filename += f"_{value}"
     
     df = df.copy()
+    df = df[~df.index.get_level_values(1).isin(["Cherokee", "Hiwassee", "Douglas"])]
 
     df["Storage_Inflow_interaction"] = df.loc[:,"Storage_pre"].mul(
         df.loc[:,"Net Inflow"])
@@ -174,9 +175,9 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         abbr = calendar.month_abbr[date.month]
         month_arrays[abbr][i] = 1
 
-    for key, array in month_arrays.items():
-        X_scaled[key] = array
-    
+    # for key, array in month_arrays.items():
+    #     X_scaled[key] = array
+
     split_date = datetime(2010,1,1)
     reservoirs = X_scaled.index.get_level_values(1).unique()
 
@@ -201,11 +202,11 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     interaction_terms = ["Storage_Inflow_interaction"]
         
     exog_terms = [
-        "const", "Net Inflow", "Storage_pre", "Release_pre",
-        "Storage_roll7",  "Inflow_roll7", "Release_roll7"
+        "const", "Storage_pre", "Release_pre", "Net Inflow",
+        "Storage_roll7",  "Release_roll7", "Inflow_roll7"
     ]
 
-    exog_re = exog.loc[:,exog_terms + interaction_terms + calendar.month_abbr[1:]]
+    exog_re = exog.loc[:,exog_terms + interaction_terms]#+ calendar.month_abbr[1:]]
 
     mexog = exog.loc[:,["const"]]
 
@@ -257,8 +258,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
     X_test["const"] = 1
     exog = X_test
     groups = exog["compositegroup"]
-    exog_re = exog.loc[:, exog_terms + interaction_terms + 
-                        calendar.month_abbr[1:] + ["compositegroup"]]
+    exog_re = exog.loc[:, exog_terms + interaction_terms + ["compositegroup"]]
     mexog = exog[["const"]]
         
     preds = predict_mixedLM(fe_coefs, re_coefs, mexog, exog_re, "compositegroup")
@@ -388,7 +388,7 @@ def scaled_MixedEffects(df, groups, filter_groups=None, scaler="mine"):
         )
     )
 
-    output_dir = pathlib.Path(f"../results/synthesis/simple_model_temporal_validation_all_res")
+    output_dir = pathlib.Path(f"../results/synthesis/simple_model/no_ints_model")
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
@@ -657,7 +657,7 @@ def fit_release_storage_stepping(y_rel, y_sto, exog, groups, means, std, init_va
 
 @time_function
 def forecast_mixedLM_new(coefs, exog, means, std, group_col, actual_inflow, timelevel="all", tree=False):
-    II()
+    # II()
     # create output data frame
     output_df = pd.DataFrame(index=exog.index, 
                              columns=list(exog.columns) + ["Storage_act", "Release_act"],
@@ -679,7 +679,8 @@ def forecast_mixedLM_new(coefs, exog, means, std, group_col, actual_inflow, time
         stop_it = 5
     else:
         stop_it = 4    
-    
+
+
     # setup output df by adding pre_date information
     idx = pd.IndexSlice
     for col in calc_columns[:stop_it]:
@@ -1009,9 +1010,9 @@ def forecast_mixedLM_other_res(groups, unseen=True):
 if __name__ == "__main__":
     df = read_tva_data()
     # forecast_mixedLM_other_res(groups=["NaturalOnly", "RunOfRiver"])
-    scaled_MixedEffects(df, groups = ["NaturalOnly","RunOfRiver"])
+    scaled_MixedEffects(df, groups = ["NaturalOnly","RunOfRiver"],
                             # filter_groups={"NaturalOnly": "NaturalFlow"})
-                        # filter_groups={"NaturalOnly":"ComboFlow"})
+                        filter_groups={"NaturalOnly":"ComboFlow"})
     # Recorded Forecast Scores:
     # NaturalOnly, PrimaryType :             0.9643
     # NaturalOnly, RunOfRiver :              0.9646

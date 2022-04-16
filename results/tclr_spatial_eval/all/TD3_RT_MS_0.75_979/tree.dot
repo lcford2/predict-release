@@ -1,8 +1,13 @@
 digraph tree {
+<<<<<<< HEAD
+=======
+bgcolor="transparent"
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
 node [shape=rectangle, style="filled, rounded", color="black", fontname=helvetica] ;
 edge [fontname=helvetica] ;
 	"0" [label="mse = 0.128
 samples = 100.0%
+<<<<<<< HEAD
 rts > 281.528", fillcolor="#f4cbad"]
 	"8" [label="mse = 0.055
 samples = 33.1%
@@ -65,6 +70,18 @@ samples = 7.6%
 	"3" [label="mse = 0.050
 samples = 27.7%
                 const: 0.000
+=======
+rts &le; 281.528", fillcolor="#f4cbad"]
+	"1" [label="mse = 0.158
+samples = 66.9%
+rts &le; 64.971", fillcolor="#f1bc96"]
+	"2" [label="mse = 0.123
+samples = 37.4%
+rts &le; 12.303", fillcolor="#f4cdb1"]
+	"3" [label="mse = 0.050
+samples = 27.7%
+               const: -0.000
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
           storage_pre: 0.136
           release_pre: 0.330
                inflow: 0.673
@@ -74,7 +91,11 @@ samples = 27.7%
     storage_x_inflow: -0.064", fillcolor="#fcf2ea"]
 	"4" [label="mse = 0.277
 samples = 9.7%
+<<<<<<< HEAD
                const: -0.000
+=======
+                const: 0.000
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
           storage_pre: 0.213
           release_pre: 0.559
                inflow: 0.130
@@ -82,6 +103,22 @@ samples = 9.7%
         release_roll7: 0.270
         inflow_roll7: -0.058
      storage_x_inflow: 0.061", fillcolor="#e58139"]
+<<<<<<< HEAD
+=======
+	"5" [label="mse = 0.148
+samples = 29.5%
+max_sto &le; 1295.449", fillcolor="#f2c09d"]
+	"6" [label="mse = 0.149
+samples = 18.2%
+                const: 0.000
+          storage_pre: 2.550
+          release_pre: 0.733
+              inflow: -0.084
+       storage_roll7: -2.532
+        release_roll7: 0.275
+        inflow_roll7: -0.103
+     storage_x_inflow: 0.064", fillcolor="#f2c09d"]
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
 	"7" [label="mse = 0.135
 samples = 11.3%
                const: -0.000
@@ -92,6 +129,7 @@ samples = 11.3%
         release_roll7: 0.346
         inflow_roll7: -0.017
     storage_x_inflow: -0.150", fillcolor="#f3c7a8"]
+<<<<<<< HEAD
 	"6" [label="mse = 0.149
 samples = 18.2%
                 const: 0.000
@@ -117,4 +155,70 @@ samples = 18.2%
 	"2" -> "4"
 	"5" -> "6"
 	"5" -> "7"
+=======
+	"8" [label="mse = 0.055
+samples = 33.1%
+rts &le; 684.120", fillcolor="#fbefe6"]
+	"9" [label="mse = 0.062
+samples = 15.6%
+max_sto &le; 524.388", fillcolor="#fbebe0"]
+	"10" [label="mse = 0.024
+samples = 8.0%
+                const: 0.000
+          storage_pre: 1.504
+          release_pre: 1.094
+              inflow: -0.072
+       storage_roll7: -1.493
+       release_roll7: -0.093
+        inflow_roll7: -0.065
+     storage_x_inflow: 0.048", fillcolor="#fefefe"]
+	"11" [label="mse = 0.084
+samples = 7.6%
+               const: -0.000
+          storage_pre: 1.239
+          release_pre: 0.538
+              inflow: -0.425
+       storage_roll7: -1.243
+        release_roll7: 0.421
+         inflow_roll7: 0.360
+     storage_x_inflow: 0.021", fillcolor="#f8e0cf"]
+	"12" [label="mse = 0.043
+samples = 17.5%
+inflow &le; -0.000", fillcolor="#fcf5ef"]
+	"13" [label="mse = 0.024
+samples = 11.2%
+               const: -0.007
+          storage_pre: 0.346
+          release_pre: 0.923
+              inflow: -0.074
+       storage_roll7: -0.332
+        release_roll7: 0.037
+         inflow_roll7: 0.001
+     storage_x_inflow: 0.047", fillcolor="#ffffff"]
+	"14" [label="mse = 0.075
+samples = 6.2%
+               const: -0.025
+          storage_pre: 0.681
+          release_pre: 1.064
+              inflow: -0.050
+       storage_roll7: -0.677
+       release_roll7: -0.088
+        inflow_roll7: -0.037
+     storage_x_inflow: 0.110", fillcolor="#f9e5d6"]
+
+	"0" -> "1" [labeldistance=2.5, labelangle=45, headlabel="True"]
+	"1" -> "2"
+	"2" -> "3"
+	"2" -> "4"
+	"1" -> "5"
+	"5" -> "6"
+	"5" -> "7"
+	"0" -> "8" [labeldistance=2.5, labelangle=-45, headlabel="False"]
+	"8" -> "9"
+	"9" -> "10"
+	"9" -> "11"
+	"8" -> "12"
+	"12" -> "13"
+	"12" -> "14"
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
 }

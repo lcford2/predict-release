@@ -4,8 +4,19 @@ import copy
 import glob
 import pathlib
 import pickle
+import os
 import subprocess
 from datetime import datetime, timedelta
+from multiprocessing import cpu_count
+
+CPUS = cpu_count()
+nprocs_per_job = 2
+njobs = int(CPUS / 2)
+os.environ["OMP_NUM_THREADS"] = str(nprocs_per_job)
+print("CPUS           = ", CPUS)
+print("NPROCS_PER_JOB = ", nprocs_per_job)
+print("NJOBS          = ", njobs)
+
 
 import numpy as np
 import pandas as pd
@@ -92,7 +103,7 @@ def get_basin_meta_data(basin: str):
     meta = pd.DataFrame()
     for file in files:
         fmeta = pd.read_pickle(file)
-        meta = fmeta if meta.empty else meta.append(fmeta)
+        meta = fmeta if meta.empty else pd.concat([meta, fmeta])
     return meta
 
 
@@ -175,7 +186,11 @@ def pipeline(args):
 
     df = read_basin_data(basin)
     meta = get_basin_meta_data(basin)
-    meta = meta.drop("MCPHEE")
+    try:
+        meta = meta.drop("MCPHEE")
+    except KeyError:
+        # basin does not have MCPHEE in it
+        pass
 
     lower_bounds = df.groupby(df.index.get_level_values(0)).min()
     upper_bounds = df.groupby(df.index.get_level_values(0)).max()
@@ -276,9 +291,11 @@ def pipeline(args):
             response_name="release",
             tree_vars=X_vars_tree,
             reg_vars=X_vars,
+            njobs=njobs,
+            method=args.method
         )
 
-        model.grow_tree()
+        time_function(model.fit)()
 
         params, groups = get_params_and_groups(X_train, model)
         groups_uniq = groups.unique()
@@ -442,8 +459,9 @@ def pipeline(args):
 
     results["simmed_res_scores"] = simmed_res_scores
 
-    # print(test_res_scores.to_markdown(floatfmt="0.3f"))
-    # print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
+# print(test_res_scores.to_markdown(floatfmt="0.3f"))
+# print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
+    print(f"{simmed_res_scores['NSE'].mean():.3f}", f"{simmed_res_scores['NSE'].std():.3f}")
 
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
     quant_scores = pd.DataFrame(index=[0, 1, 2], columns=["NSE", "RMSE"])
@@ -473,7 +491,8 @@ def pipeline(args):
     all_mod = "_all_res" if use_all else ""
     assim_mod = f"_{args.assim}" if args.assim else ""
     foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
-    folderpath = pathlib.Path("..", "results", "basin_eval", basin, foldername)
+    foldername = f"TD{max_depth}{assim_mod}_RT_MS_{args.method}"
+    folderpath = pathlib.Path("..", "results", "tclr_model", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
         # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
@@ -498,16 +517,28 @@ def pipeline(args):
 
     # setup output container for modeling information
     X_train["storage_pre"] = X["storage_pre"]
-    output = dict(
-        **results,
-        quant_scores=quant_scores,
-        data=dict(
-            X_train=X_train,
-            test_data=test_data,
-            train_data=train_data,
-            simmed_data=simmed_data,  # groups=groups,
-        ),
-    )
+    # output = dict(
+    #     **results,
+    #     quant_scores=quant_scores,
+    #     data=dict(
+    #         X_train=X_train,
+    #         test_data=test_data,
+    #         train_data=train_data,
+    #         simmed_data=simmed_data,  # groups=groups,
+    #     ),
+    # )
+    output = {
+            "f_act_score": f_act_score,
+            "p_act_score": p_act_score,
+            "s_act_score": s_act_score,
+            "f_res_scores": train_res_scores,
+            "p_res_scores": test_res_scores,
+            "s_res_scores": simmed_res_scores,
+            "train_data": train_data,
+            "test_data": test_data,
+            "simmed_data": simmed_data,
+            "groups": groups
+    }
     # write the output dict to a pickle file
     with open((folderpath / "results.pickle").as_posix(), "wb") as f:
         pickle.dump(output, f, protocol=4)
@@ -652,6 +683,10 @@ def simul_reservoir(
         assim_shift = 30
     elif assim == "seasonally":
         assim_shift = 90
+    elif assim == "semi-annually":
+    	assim_shift = 180
+    elif assim == "yearly":
+    	assim_shift = 365
     elif assim == "daily":
         assim_shift = 1
 
@@ -775,8 +810,21 @@ def parse_args(arg_list=None):
     parser.add_argument(
         "--assim",
         default=None,
-        choices=("weekly", "monthly", "seasonally", "daily"),
+        choices=(
+            "daily", 
+            "weekly",
+            "monthly",
+            "seasonally", 
+            "semi-annually", 
+            "yearly"
+        ),
         help="Frequency at which to assimilate observed storage and release values",
+    )
+    parser.add_argument(
+        "-M",
+        "--method",
+        default="Nelder-Mead",
+        help="Optimization algorithm to use for fitting the TCLR model."
     )
     if arg_list:
         return parser.parse_args(arg_list)

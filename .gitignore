@@ -45,3 +45,6 @@ python_scripts/qsub_output
 
 # large result files
 results/basin_eval/all
+
+# slurm output
+python_scripts/slurm_out

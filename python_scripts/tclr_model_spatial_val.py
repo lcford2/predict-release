@@ -5,14 +5,23 @@ import glob
 import pathlib
 import pickle
 import subprocess
+import os
 from collections import defaultdict
 from datetime import datetime, timedelta
+from multiprocessing import cpu_count
+
+CPUS = cpu_count()
+print(CPUS)
+nprocs_per_job = 2
+njobs = int(CPUS / 2)
+os.environ["OMP_NUM_THREADS"] = str(nprocs_per_job)
 
 import numpy as np
 import pandas as pd
 from IPython import embed as II
 from sklearn.metrics import mean_squared_error, r2_score
 from tclr import TreeComboLR
+from joblib import Parallel, delayed
 from utils.timing_function import time_function
 
 
@@ -179,7 +188,6 @@ def pipeline(args):
     meta = get_basin_meta_data(basin)
     meta = meta.drop("MCPHEE")
 
-    
     lower_bounds = df.groupby(df.index.get_level_values(0)).min()
     upper_bounds = df.groupby(df.index.get_level_values(0)).max()
 
@@ -215,7 +223,7 @@ def pipeline(args):
     # need to set it again after we trimmed the data set
     res_grouper = df.index.get_level_values(0)
     
-    X, y, means, std = prep_data(df)
+    X, y, means, std = prep_data(df.drop("basin", axis=1))
     X["sto_diff"] = X["storage_pre"] - X["storage_roll7"]
     X["const"] = 1
 
@@ -320,9 +328,10 @@ def pipeline(args):
             response_name="release",
             tree_vars=X_vars_tree,
             reg_vars=X_vars,
+            njobs=njobs,
         )
 
-        model.grow_tree()
+        time_function(model.fit)()
 
         params, groups = get_params_and_groups(X_train, model)
         groups_uniq = groups.unique()
@@ -488,8 +497,8 @@ def pipeline(args):
 
     results["simmed_res_scores"] = simmed_res_scores
 
-    # print(test_res_scores.to_markdown(floatfmt="0.3f"))
-    # print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
+    print(test_res_scores.to_markdown(floatfmt="0.3f"))
+    print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
 
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
     quant_scores = pd.DataFrame(index=[0, 1, 2], columns=["NSE", "RMSE"])
@@ -560,7 +569,7 @@ def pipeline(args):
         pickle.dump(output, f, protocol=4)
 
     # write the random effects to a csv file for easy access
-    # coefs.to_csv((folderpath / "random_effects.csv").as_posix())
+    coefs.to_csv((folderpath / "random_effects.csv").as_posix())
     dot_command = [
         "dot",
         "-Tpng",
@@ -627,8 +636,7 @@ def simulate_tclr_model(
 
     # since all reservoirs have different temporal spans
     # we have to iterate through each reservoir independently
-    from joblib import Parallel, delayed
-   
+
     parallel = True 
     if parallel:
         outputdfs = Parallel(n_jobs=16, verbose=11)(

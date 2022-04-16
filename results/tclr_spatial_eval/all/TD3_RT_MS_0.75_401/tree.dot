@@ -1,8 +1,13 @@
 digraph tree {
+<<<<<<< HEAD
+=======
+bgcolor="transparent"
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
 node [shape=rectangle, style="filled, rounded", color="black", fontname=helvetica] ;
 edge [fontname=helvetica] ;
 	"0" [label="mse = 0.118
 samples = 100.0%
+<<<<<<< HEAD
 release_pre > -0.000", fillcolor="#f0ba92"]
 	"1" [label="mse = 0.077
 samples = 61.0%
@@ -22,6 +27,38 @@ rts > 401.400", fillcolor="#eda877"]
 	"12" [label="mse = 0.195
 samples = 20.2%
 max_sto > 1657.229", fillcolor="#e58139"]
+=======
+release_pre &le; 0.000", fillcolor="#f0ba92"]
+	"1" [label="mse = 0.077
+samples = 61.0%
+rts &le; 314.026", fillcolor="#f7d9c3"]
+	"2" [label="mse = 0.100
+samples = 39.6%
+rts &le; 60.097", fillcolor="#f3c7a8"]
+	"3" [label="mse = 0.069
+samples = 20.8%
+               const: -0.014
+          storage_pre: 0.142
+          release_pre: 0.451
+               inflow: 0.253
+       storage_roll7: -0.120
+        release_roll7: 0.357
+        inflow_roll7: -0.187
+     storage_x_inflow: 0.095", fillcolor="#f8dfcd"]
+	"4" [label="mse = 0.112
+samples = 18.8%
+               const: -0.027
+          storage_pre: 0.273
+          release_pre: 0.488
+              inflow: -0.150
+       storage_roll7: -0.255
+        release_roll7: 0.402
+         inflow_roll7: 0.036
+     storage_x_inflow: 0.109", fillcolor="#f1be99"]
+	"5" [label="mse = 0.030
+samples = 21.4%
+storage_x_inflow &le; 0.060", fillcolor="#fefcfa"]
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
 	"6" [label="mse = 0.026
 samples = 15.1%
                const: -0.042
@@ -42,6 +79,7 @@ samples = 6.3%
         release_roll7: 0.172
          inflow_roll7: 0.035
      storage_x_inflow: 0.005", fillcolor="#fefaf8"]
+<<<<<<< HEAD
 	"3" [label="mse = 0.069
 samples = 20.8%
                const: -0.014
@@ -72,6 +110,14 @@ samples = 7.3%
         release_roll7: 0.107
          inflow_roll7: 0.068
      storage_x_inflow: 0.114", fillcolor="#f6d7c1"]
+=======
+	"8" [label="mse = 0.175
+samples = 39.0%
+inflow &le; 0.048", fillcolor="#e88f50"]
+	"9" [label="mse = 0.141
+samples = 18.8%
+rts &le; 401.400", fillcolor="#eda877"]
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
 	"10" [label="mse = 0.175
 samples = 11.5%
                const: -0.090
@@ -82,6 +128,7 @@ samples = 11.5%
         release_roll7: 0.263
         inflow_roll7: -0.071
     storage_x_inflow: -0.041", fillcolor="#e88f50"]
+<<<<<<< HEAD
 	"14" [label="mse = 0.158
 samples = 3.5%
                const: -0.102
@@ -92,6 +139,21 @@ samples = 3.5%
         release_roll7: 0.135
          inflow_roll7: 0.035
     storage_x_inflow: -0.136", fillcolor="#ea9c64"]
+=======
+	"11" [label="mse = 0.079
+samples = 7.3%
+               const: -0.021
+         storage_pre: -0.067
+          release_pre: 0.827
+              inflow: -0.226
+        storage_roll7: 0.100
+        release_roll7: 0.107
+         inflow_roll7: 0.068
+     storage_x_inflow: 0.114", fillcolor="#f6d7c1"]
+	"12" [label="mse = 0.195
+samples = 20.2%
+max_sto &le; 1657.229", fillcolor="#e58139"]
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
 	"13" [label="mse = 0.185
 samples = 16.7%
                const: -0.033
@@ -102,6 +164,7 @@ samples = 16.7%
         release_roll7: 0.040
         inflow_roll7: -0.027
      storage_x_inflow: 0.079", fillcolor="#e68844"]
+<<<<<<< HEAD
 
 	"0" -> "1"
 	"0" -> "8"
@@ -115,6 +178,31 @@ samples = 16.7%
 	"2" -> "4"
 	"9" -> "10"
 	"9" -> "11"
+=======
+	"14" [label="mse = 0.158
+samples = 3.5%
+               const: -0.102
+          storage_pre: 0.695
+          release_pre: 0.869
+               inflow: 0.069
+       storage_roll7: -0.639
+        release_roll7: 0.135
+         inflow_roll7: 0.035
+    storage_x_inflow: -0.136", fillcolor="#ea9c64"]
+
+	"0" -> "1" [labeldistance=2.5, labelangle=45, headlabel="True"]
+	"1" -> "2"
+	"2" -> "3"
+	"2" -> "4"
+	"1" -> "5"
+	"5" -> "6"
+	"5" -> "7"
+	"0" -> "8" [labeldistance=2.5, labelangle=-45, headlabel="False"]
+	"8" -> "9"
+	"9" -> "10"
+	"9" -> "11"
+	"8" -> "12"
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
 	"12" -> "13"
 	"12" -> "14"
 }
