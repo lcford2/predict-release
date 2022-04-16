@@ -255,7 +255,7 @@ def pipeline(args):
     # train_index, test_index = split_train_test_index_by_res(X, prop=0.8)
    
     train_frac = args.train_prop
-    np.random.seed(args.seed)
+    np.random.seed(44)
     basin_split = True
     if basin_split:
         basin_count_train = (basin_counts * train_frac).round().astype(int)
@@ -545,24 +545,16 @@ def pipeline(args):
 
     # setup output container for modeling information
     X_train["storage_pre"] = X["storage_pre"]
-    # output = dict(
-    #     **results,
-    #     quant_scores=quant_scores,
-    #     data=dict(
-    #         X_train=X_train,
-    #         test_data=test_data,
-    #         train_data=train_data,
-    #         simmed_data=simmed_data,  # groups=groups,
-    #     ),
-    # )
-    output = {
-            "f_act_score": f_act_score,
-            "p_act_score": p_act_score,
-            "s_act_score": s_act_score,
-            "f_res_scores": train_res_scores,
-            "p_res_scores": test_res_scores,
-            "s_res_scores": simmed_res_scores
-    }
+    output = dict(
+        **results,
+        quant_scores=quant_scores,
+        data=dict(
+            X_train=X_train,
+            test_data=test_data,
+            train_data=train_data,
+            simmed_data=simmed_data,  # groups=groups,
+        ),
+    )
     # write the output dict to a pickle file
     with open((folderpath / "results.pickle").as_posix(), "wb") as f:
         pickle.dump(output, f, protocol=4)
@@ -842,6 +834,7 @@ def parse_args(arg_list=None):
         type=float,
         help="Fraction of reservoirs to include in the training set."
     )
+
     if arg_list:
         return parser.parse_args(arg_list)
     else:

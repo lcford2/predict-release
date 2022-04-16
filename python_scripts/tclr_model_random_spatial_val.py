@@ -179,6 +179,8 @@ def pipeline(args):
     meta = get_basin_meta_data(basin)
     meta = meta.drop("MCPHEE")
 
+    II()    
+    sys.exit()
     
     lower_bounds = df.groupby(df.index.get_level_values(0)).min()
     upper_bounds = df.groupby(df.index.get_level_values(0)).max()
@@ -545,16 +547,16 @@ def pipeline(args):
 
     # setup output container for modeling information
     X_train["storage_pre"] = X["storage_pre"]
-    output = dict(
-        **results,
-        quant_scores=quant_scores,
-        data=dict(
-            X_train=X_train,
-            test_data=test_data,
-            train_data=train_data,
-            simmed_data=simmed_data,  # groups=groups,
-        ),
-    )
+    # output = dict(
+    #     **results,
+    #     quant_scores=quant_scores,
+    #     data=dict(
+    #         X_train=X_train,
+    #         test_data=test_data,
+    #         train_data=train_data,
+    #         simmed_data=simmed_data,  # groups=groups,
+    #     ),
+    # )
     output = {
             "f_act_score": f_act_score,
             "p_act_score": p_act_score,
