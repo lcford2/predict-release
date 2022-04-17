@@ -7,6 +7,7 @@ import pickle
 import os
 import subprocess
 from datetime import datetime, timedelta
+from itertools import product
 from multiprocessing import cpu_count
 
 CPUS = cpu_count()
@@ -305,7 +306,7 @@ def pipeline(args):
     ROR_CUT = 7
     LRT_CUT = 60
 
-    def find_best_cuts(cuts, X_train, y_train, meta):
+    def fit_three_group_model(cuts, X_train, y_train, meta, return_beta=False):
         ROR_CUT, LRT_CUT = cuts
         ror_res = meta[meta["rts"] <= ROR_CUT].index
         lrt_res = meta[(meta["rts"] > ROR_CUT) & (meta["rts"] <= LRT_CUT)].index
@@ -349,40 +350,57 @@ def pipeline(args):
         ror_score = np.sqrt(mean_squared_error(y_train_ror, ror_train))
         lrt_score = np.sqrt(mean_squared_error(y_train_lrt, lrt_train))
         hrt_score = np.sqrt(mean_squared_error(y_train_hrt, hrt_train))
-        # NRES = nror_res + nlrt_res + nhrt_res
-        nobs_ror = X_train_ror.shape[0]
-        nobs_lrt = X_train_lrt.shape[0]
-        nobs_hrt = X_train_hrt.shape[0]
-        nobs = nobs_ror + nobs_lrt + nobs_hrt
-        # return (nror_res * ror_score + nlrt_res * lrt_score + nhrt_res * hrt_score) / NRES
-        return (nobs_ror * ror_score + nobs_lrt * lrt_score + nobs_hrt * hrt_score) / nobs
+        NRES = nror_res + nlrt_res + nhrt_res
 
-    b_low = meta["rts"].min()
-    b_high = meta["rts"].max()
-    ror_cuts = np.random.randint(low=1, high=b_high/2, size=2000)
-    lrt_cuts = np.random.randint(low=ror_cuts, high=b_high, size=2000)
+        error = (nror_res * ror_score + nlrt_res * lrt_score + nhrt_res * hrt_score) / NRES
+        if return_beta:
+            return error, ror_params, lrt_params, hrt_params
+        else:
+            return error
+
+    p_lrt_cuts = meta[meta["rts"] > 14]["rts"].sort_values()
+    p_lrt_cuts = (p_lrt_cuts - 0.1).tolist()
+    p_ror_cuts = meta[meta["rts"] <= 14]["rts"].sort_values()
+    p_ror_cuts = (p_ror_cuts - 0.1).tolist()
+
+    cuts = list(product(p_ror_cuts, p_lrt_cuts))
     X_train_trim = X_train.loc[:, X_vars]
     scores = Parallel(n_jobs=-1, verbose=11)(
-        delayed(find_best_cuts)(
+        delayed(fit_three_group_model)(
             c, X_train_trim, y_train, meta
-        ) for c in zip(ror_cuts, lrt_cuts)
+        ) for c in cuts
     )
-    # scores = [find_best_cuts(c, X_train, y_train, meta) for c in zip(ror_cuts, lrt_cuts)]
-    II()
-    sys.exit()
-    from scipy.optimize import minimize
-    best = minimize(
-        find_best_cuts,
-        [1, 200],
-        args=(
-            X_train,
-            y_train,
-            meta
-        ),
-        method="Nelder-Mead"
+    
+    best_score_idx = np.argmin(scores)
+    best_cuts = cuts[best_score_idx]
+    error, ror_params, lrt_params, hrt_params = fit_three_group_model(
+            best_cuts, X_train_trim, y_train, meta, return_beta=True
     )
-    II()
-    sys.exit()
+
+    # from scipy.optimize import minimize
+    # scores = Parallel(n_jobs=-1, verbose=11)(
+    #         delayed(minimize)(
+    #             find_best_cuts,
+    #             [10, i],
+    #             args=(
+    #                 X_train_trim, 
+    #                 y_train,
+    #                 meta
+    #             ),
+    #             method="Nelder-Mead"
+    #         ) for i in p_lrt_cuts
+    # )
+
+    # best = time_function(minimize)(
+    #     find_best_cuts,
+    #     [10, 250],
+    #     args=(
+    #         X_train_trim,
+    #         y_train,
+    #         meta
+    #     ),
+    #     method="Nelder-Mead"
+    # )
 
     ror_test = X_test_ror @ ror_params
     lrt_test = X_test_lrt @ lrt_params
@@ -395,7 +413,8 @@ def pipeline(args):
     ror_test_score = r2_score(y_test_ror, ror_test)
     lrt_test_score = r2_score(y_test_lrt, lrt_test)
     hrt_test_score = r2_score(y_test_hrt, hrt_test)
-
+    II()
+    sys.exit()
 
     make_dot = False
     if max_depth > 0:
