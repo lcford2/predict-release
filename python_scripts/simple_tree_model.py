@@ -260,10 +260,11 @@ def pipeline(args):
 
     # set exogenous variables
     X_vars = [
-        "storage_pre",
+        # "storage_pre",
+        "sto_diff",
         "release_pre",
         "inflow",
-        "storage_roll7",
+        # "storage_roll7",
         "release_roll7",
         "inflow_roll7",
         "storage_x_inflow",
@@ -287,8 +288,8 @@ def pipeline(args):
     y_test = y.loc[test_index]
 
     df["const"] = 1
-    X_test_act = df.loc[test_index, X_vars]
-    y_test_act = df.loc[test_index, "release"]
+    # X_test_act = df.loc[test_index, X_vars]
+    # y_test_act = df.loc[test_index, "release"]
 
     add_tree_vars = ["rts", "max_sto"]
     for tree_var in add_tree_vars:
@@ -296,67 +297,69 @@ def pipeline(args):
         test_values = [meta.loc[i, tree_var] for i in X_test.index.get_level_values(0)]
         X_train[tree_var] = train_values
         X_test[tree_var] = test_values
-        X_test_act[tree_var] = test_values
+        # X_test_act[tree_var] = test_values
 
     X_vars_tree = [*X_vars, *add_tree_vars]
 
     train_res = res_grouper.unique()
     test_res = train_res
 
-    ROR_CUT = 7
-    LRT_CUT = 60
-
-    def fit_three_group_model(cuts, X_train, y_train, meta, return_beta=False):
+    def get_cut_xy(cuts, X, y, meta):
         ROR_CUT, LRT_CUT = cuts
         ror_res = meta[meta["rts"] <= ROR_CUT].index
         lrt_res = meta[(meta["rts"] > ROR_CUT) & (meta["rts"] <= LRT_CUT)].index
         hrt_res = meta[meta["rts"] > LRT_CUT].index
 
-        X_train_ror = X_train.loc[X_train.index.get_level_values("site_name").isin(ror_res)]
-        # X_test_ror = X_test.loc[X_test.index.get_level_values("site_name").isin(ror_res)]
-        y_train_ror = y_train.loc[y_train.index.get_level_values("site_name").isin(ror_res)]
-        # y_test_ror = y_test.loc[y_test.index.get_level_values("site_name").isin(ror_res)]
+        X_ror = X.loc[X.index.get_level_values("site_name").isin(ror_res)]
+        y_ror = y.loc[y.index.get_level_values("site_name").isin(ror_res)]
 
-        X_train_lrt = X_train.loc[X_train.index.get_level_values("site_name").isin(lrt_res)]
-        # X_test_lrt = X_test.loc[X_test.index.get_level_values("site_name").isin(lrt_res)]
-        y_train_lrt = y_train.loc[y_train.index.get_level_values("site_name").isin(lrt_res)]
-        # y_test_lrt = y_test.loc[y_test.index.get_level_values("site_name").isin(lrt_res)]
+        X_lrt = X.loc[X.index.get_level_values("site_name").isin(lrt_res)]
+        y_lrt = y.loc[y.index.get_level_values("site_name").isin(lrt_res)]
 
-        X_train_hrt = X_train.loc[X_train.index.get_level_values("site_name").isin(hrt_res)]
-        # X_test_hrt = X_test.loc[X_test.index.get_level_values("site_name").isin(hrt_res)]
-        y_train_hrt = y_train.loc[y_train.index.get_level_values("site_name").isin(hrt_res)]
-        # y_test_hrt = y_test.loc[y_test.index.get_level_values("site_name").isin(hrt_res)]
+        X_hrt = X.loc[X.index.get_level_values("site_name").isin(hrt_res)]
+        y_hrt = y.loc[y.index.get_level_values("site_name").isin(hrt_res)]
+        return X_ror, X_lrt, X_hrt, y_ror, y_lrt, y_hrt
 
-        nror_res = y_train_ror.index.get_level_values(0).unique().size
-        nlrt_res = y_train_lrt.index.get_level_values(0).unique().size
-        nhrt_res = y_train_hrt.index.get_level_values(0).unique().size
+    def three_group_model(cuts, X, y, meta, return_beta=False, fit=True, params=None):
+        X_ror, X_lrt, X_hrt, y_ror, y_lrt, y_hrt = get_cut_xy(cuts, X, y, meta)
 
-        if nror_res < 2 or nlrt_res < 2 or nhrt_res < 2:
-            # return max(*y_train_ror, *y_train_lrt, *y_train_hrt)*2
-            return 5
+        nror_res = y_ror.index.get_level_values(0).unique().size
+        nlrt_res = y_lrt.index.get_level_values(0).unique().size
+        nhrt_res = y_hrt.index.get_level_values(0).unique().size
 
-        try:
-            ror_params = linear_model(X_train_ror, y_train_ror)
-            lrt_params = linear_model(X_train_lrt, y_train_lrt)
-            hrt_params = linear_model(X_train_hrt, y_train_hrt)
-        except np.linalg.LinAlgError:
-            # return max(*y_train_ror, *y_train_lrt, *y_train_hrt)*2
-            return 5
+        if fit:
+            if nror_res < 2 or nlrt_res < 2 or nhrt_res < 2:
+                return 5
 
-        ror_train = X_train_ror @ ror_params
-        lrt_train = X_train_lrt @ lrt_params
-        hrt_train = X_train_hrt @ hrt_params
+            try:
+                ror_params = linear_model(X_ror, y_ror)
+                lrt_params = linear_model(X_lrt, y_lrt)
+                hrt_params = linear_model(X_hrt, y_hrt)
+            except np.linalg.LinAlgError:
+                return 5
+        else:
+            ror_params, lrt_params, hrt_params = params
 
-        ror_score = np.sqrt(mean_squared_error(y_train_ror, ror_train))
-        lrt_score = np.sqrt(mean_squared_error(y_train_lrt, lrt_train))
-        hrt_score = np.sqrt(mean_squared_error(y_train_hrt, hrt_train))
+        ror = X_ror @ ror_params
+        lrt = X_lrt @ lrt_params
+        hrt = X_hrt @ hrt_params
+
+        ror_score = np.sqrt(mean_squared_error(y_ror, ror))
+        lrt_score = np.sqrt(mean_squared_error(y_lrt, lrt))
+        hrt_score = np.sqrt(mean_squared_error(y_hrt, hrt))
         NRES = nror_res + nlrt_res + nhrt_res
 
         error = (nror_res * ror_score + nlrt_res * lrt_score + nhrt_res * hrt_score) / NRES
-        if return_beta:
+
+        if return_beta and not fit:
+            return error, ror, lrt, hrt
+        elif return_beta and fit:
             return error, ror_params, lrt_params, hrt_params
         else:
             return error
+
+    X_train_trim = X_train.loc[:, X_vars]
+    X_test_trim = X_test.loc[:, X_vars]
 
     p_lrt_cuts = meta[meta["rts"] > 14]["rts"].sort_values()
     p_lrt_cuts = (p_lrt_cuts - 0.1).tolist()
@@ -364,18 +367,52 @@ def pipeline(args):
     p_ror_cuts = (p_ror_cuts - 0.1).tolist()
 
     cuts = list(product(p_ror_cuts, p_lrt_cuts))
-    X_train_trim = X_train.loc[:, X_vars]
     scores = Parallel(n_jobs=-1, verbose=11)(
-        delayed(fit_three_group_model)(
+        delayed(three_group_model)(
             c, X_train_trim, y_train, meta
         ) for c in cuts
     )
     
     best_score_idx = np.argmin(scores)
     best_cuts = cuts[best_score_idx]
-    error, ror_params, lrt_params, hrt_params = fit_three_group_model(
-            best_cuts, X_train_trim, y_train, meta, return_beta=True
+    
+    # fit the model with best cuts
+    error, ror_params, lrt_params, hrt_params = three_group_model(
+            best_cuts, X_train_trim, y_train, meta, return_beta=True, fit=True
     )
+    # use the best cuts and params to get training time series
+    error, ror_train, lrt_train, hrt_train = three_group_model(
+            best_cuts, X_train_trim, y_train, meta, return_beta=True, fit=False,
+            params=[ror_params, lrt_params, hrt_params]
+    )
+    # use the best cuts and params to get the testing time series
+    error, ror_test, lrt_test, hrt_test = three_group_model(
+            best_cuts, X_test_trim, y_test, meta, return_beta=True, fit=False,
+            params=[ror_params, lrt_params, hrt_params]
+    )
+    # use best cuts to get training and testing data sets
+    X_tr_ror, X_tr_lrt, X_tr_hrt, y_tr_ror, y_tr_lrt, y_tr_hrt = get_cut_xy(
+            best_cuts, 
+            X_train_trim, 
+            y_train, 
+            meta
+    )
+    X_te_ror, X_te_lrt, X_te_hrt, y_te_ror, y_te_lrt, y_te_hrt = get_cut_xy(
+            best_cuts,
+            X_test_trim, 
+            y_test,
+            meta
+    )
+
+    ror_train_score = r2_score(y_tr_ror, ror_train)
+    lrt_train_score = r2_score(y_tr_lrt, lrt_train)
+    hrt_train_score = r2_score(y_tr_hrt, hrt_train)
+
+    ror_test_score = r2_score(y_te_ror, ror_test)
+    lrt_test_score = r2_score(y_te_lrt, lrt_test)
+    hrt_test_score = r2_score(y_te_hrt, hrt_test)
+    II()
+    sys.exit()
 
     # from scipy.optimize import minimize
     # scores = Parallel(n_jobs=-1, verbose=11)(
@@ -401,20 +438,6 @@ def pipeline(args):
     #     ),
     #     method="Nelder-Mead"
     # )
-
-    ror_test = X_test_ror @ ror_params
-    lrt_test = X_test_lrt @ lrt_params
-    hrt_test = X_test_hrt @ hrt_params
-
-    ror_train_score = r2_score(y_train_ror, ror_train)
-    lrt_train_score = r2_score(y_train_lrt, lrt_train)
-    hrt_train_score = r2_score(y_train_hrt, hrt_train)
-
-    ror_test_score = r2_score(y_test_ror, ror_test)
-    lrt_test_score = r2_score(y_test_lrt, lrt_test)
-    hrt_test_score = r2_score(y_test_hrt, hrt_test)
-    II()
-    sys.exit()
 
     make_dot = False
     if max_depth > 0:
