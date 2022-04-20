@@ -276,6 +276,7 @@ def pipeline(args):
         X_test_act[tree_var] = test_values
 
     X_vars_tree = [*X_vars, *add_tree_vars]
+    X_vars_tree.remove("const")
 
     train_res = res_grouper.unique()
     test_res = train_res
@@ -823,7 +824,8 @@ def parse_args(arg_list=None):
     parser.add_argument(
         "-M",
         "--method",
-        default="Nelder-Mead",
+        # default="Nelder-Mead",
+        default="exhaustive",
         help="Optimization algorithm to use for fitting the TCLR model."
     )
     if arg_list:
