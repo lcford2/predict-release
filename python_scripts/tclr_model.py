@@ -276,6 +276,7 @@ def pipeline(args):
         X_test_act[tree_var] = test_values
 
     X_vars_tree = [*X_vars, *add_tree_vars]
+    feat_names = X_vars_tree.copy()
     X_vars_tree.remove("const")
 
     train_res = res_grouper.unique()
@@ -288,7 +289,7 @@ def pipeline(args):
             X_train,
             y_train,
             max_depth=max_depth,
-            feature_names=X_vars_tree,
+            feature_names=feat_names,
             response_name="release",
             tree_vars=X_vars_tree,
             reg_vars=X_vars,
@@ -717,7 +718,10 @@ def simul_reservoir(
 
         # reshape to a 2 d row vector
         if model_or_beta == "model":
-            release = model.predict(X_r[model.feats].values.reshape(1, X_r.size))[0]
+            X_r_val = X_r[model.feats].values
+            X_r_val = X_r_val.reshape(1, X_r_val.size)
+            release = model.predict(X_r_val)[0]
+            # release = model.predict(X_r[model.feats].values.reshape(1, X_r.size))[0]
         else:
             release = X_r[X_loc_vars] @ model
         

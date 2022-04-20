@@ -46,5 +46,6 @@ python_scripts/qsub_output
 # large result files
 results/basin_eval/all
 
-# slurm output
+# hpc output
 python_scripts/slurm_out
+**/*remora*/*
