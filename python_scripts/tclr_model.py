@@ -718,7 +718,10 @@ def simul_reservoir(
 
         # reshape to a 2 d row vector
         if model_or_beta == "model":
-            release = model.predict(X_r[model.feats].values.reshape(1, X_r.size))[0]
+            X_r_val = X_r[model.feats].values
+            X_r_val = X_r_val.reshape(1, X_r_val.size)
+            release = model.predict(X_r_val)[0]
+            # release = model.predict(X_r[model.feats].values.reshape(1, X_r.size))[0]
         else:
             release = X_r[X_loc_vars] @ model
         
