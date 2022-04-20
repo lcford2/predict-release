@@ -5,10 +5,10 @@ from tclr_model import parse_args, pipeline
 # arglist.extend([["all", "-d", str(i), "--assim_freq", "seasonally"] for i in range(0,11)])
 # arglist.extend([["all", "-d", str(i), "--assim_freq", "monthly"] for i in range(0,11)])
 # arglist.extend([["all", "-d", str(i), "--assim_freq", "daily"] for i in range(0,11)])
-# arglist.extend([["all", "-d", str(i)] for i in range(0,11)])
+arglist = [["all", "-d", str(i)] for i in range(1,11)]
    
-arglist = [["all", "-d", "4", "--assim", i] for i in ["daily", "weekly", "monthly", "seasonally", "semi-annually", "yearly"]]
-arglist.append(["all", "-d", "4"])
+# arglist = [["all", "-d", "4", "--assim", i] for i in ["daily", "weekly", "monthly", "seasonally", "semi-annually", "yearly"]]
+# arglist.append(["all", "-d", "4"])
 
 # train_props = [i / 100 for i in range(25, 91, 5)]
 # arglist = [["all", "-d", "3", "--train_prop", str(i)] for i in train_props]
