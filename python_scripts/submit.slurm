@@ -26,12 +26,12 @@
 
 #----------------------------------------------------
 
-#SBATCH -J tclr_model_assim           # Job name
+#SBATCH -J tclr_model_brute           # Job name
 #SBATCH -o slurm_out/%x.o%j       # Name of stdout output file
 #SBATCH -e slurm_out/%x.e%j       # Name of stderr error file
 #SBATCH -p development           # Queue (partition) name
-#SBATCH -N 7             # Total # of nodes (must be 1 for OpenMP)
-#SBATCH -n 7               # Total # of mpi tasks (should be 1 for OpenMP)
+#SBATCH -N 10             # Total # of nodes (must be 1 for OpenMP)
+#SBATCH -n 10               # Total # of mpi tasks (should be 1 for OpenMP)
 #SBATCH -c 56		   # # of cpus per task
 #SBATCH -t 02:00:00        # Run time (hh:mm:ss)
 #SBATCH --mail-type=all    # Send email at begin and end of job
