@@ -191,6 +191,9 @@ def pipeline(args):
     except KeyError:
         # basin does not have MCPHEE in it
         pass
+    drop_res = ["Causey", "Lost Creek", "Echo", "Smith & Morehouse Reservoir",
+                "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa "]
+    drop_res = [i.upper() for i in drop_res]
 
     lower_bounds = df.groupby(df.index.get_level_values(0)).min()
     upper_bounds = df.groupby(df.index.get_level_values(0)).max()
@@ -494,7 +497,7 @@ def pipeline(args):
     assim_mod = f"_{args.assim}" if args.assim else ""
     foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
     foldername = f"TD{max_depth}{assim_mod}_RT_MS_{args.method}"
-    folderpath = pathlib.Path("..", "results", "tclr_model", basin, foldername)
+    folderpath = pathlib.Path("..", "results", "tclr_model_drop_res", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
         # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
