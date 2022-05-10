@@ -1,0 +1,61 @@
+digraph tree {
+bgcolor="transparent"
+node [shape=rectangle, style="filled, rounded", color="black", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+	"0" [label="mse = 0.131
+samples = 100.0%
+rts &le; 9.553", fillcolor="#e58139"]
+	"1" [label="mse = 0.044
+samples = 23.9%
+max_sto &le; 27.446", fillcolor="#fae6d8"]
+	"2" [label="mse = 0.023
+samples = 7.1%
+                const: 0.001
+          storage_pre: 0.060
+          release_pre: 0.058
+               inflow: 1.158
+             sto_diff: 0.046
+       release_roll7: -0.017
+         inflow_roll7: 0.064
+    storage_x_inflow: -0.285", fillcolor="#ffffff"]
+	"3" [label="mse = 0.047
+samples = 16.7%
+                const: 0.001
+          storage_pre: 0.039
+          release_pre: 0.320
+               inflow: 0.678
+             sto_diff: 0.061
+        release_roll7: 0.045
+         inflow_roll7: 0.025
+    storage_x_inflow: -0.072", fillcolor="#f9e2d2"]
+	"4" [label="mse = 0.129
+samples = 76.1%
+rts &le; 16.792", fillcolor="#e5833c"]
+	"5" [label="mse = 0.097
+samples = 7.9%
+               const: -0.004
+          storage_pre: 0.029
+          release_pre: 0.602
+               inflow: 0.302
+             sto_diff: 0.056
+        release_roll7: 0.171
+        inflow_roll7: -0.054
+    storage_x_inflow: -0.038", fillcolor="#eda876"]
+	"6" [label="mse = 0.129
+samples = 68.2%
+               const: -0.000
+          storage_pre: 0.019
+          release_pre: 0.686
+              inflow: -0.037
+             sto_diff: 0.103
+        release_roll7: 0.286
+        inflow_roll7: -0.030
+     storage_x_inflow: 0.001", fillcolor="#e5823b"]
+
+	"0" -> "1" [labeldistance=2.5, labelangle=45, headlabel="True"]
+	"1" -> "2"
+	"1" -> "3"
+	"0" -> "4" [labeldistance=2.5, labelangle=-45, headlabel="False"]
+	"4" -> "5"
+	"4" -> "6"
+}

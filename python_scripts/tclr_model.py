@@ -132,6 +132,7 @@ def prep_data(df):
         "inflow_roll7",
         "storage_roll7",
         "storage_x_inflow",
+        #"sto_diff",
     ]
     X = std_data.loc[:, columns]
     y = std_data["release"]
@@ -195,6 +196,8 @@ def pipeline(args):
                 "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa "]
     drop_res = [i.upper() for i in drop_res]
 
+    meta = meta.drop(drop_res)
+
     lower_bounds = df.groupby(df.index.get_level_values(0)).min()
     upper_bounds = df.groupby(df.index.get_level_values(0)).max()
 
@@ -222,7 +225,9 @@ def pipeline(args):
     # need to set it again after we trimmed the data set
     res_grouper = df.index.get_level_values(0)
 
+#    df["sto_diff"] = df["storage_pre"] - df["storage_roll7"]
     X, y, means, std = prep_data(df)
+    df["sto_diff"] = X["storage_pre"] - X["storage_roll7"]
     X["sto_diff"] = X["storage_pre"] - X["storage_roll7"]
     X["const"] = 1
 
@@ -243,7 +248,8 @@ def pipeline(args):
         "storage_pre",
         "release_pre",
         "inflow",
-        "storage_roll7",
+        # "storage_roll7",
+        "sto_diff",
         "release_roll7",
         "inflow_roll7",
         "storage_x_inflow",
@@ -466,7 +472,14 @@ def pipeline(args):
 
 # print(test_res_scores.to_markdown(floatfmt="0.3f"))
 # print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
-    print(f"{simmed_res_scores['NSE'].mean():.3f}", f"{simmed_res_scores['NSE'].std():.3f}")
+    print(
+        f"{simmed_res_scores['NSE'].mean():.3f}",
+        f"{simmed_res_scores['NSE'].median():.3f}",
+        f"{simmed_res_scores['NSE'].std():.3f}"
+    )
+    II()
+    sys.exit()
+    
 
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
     quant_scores = pd.DataFrame(index=[0, 1, 2], columns=["NSE", "RMSE"])
@@ -497,7 +510,7 @@ def pipeline(args):
     assim_mod = f"_{args.assim}" if args.assim else ""
     foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
     foldername = f"TD{max_depth}{assim_mod}_RT_MS_{args.method}"
-    folderpath = pathlib.Path("..", "results", "tclr_model_drop_res", basin, foldername)
+    folderpath = pathlib.Path("..", "results", "tclr_model_drop_res_sto_diff", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
         # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
@@ -613,12 +626,14 @@ def simulate_tclr_model(
     track_df.loc[
         init_rolling.index, ["storage_roll7", "release_roll7"]
     ] = init_rolling.values
+    
+    X_act["storage_roll7"] = track_df["storage_roll7"]
 
     # since all reservoirs have different temporal spans
     # we have to iterate through each reservoir independently
     from joblib import Parallel, delayed
    
-    parallel = True 
+    parallel = True
     if parallel:
         outputdfs = Parallel(n_jobs=-1, verbose=11)(
             delayed(simul_reservoir)(
@@ -657,6 +672,7 @@ def simulate_tclr_model(
                     X_test
                 )
             )
+            
     return pd.concat(outputdfs)
 
 
@@ -699,7 +715,11 @@ def simul_reservoir(
     if "const" in reg_vars:
         cindex = reg_vars.index("const")
         reg_vars = reg_vars[:cindex] + reg_vars[cindex + 1:]
-  
+        
+    roll_storage = pd.Series(index=rdf.index, dtype=np.float64)
+    roll_storage.loc[idx[res, dates[0]]] = rdf.loc[
+        idx[res, dates[0]], "storage_roll7"]
+
     for date in dates:
         # get values for today
         X_r = rdf.loc[idx[res, date], X_loc_vars]
@@ -711,8 +731,17 @@ def simul_reservoir(
             res_vars = True
         except KeyError:
             res_vars = False
+        # add the difference term
+        # X_r["sto_diff"] = X_r["storage_pre"] - roll_storage.loc[idx[res, date]]
+
         # standardize the values
-        X_r = (X_r - means.loc[res, reg_vars]) / std.loc[res, reg_vars]
+        reg_vars_nsd = reg_vars.copy()
+        reg_vars_nsd.remove("sto_diff")
+        X_r = (X_r - means.loc[res, reg_vars_nsd]) / std.loc[res, reg_vars_nsd]
+        X_r["sto_diff"] = X_r["storage_pre"] - (
+            (rdf.loc[idx[res, date], "storage_roll7"] - 
+             means.loc[res, "storage_roll7"]) / std.loc[res, "storage_roll7"])
+        
         # and the constant
         X_r["const"] = 1
         if res_vars:
@@ -778,12 +807,17 @@ def simul_reservoir(
                 rdf.loc[idx[res, tomorrow], "storage_pre"] = storage
                 rdf.loc[idx[res, tomorrow], "release_pre"] = release_act
             # here we already updated the _pre values we can use the same logic to get rolling values
+            
             rdf.loc[idx[res, tomorrow], "storage_roll7"] = rdf.loc[
+                idx[res, prev_seven], "storage_pre"
+            ].mean()
+            roll_storage.loc[idx[res, tomorrow]] = rdf.loc[
                 idx[res, prev_seven], "storage_pre"
             ].mean()
             rdf.loc[idx[res, tomorrow], "release_roll7"] = rdf.loc[
                 idx[res, prev_seven], "release_pre"
             ].mean()
+        
 
     return rdf
 
