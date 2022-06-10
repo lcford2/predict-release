@@ -4,6 +4,8 @@ import pathlib
 import json
 from datetime import datetime
 import calendar
+import os
+os.environ["PROJ_LIB"] = r"C:\\Users\\lcford2\AppData\\Local\\Continuum\\anaconda3\\envs\\sry-env\\Library\\share"
 
 import numpy as np
 import pandas as pd
