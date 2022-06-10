@@ -581,6 +581,8 @@ def make_map(ax=None, coords=None, other_bound=None):
             -127.441406, 24.607069, -66.093750, 49.382373
         )
     m = Basemap(
+        # projection="merc",
+        epsg=3857,
         resolution="c",
         llcrnrlon=west,
         llcrnrlat=south,
@@ -594,16 +596,33 @@ def make_map(ax=None, coords=None, other_bound=None):
     mbound = m.drawmapboundary(fill_color="white")
     states = m.readshapefile(states_path.as_posix(), "states")
 
+    rivers = [
+        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusLC_trimmed_flowlines_noz").as_posix(),
+        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusUC_trimmed_flowlines_noz").as_posix(),
+        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusTN_trimmed_flowlines_noz").as_posix(),
+        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusML_trimmed_flowlines_noz").as_posix(),
+        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusMU_trimmed_flowlines_noz").as_posix(),
+        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusPN_trimmed_flowlines_noz").as_posix()
+    ]
+
+    for i, r in enumerate(rivers):
+        river_lines = m.readshapefile(r, f"river_{i}", color="b", linewidth=0.5, default_encoding="latin-1")
+        river_lines[4].set_alpha(1.0)
+
     if other_bound:
-        for b in other_bound:
+        for b, c in other_bound:
             bound = m.readshapefile(
                 b,
                 "bound",
-                color="#FF3BC6"
+                # color="#FF3BC6"
+                color=c
             )
-            bound[4].set_facecolor("#FF3BC6")
-            bound[4].set_alpha(0.4)
+            # bound[4].set_facecolor("#FF3BC6")
+            bound[4].set_facecolor(c)
+            bound[4].set_alpha(0.5)
             bound[4].set_zorder(2)
+
+    return m
 
 
 def plot_res_locs():
@@ -614,9 +633,16 @@ def plot_res_locs():
                 "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa "]
     drop_res = [i.upper() for i in drop_res]
     res_locs = res_locs.drop(drop_res)
-
+    
     with open("../geo_data/extents.json", "r") as f:
         coords = json.load(f)
+    color_map = sns.color_palette("Set2")
+    basins = [((GIS_DIR/"columbia_shp"/"Shape"/"WBDHU2").as_posix(), color_map[0]),
+              ((GIS_DIR/"missouri_shp"/"Shape"/"WBDHU2").as_posix(), color_map[1]),
+            #   (GIS_DIR/"lowercol_shp"/"Shape"/"WBDHU2").as_posix(),
+            #   (GIS_DIR/"uppercol_shp"/"Shape"/"WBDHU2").as_posix(),
+              ((GIS_DIR/"colorado_shp"/"Shape"/"WBDHU2").as_posix(), color_map[2]),
+              ((GIS_DIR/"tennessee_shp"/"Shape"/"WBDHU2").as_posix(), color_map[3])]
 
     basins = [(GIS_DIR/"columbia_shp"/"Shape"/"WBDHU2").as_posix(),
               (GIS_DIR/"missouri_shp"/"Shape"/"WBDHU2").as_posix(),
@@ -625,7 +651,57 @@ def plot_res_locs():
               (GIS_DIR/"tennessee_shp"/"Shape"/"WBDHU2").as_posix()]
 
     fig, ax = plt.subplots(1, 1)
-    make_map(ax, other_bound=basins)
+    m = make_map(ax, other_bound=basins)
+    x, y = m(res_locs.long, res_locs.lat)
+    max_size = 600
+    min_size = 50
+    size_var = "max_sto"
+    max_value = res_locs[size_var].max()
+    min_value = res_locs[size_var].min()
+    
+    ratio = (max_size - min_size) / (max_value - min_value)
+    sizes = [min_size + i * ratio for i in res_locs[size_var]]
+    markers = ax.scatter(x, y, marker="v", edgecolor="k", s=sizes, zorder=4)
+    marker_color = markers.get_facecolor()
+    
+    river_line = mlines.Line2D(
+        [], [], color="b", alpha=1, linewidth=0.5
+    )
+    river_basins = [
+        mpatch.Patch(facecolor=color_map[i], alpha=0.5) for i in range(4)
+    ]
+    size_legend_sizes = np.linspace(min_size, max_size, 4)
+    # size_legend_labels = [(i-min_size) / ratio for i in size_legend_sizes]
+    size_legend_labels = np.linspace(min_value, max_value, 4)
+
+    size_markers = [
+        plt.scatter([], [], s=i, edgecolors="k", c=marker_color, marker="v")
+        for i in size_legend_sizes
+    ]
+
+    size_legend = plt.legend(
+        size_markers,
+        [
+            f"{round(size_legend_labels[0]*1000, -2):.0f}",
+            *[f"{round(i / 1000, 0):,.0f} million" for i in size_legend_labels[1:]]
+        ],
+        title="Maximum Storage [acre-feet]",
+        loc="lower left",
+        ncol=4,
+    )
+    hydro_legend = plt.legend(
+        [river_line, *river_basins],
+        [
+            "Major River Flowlines",
+            "Columbia HUC2",
+            "Missouri HUC2",
+            "Colorado HUC2",
+            "Tennessee HUC2",
+        ],
+        loc="lower right"
+    )
+    ax.add_artist(size_legend)
+    ax.add_artist(hydro_legend)
 
     ax.scatter(res_locs["long"], res_locs["lat"], marker="v", s=120, zorder=4)
     plt.show()
