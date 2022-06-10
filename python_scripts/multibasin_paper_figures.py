@@ -1,3 +1,4 @@
+import socket
 import pickle
 import pathlib
 import json
@@ -18,7 +19,11 @@ from IPython import embed as II
 from simulate_reservoir import simulate_storage
 
 
-GIS_DIR = pathlib.Path("../../../data/GIS")
+hostname = socket.gethostname()
+if hostname == "CCEE-DT-094":
+    GIS_DIR = pathlib.Path("G:/My Drive/PHD/GIS")
+else:
+    GIS_DIR = pathlib.Path("~/data/GIS")
 
 def load_pickle(file):
     with open(file, "rb") as f:
