@@ -578,7 +578,7 @@ def make_map(ax=None, coords=None, other_bound=None):
         west, south, east, north = coords
     else:
         west, south, east, north = (
-            -127.441406, 24.607069, -66.093750, 49.382373
+            -127.441406, 24.207069, -66.093750, 49.382373
         )
     m = Basemap(
         # projection="merc",
@@ -589,6 +589,33 @@ def make_map(ax=None, coords=None, other_bound=None):
         urcrnrlon=east,
         urcrnrlat=north,
         ax=ax
+    )
+    parallels = np.arange(0.0, 81, 10.0)
+    meridians = np.arange(10.0, 351.0, 20.0)
+    pvals = m.drawparallels(parallels, linewidth=0.0, labels=[1,1,1,1])
+    mvals = m.drawmeridians(meridians, linewidth=0.0, labels=[1,1,1,1])
+    xticks = [i[1][0].get_position()[0] for i in mvals.values()]
+    yticks = []
+    for i in pvals.values():
+        try:
+            yticks.append(i[1][0].get_position()[1])
+        except IndexError:
+            pass
+
+    ax.set_xticks(xticks) 
+    ax.set_yticks(yticks)
+    ax.tick_params(
+        axis="both",
+        direction="in",
+        left=True,
+        right=True,
+        top=True,
+        bottom=True,
+        labelleft=False,
+        labelright=False,
+        labeltop=False,
+        labelbottom=False,
+        zorder=10
     )
 
     states_path = GIS_DIR / "cb_2017_us_state_500k"
