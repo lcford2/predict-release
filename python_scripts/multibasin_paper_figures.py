@@ -487,7 +487,7 @@ def plot_variable_correlations_new():
 
     inf_corr = {}
     inflow = df.loc[:, ["release", "inflow"]]
-    lags = range(-14, 15)
+    lags = range(0, 15)
     for i in lags:
         inflow[i] = inflow["inflow"].groupby("site_name").shift(i)
 
@@ -499,11 +499,13 @@ def plot_variable_correlations_new():
 
     rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
     rename = {"upper_col": "colorado", "lower_col": "colorado", "pnw": "columbia", "tva": "tennessee"}
+    rbasins = rbasins.replace(rename)
+    rbasins = rbasins.str.capitalize()
     inf_corr["basin"] = rbasins
-    inf_corr["basin"] = inf_corr["basin"].replace(rename)
-    inf_corr["basin"] = inf_corr["basin"].str.capitalize()
+    # inf_corr["basin"] = inf_corr["basin"].replace(rename)
+    # inf_corr["basin"] = inf_corr["basin"].str.capitalize()
 
-    # inf_corr = inf_corr.melt(id_vars=["basin"], var_name="Lag", value_name="Correlation")
+    inf_corr = inf_corr.melt(id_vars=["basin"], var_name="Lag", value_name="Correlation")
 
     st = df.loc[:,["release", "storage_pre", "storage_roll7", "storage_x_inflow"]]
     st["sto_diff"] = df["storage_pre"] - df["storage_roll7"]
@@ -515,12 +517,10 @@ def plot_variable_correlations_new():
     st = st[~st.index.get_level_values(0).isin(drop_res)]
     stcorr = st.groupby("site_name").corr()["release"].unstack()
     stcorr = stcorr.drop("release", axis=1)
-    II()
-    sys.exit()
 
     sns.set_context("notebook")
     fig = plt.figure()
-    gs = GS.GridSpec(2, 1, height_ratios=[3, 1])
+    gs = GS.GridSpec(2, 1, height_ratios=[1, 1])
     axes = [
         fig.add_subplot(gs[0]),
         fig.add_subplot(gs[1])
@@ -539,15 +539,20 @@ def plot_variable_correlations_new():
         whis=(0.05, 0.95),
         ax=ax
     )
-    axes[0].legend(loc="best", ncol=4)
+    axes[0].legend(loc="lower right", ncol=4)
+
+    stcorr["basin"] = rbasins
 
     sns.boxplot(
-        data=stcorr.melt(),
+        data=stcorr.melt(id_vars=["basin"]),
         y="variable",
         x="value",
+        hue="basin",
+        palette="tab10",
         ax=axes[-1],
         whis=(0.05, 0.95)
     )
+    axes[1].legend(loc="lower right", ncol=4)
 
     axes[0].set_ylabel("$r(R_t, I_L)$")
     axes[0].set_xlabel("Lag $L$ [days]")
