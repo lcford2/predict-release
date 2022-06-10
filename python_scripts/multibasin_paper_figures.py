@@ -671,11 +671,6 @@ def plot_res_locs():
               ((GIS_DIR/"colorado_shp"/"Shape"/"WBDHU2").as_posix(), color_map[2]),
               ((GIS_DIR/"tennessee_shp"/"Shape"/"WBDHU2").as_posix(), color_map[3])]
 
-    basins = [(GIS_DIR/"columbia_shp"/"Shape"/"WBDHU2").as_posix(),
-              (GIS_DIR/"missouri_shp"/"Shape"/"WBDHU2").as_posix(),
-              (GIS_DIR/"lowercol_shp"/"Shape"/"WBDHU2").as_posix(),
-              (GIS_DIR/"uppercol_shp"/"Shape"/"WBDHU2").as_posix(),
-              (GIS_DIR/"tennessee_shp"/"Shape"/"WBDHU2").as_posix()]
 
     fig, ax = plt.subplots(1, 1)
     m = make_map(ax, other_bound=basins)
@@ -730,7 +725,6 @@ def plot_res_locs():
     ax.add_artist(size_legend)
     ax.add_artist(hydro_legend)
 
-    ax.scatter(res_locs["long"], res_locs["lat"], marker="v", s=120, zorder=4)
     plt.show()
 
 def plot_res_perf_map(results):
