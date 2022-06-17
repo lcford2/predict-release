@@ -518,8 +518,9 @@ def plot_variable_correlations_new():
     stcorr = st.groupby("site_name").corr()["release"].unstack()
     stcorr = stcorr.drop("release", axis=1)
 
-    sns.set_context("notebook")
+    # sns.set_context("notebook")
     fig = plt.figure()
+    fig.set_alpha(0.0)
     gs = GS.GridSpec(2, 1, height_ratios=[1, 1])
     axes = [
         fig.add_subplot(gs[0]),
@@ -542,6 +543,8 @@ def plot_variable_correlations_new():
     axes[0].legend(loc="lower right", ncol=4)
 
     stcorr["basin"] = rbasins
+    II()
+    sys.exit()
 
     sns.boxplot(
         data=stcorr.melt(id_vars=["basin"]),
@@ -552,7 +555,7 @@ def plot_variable_correlations_new():
         ax=axes[-1],
         whis=(0.05, 0.95)
     )
-    axes[1].legend(loc="lower right", ncol=4)
+    axes[1].legend(loc="upper left", ncol=2)
 
     axes[0].set_ylabel("$r(R_t, I_L)$")
     axes[0].set_xlabel("Lag $L$ [days]")
@@ -665,6 +668,8 @@ def plot_res_locs():
                 "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa "]
     drop_res = [i.upper() for i in drop_res]
     res_locs = res_locs.drop(drop_res)
+    II()
+    sys.exit()
     
     with open("../geo_data/extents.json", "r") as f:
         coords = json.load(f)
@@ -1157,19 +1162,22 @@ def plot_perf_vs_datalength(results):
 
 
 if __name__ == "__main__":
-    plt.style.use("seaborn")
-    sns.set_context("talk")
+    # plt.style.use("seaborn")
+    plt.style.use(["science", "nature"])
+    sns.set_context("notebook", font_scale=1.4)
     results = read_results()
     # plot_performance_boxplots(results)
-    plot_storage_performance_boxplots(results)
+    # plot_storage_performance_boxplots(results)
     # plot_third_performance_boxplots(results)
     # plot_res_perf_map(results)
-    # plot_res_locs()
-    # plot_variable_correlations_new()
     # plot_flood_analysis(results)
     # plot_overall_ecdf(results)
     # plot_seasonal_performance(results)
     # plot_upper_lower_perf(results)
     # plot_constinency_analysis(results)
     # plot_perf_vs_datalength(results)
-    # II()
+
+    #* FIGURE 1
+    # plot_res_locs()
+    #* FIGURE 2
+    plot_variable_correlations_new()
