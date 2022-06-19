@@ -5,7 +5,11 @@ import json
 from datetime import datetime
 import calendar
 import os
-os.environ["PROJ_LIB"] = r"C:\\Users\\lcford2\AppData\\Local\\Continuum\\anaconda3\\envs\\sry-env\\Library\\share"
+hostname = socket.gethostname()
+if hostname == "CCEE-DT-094":
+    os.environ["PROJ_LIB"] = r"C:\\Users\\lcford2\\AppData\\Local\\Continuum\\anaconda3\\envs\\sry-env\\Library\\share"
+elif hostname == "inspiron-laptop":
+    os.environ["PROJ_LIB"] = r"C:\\Users\\lcford\\miniconda3\\envs\\sry-env\\Library\\share"
 
 import numpy as np
 import pandas as pd
@@ -21,7 +25,6 @@ from IPython import embed as II
 from simulate_reservoir import simulate_storage
 
 
-hostname = socket.gethostname()
 if hostname == "CCEE-DT-094":
     GIS_DIR = pathlib.Path("G:/My Drive/PHD/GIS")
 else:
@@ -165,9 +168,21 @@ def plot_performance_boxplots(results):
         {"Train": train_score, "Test": test_score, "Simulation": simul_score},
         "Data Set"
     )
+    from tclr_model import get_basin_meta_data
+    meta = get_basin_meta_data("all")
+    scores = scores.set_index("site_name")
+    scores[["rts", "max_sto"]] = meta[["rts", "max_sto"]]
 
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    rename = {"upper_col": "colorado", "lower_col": "colorado", "pnw": "columbia", "tva": "tennessee"}
+    rbasins = rbasins.replace(rename)
+    rbasins = rbasins.str.capitalize()
+
+    scores["basin"] = rbasins
     # scores = combine_dict_to_df({"Simulation": simul_score}, "Data Set")
-    # II()
+    II()
+    import sys
+    sys.exit()
 
     fg = sns.catplot(
         data=scores,
@@ -1166,7 +1181,6 @@ if __name__ == "__main__":
     plt.style.use(["science", "nature"])
     sns.set_context("notebook", font_scale=1.4)
     results = read_results()
-    # plot_performance_boxplots(results)
     # plot_storage_performance_boxplots(results)
     # plot_third_performance_boxplots(results)
     # plot_res_perf_map(results)
@@ -1180,4 +1194,6 @@ if __name__ == "__main__":
     #* FIGURE 1
     # plot_res_locs()
     #* FIGURE 2
-    plot_variable_correlations_new()
+    # plot_variable_correlations_new()
+    #* FIGURE 3
+    plot_performance_boxplots(results)
