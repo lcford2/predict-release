@@ -1,4 +1,4 @@
-name: sry-env
+name: sry-env-2
 channels:
   - plotly
   - file:///opt/intel/oneapi/conda_channel
@@ -332,4 +332,3 @@ dependencies:
     - scaleogram==0.9.5
     - treelib==1.6.1
     - xgboost==1.5.0
-prefix: /home/lford/miniconda3/envs/sry-env
