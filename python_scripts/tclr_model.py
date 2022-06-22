@@ -304,7 +304,7 @@ def pipeline(args):
             reg_vars=X_vars,
             njobs=njobs,
             method=args.method,
-            n_disc_samples=10
+            n_disc_samples=1000
         )
 
         time_function(model.fit)()
@@ -337,7 +337,6 @@ def pipeline(args):
             pd.Series(preds, index=X_test.index),
             X_test
         )
-        II()
         simuled = simuled[["release", "storage"]].dropna()
     else:
         X_train = X_train[X_vars]
@@ -503,11 +502,11 @@ def pipeline(args):
     )
 
     # setup output parameters
-    foldername = "tclr_model"
-    int_mod = "" if month_intercepts else "_no_ints"
-    all_mod = "_all_res" if use_all else ""
+    # foldername = "tclr_model"
+    # int_mod = "" if month_intercepts else "_no_ints"
+    # all_mod = "_all_res" if use_all else ""
+    # foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
     assim_mod = f"_{args.assim}" if args.assim else ""
-    foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
     foldername = f"TD{max_depth}{assim_mod}_RT_MS_{args.method}"
     folderpath = pathlib.Path("..", "results", "tclr_model_drop_res_sto_diff_pers_testing", basin, foldername)
     # check if the directory exists and handle it
@@ -531,6 +530,7 @@ def pipeline(args):
     # rotate_tree = True if max_depth > 3 else e
     if make_dot:
         model.to_graphviz(folderpath / "tree.dot")
+    model.save_model((folderpath / "model.pickle").as_posix())
 
     # setup output container for modeling information
     X_train["storage_pre"] = X["storage_pre"]
