@@ -303,7 +303,8 @@ def pipeline(args):
             tree_vars=X_vars_tree,
             reg_vars=X_vars,
             njobs=njobs,
-            method=args.method
+            method=args.method,
+            n_disc_samples=10
         )
 
         time_function(model.fit)()
@@ -336,6 +337,7 @@ def pipeline(args):
             pd.Series(preds, index=X_test.index),
             X_test
         )
+        II()
         simuled = simuled[["release", "storage"]].dropna()
     else:
         X_train = X_train[X_vars]
@@ -507,7 +509,7 @@ def pipeline(args):
     assim_mod = f"_{args.assim}" if args.assim else ""
     foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
     foldername = f"TD{max_depth}{assim_mod}_RT_MS_{args.method}"
-    folderpath = pathlib.Path("..", "results", "tclr_model_drop_res_sto_diff_pers", basin, foldername)
+    folderpath = pathlib.Path("..", "results", "tclr_model_drop_res_sto_diff_pers_testing", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
         # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
@@ -651,7 +653,7 @@ def simulate_tclr_model(
         )
     else:
         outputdfs = []
-        for res in resers:
+        for res in resers[:1]:
             outputdfs.append(
                 simul_reservoir(
                     res,
@@ -669,7 +671,6 @@ def simulate_tclr_model(
                     X_test
                 )
             )
-            
     return pd.concat(outputdfs)
 
 
@@ -717,9 +718,11 @@ def simul_reservoir(
     roll_storage.loc[idx[res, dates[0]]] = rdf.loc[
         idx[res, dates[0]], "storage_roll7"]
 
+    counter = 0
     for date in dates:
+        loc = idx[res, date]
         # get values for today
-        X_r = rdf.loc[idx[res, date], X_loc_vars]
+        X_r = rdf.loc[loc, X_loc_vars]
         # add the interaction term
         X_r["storage_x_inflow"] = X_r["storage_pre"] * X_r["inflow"]
         # grab actual rt and max_sto values if they exist
@@ -729,14 +732,14 @@ def simul_reservoir(
         except KeyError:
             res_vars = False
         # add the difference term
-        # X_r["sto_diff"] = X_r["storage_pre"] - roll_storage.loc[idx[res, date]]
+        # X_r["sto_diff"] = X_r["storage_pre"] - roll_storage.loc[loc]
 
         # standardize the values
         reg_vars_nsd = reg_vars.copy()
         reg_vars_nsd.remove("sto_diff")
         X_r = (X_r - means.loc[res, reg_vars_nsd]) / std.loc[res, reg_vars_nsd]
         X_r["sto_diff"] = X_r["storage_pre"] - (
-            (rdf.loc[idx[res, date], "storage_roll7"] - 
+            (rdf.loc[loc, "storage_roll7"] -
              means.loc[res, "storage_roll7"]) / std.loc[res, "storage_roll7"])
         
         # and the constant
@@ -754,8 +757,8 @@ def simul_reservoir(
         else:
             release = X_r[X_loc_vars] @ model
         
-        # if abs(release - preds.loc[idx[res, date]]) > 0.000001:
-        #     print(res, date, release, preds.loc[idx[res, date]])
+        # if abs(release - preds.loc[loc]) > 0.000001:
+        #     print(res, date, release, preds.loc[loc])
         # if date - np.timedelta64(7, "D"):
         #     sys.exit()
         # else:
@@ -764,8 +767,8 @@ def simul_reservoir(
         release_act = release * std.loc[res, "release"] + means.loc[res, "release"]
         # calculate storage from mass balance
         storage = (
-            rdf.loc[idx[res, date], "storage_pre"]
-            + rdf.loc[idx[res, date], "inflow"]
+            rdf.loc[loc, "storage_pre"]
+            + rdf.loc[loc, "inflow"]
             - release_act
         )
         # keep storage and release within bounds
@@ -780,8 +783,8 @@ def simul_reservoir(
             release_act = lower_bounds.loc[res, "release"]
 
         # store calculated values
-        rdf.loc[idx[res, date], "storage"] = storage
-        rdf.loc[idx[res, date], "release"] = release_act
+        rdf.loc[loc, "storage"] = storage
+        rdf.loc[loc, "release"] = release_act
 
         # if we are not at the last day, store values needed for tomorrow
         if date != end_date:
@@ -814,7 +817,15 @@ def simul_reservoir(
             rdf.loc[idx[res, tomorrow], "release_roll7"] = rdf.loc[
                 idx[res, prev_seven], "release_pre"
             ].mean()
-        
+            rdf.loc[idx[res, tomorrow], :] = rdf.loc[idx[res, tomorrow], :]
+        # if counter < 10:
+        #     II()
+        #     counter += 1
+        # else:
+        #     import sys
+        #     sys.exit()
+        # print(rdf.loc[loc, :].T)
+        rdf.loc[loc, :] = rdf.loc[loc, :]
 
     return rdf
 
