@@ -45,6 +45,7 @@ python_scripts/qsub_output
 
 # large result files
 results/basin_eval/all
+results/**/model.pickle
 
 # hpc output
 python_scripts/slurm_out
