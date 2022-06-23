@@ -530,7 +530,8 @@ def pipeline(args):
     # rotate_tree = True if max_depth > 3 else e
     if make_dot:
         model.to_graphviz(folderpath / "tree.dot")
-    model.save_model((folderpath / "model.pickle").as_posix())
+    if max_depth > 0:
+        model.save_model((folderpath / "model.pickle").as_posix())
 
     # setup output container for modeling information
     X_train["storage_pre"] = X["storage_pre"]
@@ -554,8 +555,9 @@ def pipeline(args):
             "train_data": train_data,
             "test_data": test_data,
             "simmed_data": simmed_data,
-            "groups": groups
     }
+    if max_depth > 0:
+        output["groups"] = groups
     # write the output dict to a pickle file
     with open((folderpath / "results.pickle").as_posix(), "wb") as f:
         pickle.dump(output, f, protocol=4)
