@@ -27,7 +27,7 @@ from simulate_reservoir import simulate_storage
 
 if hostname == "CCEE-DT-094":
     GIS_DIR = pathlib.Path("G:/My Drive/PHD/GIS")
-else:
+elif hostname == "inspiron13":
     GIS_DIR = pathlib.Path("~/data/GIS")
 
 def load_pickle(file):
@@ -40,14 +40,18 @@ def write_pickle(obj, file):
         pickle.dump(obj, f)
 
 def read_results():
+    path_format = "../results/tclr_model_drop_res_sto_diff_pers_testing/all/TD{}_RT_MS_exhaustive/results.pickle".format
     models = {
-        "TD0": "../results/tclr_model_drop_res_sto_diff/all/TD0_RT_MS_exhaustive/results.pickle",
-        "TD1": "../results/tclr_model_drop_res_sto_diff/all/TD1_RT_MS_exhaustive/results.pickle",
-        "TD2": "../results/tclr_model_drop_res_sto_diff/all/TD2_RT_MS_exhaustive/results.pickle",
-        "TD3": "../results/tclr_model_drop_res_sto_diff/all/TD3_RT_MS_exhaustive/results.pickle",
-        "TD4": "../results/tclr_model_drop_res_sto_diff/all/TD4_RT_MS_exhaustive/results.pickle",
-        "TD5": "../results/tclr_model_drop_res_sto_diff/all/TD5_RT_MS_exhaustive/results.pickle",
-        "TD6": "../results/tclr_model_drop_res_sto_diff/all/TD6_RT_MS_exhaustive/results.pickle",
+        # "TD0": path_format(0),
+        "TD1": path_format(1),
+        "TD2": path_format(2),
+        "TD3": path_format(3),
+        "TD4": path_format(4),
+        "TD5": path_format(5),
+        "TD6": path_format(6),
+        "TD7": path_format(7),
+        "TD8": path_format(8),
+        "TD9": path_format(9),
         # "TRM": "../results/three_reg_model/all/stovars_three_model/results.pickle"
     }
 
@@ -152,7 +156,15 @@ def make_bin(df, res=True):
     return df
 
 def plot_performance_boxplots(results):
-    metric = "nRMSE"
+    # calculating the mean and std of the performance across basins
+    # rank each of these values (1 being best and n being worst)
+    # calculate per depth means of these for the mean and the std
+    # add the two together and take the smallest number as the best model for that metric
+    # nRMSE - TD2 is best
+    # NSE - TD3 is best
+    # MASE - TD2 and TD3 are tied
+    # RMSE - TD4 is best
+    metric = "NSE"
     train = select_results(results, "train_data")
     test = select_results(results, "test_data")
     simul = select_results(results, "simmed_data")
@@ -180,9 +192,16 @@ def plot_performance_boxplots(results):
 
     scores["basin"] = rbasins
     # scores = combine_dict_to_df({"Simulation": simul_score}, "Data Set")
-    II()
-    import sys
-    sys.exit()
+    sim_scores = scores[scores["Data Set"] == "Simulation"]
+    ss_mean = sim_scores.groupby(["basin", "Model"]).mean()[metric]
+    ss_std = sim_scores.groupby(["basin", "Model"]).std()[metric]
+    if metric == "NSE":
+        ascending = False
+    else:
+        ascending = True
+    ss_mean_rank = ss_mean.unstack().T.rank(ascending=ascending)
+    ss_std_rank = ss_std.unstack().T.rank(ascending=ascending)
+    perf = ss_mean_rank.mean(axis=1) + ss_std_rank.mean(axis=1)
 
     fg = sns.catplot(
         data=scores,
@@ -205,7 +224,11 @@ def plot_storage_performance_boxplots(results):
     from tclr_model import read_basin_data
     df = read_basin_data("all")
 
-    metric = "nRMSE"
+    # nRMSE - TD4 is best
+    # NSE - TD5 is best
+    # MASE - TD3 is best
+    # RMSE - TD1 and TD2 are tied
+    metric = "MASE"
     train = select_results(results, "train_data")
     test = select_results(results, "test_data")
     simul = select_results(results, "simmed_data")
@@ -305,6 +328,31 @@ def plot_storage_performance_boxplots(results):
     # )
 
     # scores = combine_dict_to_df({"Simulation": simul_score}, "Data Set")
+    from tclr_model import get_basin_meta_data
+    meta = get_basin_meta_data("all")
+    scores = simul_score.set_index("site_name")
+    scores[["rts", "max_sto"]] = meta[["rts", "max_sto"]]
+
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    rename = {"upper_col": "colorado", "lower_col": "colorado", "pnw": "columbia", "tva": "tennessee"}
+    rbasins = rbasins.replace(rename)
+    rbasins = rbasins.str.capitalize()
+
+    scores["basin"] = rbasins
+    # scores = combine_dict_to_df({"Simulation": simul_score}, "Data Set")
+    # sim_scores = scores[scores["Data Set"] == "Simulation"]
+    ss_mean = scores.groupby(["basin", "Model"]).mean()[metric]
+    ss_std = scores.groupby(["basin", "Model"]).std()[metric]
+    if metric == "NSE":
+        ascending = False
+    else:
+        ascending = True
+    ss_mean_rank = ss_mean.unstack().T.rank(ascending=ascending)
+    ss_std_rank = ss_std.unstack().T.rank(ascending=ascending)
+    perf = ss_mean_rank.mean(axis=1) + ss_std_rank.mean(axis=1)
+    II()
+    import sys
+    sys.exit()
 
     fg = sns.catplot(
         data=simul_score,
@@ -1177,8 +1225,8 @@ def plot_perf_vs_datalength(results):
 
 
 if __name__ == "__main__":
-    # plt.style.use("seaborn")
-    plt.style.use(["science", "nature"])
+    plt.style.use("seaborn")
+    # plt.style.use(["science", "nature"])
     sns.set_context("notebook", font_scale=1.4)
     results = read_results()
     # plot_storage_performance_boxplots(results)
@@ -1197,3 +1245,4 @@ if __name__ == "__main__":
     # plot_variable_correlations_new()
     #* FIGURE 3
     plot_performance_boxplots(results)
+    # plot_storage_performance_boxplots(results)
