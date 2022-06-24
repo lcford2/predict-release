@@ -508,7 +508,7 @@ def pipeline(args):
     # foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
     assim_mod = f"_{args.assim}" if args.assim else ""
     foldername = f"TD{max_depth}{assim_mod}_RT_MS_{args.method}"
-    folderpath = pathlib.Path("..", "results", "tclr_model_drop_res_sto_diff_pers_testing", basin, foldername)
+    folderpath = pathlib.Path("..", "results", "tclr_model_drop_res_sto_diff_pers_testing_minsamples", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
         # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
