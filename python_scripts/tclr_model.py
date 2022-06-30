@@ -303,7 +303,8 @@ def pipeline(args):
             tree_vars=X_vars_tree,
             reg_vars=X_vars,
             njobs=njobs,
-            method=args.method
+            method=args.method,
+            n_disc_samples=1000
         )
 
         time_function(model.fit)()
@@ -477,10 +478,6 @@ def pipeline(args):
         f"{simmed_res_scores['NSE'].median():.3f}",
         f"{simmed_res_scores['NSE'].std():.3f}"
     )
-    # II()
-    # import sys
-    # sys.exit()
-
 
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
     quant_scores = pd.DataFrame(index=[0, 1, 2], columns=["NSE", "RMSE"])
@@ -505,13 +502,13 @@ def pipeline(args):
     )
 
     # setup output parameters
-    foldername = "tclr_model"
-    int_mod = "" if month_intercepts else "_no_ints"
-    all_mod = "_all_res" if use_all else ""
+    # foldername = "tclr_model"
+    # int_mod = "" if month_intercepts else "_no_ints"
+    # all_mod = "_all_res" if use_all else ""
+    # foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
     assim_mod = f"_{args.assim}" if args.assim else ""
-    foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
     foldername = f"TD{max_depth}{assim_mod}_RT_MS_{args.method}"
-    folderpath = pathlib.Path("..", "results", "tclr_model_drop_res_sto_diff", basin, foldername)
+    folderpath = pathlib.Path("..", "results", "tclr_model_drop_res_sto_diff_pers_testing_minsamples", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
         # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
@@ -533,6 +530,8 @@ def pipeline(args):
     # rotate_tree = True if max_depth > 3 else e
     if make_dot:
         model.to_graphviz(folderpath / "tree.dot")
+    if max_depth > 0:
+        model.save_model((folderpath / "model.pickle").as_posix())
 
     # setup output container for modeling information
     X_train["storage_pre"] = X["storage_pre"]
@@ -556,8 +555,9 @@ def pipeline(args):
             "train_data": train_data,
             "test_data": test_data,
             "simmed_data": simmed_data,
-# "groups": groups
     }
+    if max_depth > 0:
+        output["groups"] = groups
     # write the output dict to a pickle file
     with open((folderpath / "results.pickle").as_posix(), "wb") as f:
         pickle.dump(output, f, protocol=4)
@@ -655,7 +655,7 @@ def simulate_tclr_model(
         )
     else:
         outputdfs = []
-        for res in resers:
+        for res in resers[:1]:
             outputdfs.append(
                 simul_reservoir(
                     res,
@@ -673,7 +673,6 @@ def simulate_tclr_model(
                     X_test
                 )
             )
-            
     return pd.concat(outputdfs)
 
 
@@ -721,9 +720,11 @@ def simul_reservoir(
     roll_storage.loc[idx[res, dates[0]]] = rdf.loc[
         idx[res, dates[0]], "storage_roll7"]
 
+    counter = 0
     for date in dates:
+        loc = idx[res, date]
         # get values for today
-        X_r = rdf.loc[idx[res, date], X_loc_vars]
+        X_r = rdf.loc[loc, X_loc_vars]
         # add the interaction term
         X_r["storage_x_inflow"] = X_r["storage_pre"] * X_r["inflow"]
         # grab actual rt and max_sto values if they exist
@@ -733,15 +734,14 @@ def simul_reservoir(
         except KeyError:
             res_vars = False
         # add the difference term
-        # X_r["sto_diff"] = X_r["storage_pre"] - roll_storage.loc[idx[res, date]]
+        # X_r["sto_diff"] = X_r["storage_pre"] - roll_storage.loc[loc]
 
         # standardize the values
         reg_vars_nsd = reg_vars.copy()
         reg_vars_nsd.remove("sto_diff")
         X_r = (X_r - means.loc[res, reg_vars_nsd]) / std.loc[res, reg_vars_nsd]
         X_r["sto_diff"] = X_r["storage_pre"] - (
-            # (rdf.loc[idx[res, date], "storage_roll7"] -
-            (roll_storage.loc[idx[res, date]] -
+            (rdf.loc[loc, "storage_roll7"] -
              means.loc[res, "storage_roll7"]) / std.loc[res, "storage_roll7"])
 
         # and the constant
@@ -759,9 +759,9 @@ def simul_reservoir(
         else:
             release = X_r[X_loc_vars] @ model
         
-        # if abs(release - preds.loc[idx[res, date]]) > 0.000001:
-        #     print(res, date, release, preds.loc[idx[res, date]])
-        # if date - np.timedelta64(7, "D") > start_date:
+        # if abs(release - preds.loc[loc]) > 0.000001:
+        #     print(res, date, release, preds.loc[loc])
+        # if date - np.timedelta64(7, "D"):
         #     sys.exit()
         # else:
         #     II()
@@ -769,8 +769,8 @@ def simul_reservoir(
         release_act = release * std.loc[res, "release"] + means.loc[res, "release"]
         # calculate storage from mass balance
         storage = (
-            rdf.loc[idx[res, date], "storage_pre"]
-            + rdf.loc[idx[res, date], "inflow"]
+            rdf.loc[loc, "storage_pre"]
+            + rdf.loc[loc, "inflow"]
             - release_act
         )
         # keep storage and release within bounds
@@ -785,8 +785,8 @@ def simul_reservoir(
             release_act = lower_bounds.loc[res, "release"]
 
         # store calculated values
-        rdf.loc[idx[res, date], "storage"] = storage
-        rdf.loc[idx[res, date], "release"] = release_act
+        rdf.loc[loc, "storage"] = storage
+        rdf.loc[loc, "release"] = release_act
 
         # if we are not at the last day, store values needed for tomorrow
         if date != end_date:
@@ -819,7 +819,15 @@ def simul_reservoir(
             rdf.loc[idx[res, tomorrow], "release_roll7"] = rdf.loc[
                 idx[res, prev_seven], "release_pre"
             ].mean()
-        
+            rdf.loc[idx[res, tomorrow], :] = rdf.loc[idx[res, tomorrow], :]
+        # if counter < 10:
+        #     II()
+        #     counter += 1
+        # else:
+        #     import sys
+        #     sys.exit()
+        # print(rdf.loc[loc, :].T)
+        rdf.loc[loc, :] = rdf.loc[loc, :]
 
     return rdf
 
