@@ -132,7 +132,7 @@ def prep_data(df):
         "inflow_roll7",
         "storage_roll7",
         "storage_x_inflow",
-        #"sto_diff",
+        # "sto_diff",
     ]
     X = std_data.loc[:, columns]
     y = std_data["release"]
@@ -225,7 +225,7 @@ def pipeline(args):
     # need to set it again after we trimmed the data set
     res_grouper = df.index.get_level_values(0)
 
-#    df["sto_diff"] = df["storage_pre"] - df["storage_roll7"]
+    # df["sto_diff"] = df["storage_pre"] - df["storage_roll7"]
     X, y, means, std = prep_data(df)
     df["sto_diff"] = X["storage_pre"] - X["storage_roll7"]
     X["sto_diff"] = X["storage_pre"] - X["storage_roll7"]
@@ -477,9 +477,10 @@ def pipeline(args):
         f"{simmed_res_scores['NSE'].median():.3f}",
         f"{simmed_res_scores['NSE'].std():.3f}"
     )
-    II()
-    sys.exit()
-    
+    # II()
+    # import sys
+    # sys.exit()
+
 
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
     quant_scores = pd.DataFrame(index=[0, 1, 2], columns=["NSE", "RMSE"])
@@ -555,7 +556,7 @@ def pipeline(args):
             "train_data": train_data,
             "test_data": test_data,
             "simmed_data": simmed_data,
-            "groups": groups
+# "groups": groups
     }
     # write the output dict to a pickle file
     with open((folderpath / "results.pickle").as_posix(), "wb") as f:
@@ -705,9 +706,9 @@ def simul_reservoir(
     elif assim == "seasonally":
         assim_shift = 90
     elif assim == "semi-annually":
-    	assim_shift = 180
+        assim_shift = 180
     elif assim == "yearly":
-    	assim_shift = 365
+        assim_shift = 365
     elif assim == "daily":
         assim_shift = 1
 
@@ -739,9 +740,10 @@ def simul_reservoir(
         reg_vars_nsd.remove("sto_diff")
         X_r = (X_r - means.loc[res, reg_vars_nsd]) / std.loc[res, reg_vars_nsd]
         X_r["sto_diff"] = X_r["storage_pre"] - (
-            (rdf.loc[idx[res, date], "storage_roll7"] - 
+            # (rdf.loc[idx[res, date], "storage_roll7"] -
+            (roll_storage.loc[idx[res, date]] -
              means.loc[res, "storage_roll7"]) / std.loc[res, "storage_roll7"])
-        
+
         # and the constant
         X_r["const"] = 1
         if res_vars:
@@ -759,7 +761,7 @@ def simul_reservoir(
         
         # if abs(release - preds.loc[idx[res, date]]) > 0.000001:
         #     print(res, date, release, preds.loc[idx[res, date]])
-        # if date - np.timedelta64(7, "D"):
+        # if date - np.timedelta64(7, "D") > start_date:
         #     sys.exit()
         # else:
         #     II()
