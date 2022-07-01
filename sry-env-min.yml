@@ -1,4 +1,4 @@
-name: sry-env-2
+name: sry-env
 channels:
   - conda-forge
   - defaults
