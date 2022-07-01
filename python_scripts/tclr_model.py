@@ -291,6 +291,7 @@ def pipeline(args):
     train_res = res_grouper.unique()
     test_res = train_res
 
+    min_samples_split = args.mss
     make_dot = False
     if max_depth > 0:
         make_dot = True
@@ -304,7 +305,8 @@ def pipeline(args):
             reg_vars=X_vars,
             njobs=njobs,
             method=args.method,
-            n_disc_samples=1000
+            n_disc_samples=1000,
+            min_samples_split=min_samples_split
         )
 
         time_function(model.fit)()
@@ -507,8 +509,9 @@ def pipeline(args):
     # all_mod = "_all_res" if use_all else ""
     # foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
     assim_mod = f"_{args.assim}" if args.assim else ""
-    foldername = f"TD{max_depth}{assim_mod}_RT_MS_{args.method}"
-    folderpath = pathlib.Path("..", "results", "tclr_model_drop_res_sto_diff_pers_testing_minsamples", basin, foldername)
+    mss_mod = f"_MSS{min_samples_split:0.2f}"
+    foldername = f"TD{max_depth}{assim_mod}{mss_mod}_RT_MS_{args.method}"
+    folderpath = pathlib.Path("..", "results", "tclr_model_testing", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
         # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
@@ -878,6 +881,12 @@ def parse_args(arg_list=None):
         # default="Nelder-Mead",
         default="exhaustive",
         help="Optimization algorithm to use for fitting the TCLR model."
+    )
+    parser.add_argument(
+        "--mss",
+        type=float,
+        default=0.05,
+        help="Fraction of samples required to be in a child node to perform a split"
     )
     if arg_list:
         return parser.parse_args(arg_list)
