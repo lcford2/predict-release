@@ -38,7 +38,8 @@ def read_basin_data(basin: str) -> pd.DataFrame:
             "raw": "../pnw_data/dam_data/*_data/*.csv",
         },
         "lower_col": {
-            "ready": "../lower_col_data/model_ready_data/lower_col_data_net_inflow.csv",
+            # "ready": "../lower_col_data/model_ready_data/lower_col_data_net_inflow.csv",
+            "ready": "../lower_col_data/model_ready_data/lower_col_data_net_inflow_new_hoover.csv",
             "raw": "../lower_col_data/lower_col_dam_data.csv",
         },
         "missouri": {
@@ -293,6 +294,11 @@ def pipeline(args):
 
     min_samples_split = args.mss
     make_dot = False
+
+    if args.data_init:
+        II()
+        import sys
+        sys.exit()
     if max_depth > 0:
         make_dot = True
         model = TreeComboLR(
@@ -887,6 +893,13 @@ def parse_args(arg_list=None):
         type=float,
         default=0.05,
         help="Fraction of samples required to be in a child node to perform a split"
+    )
+    parser.add_argument(
+        "--data-init",
+        dest="data_init",
+        action="store_true",
+        default=False,
+        help="Just prepare the training and testing data then launch an IPython session."
     )
     if arg_list:
         return parser.parse_args(arg_list)
