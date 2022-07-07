@@ -293,6 +293,11 @@ def pipeline(args):
 
     min_samples_split = args.mss
     make_dot = False
+
+    if args.data_init:
+        II()
+        import sys
+        sys.exit()
     if max_depth > 0:
         make_dot = True
         model = TreeComboLR(
@@ -887,6 +892,13 @@ def parse_args(arg_list=None):
         type=float,
         default=0.05,
         help="Fraction of samples required to be in a child node to perform a split"
+    )
+    parser.add_argument(
+        "--data-init",
+        dest="data_init",
+        action="store_true",
+        default=False,
+        help="Just prepare the training and testing data then launch an IPython session."
     )
     if arg_list:
         return parser.parse_args(arg_list)
