@@ -38,7 +38,8 @@ def read_basin_data(basin: str) -> pd.DataFrame:
             "raw": "../pnw_data/dam_data/*_data/*.csv",
         },
         "lower_col": {
-            "ready": "../lower_col_data/model_ready_data/lower_col_data_net_inflow.csv",
+            # "ready": "../lower_col_data/model_ready_data/lower_col_data_net_inflow.csv",
+            "ready": "../lower_col_data/model_ready_data/lower_col_data_net_inflow_new_hoover.csv",
             "raw": "../lower_col_data/lower_col_dam_data.csv",
         },
         "missouri": {
