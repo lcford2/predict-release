@@ -212,9 +212,9 @@ def plot_performance_boxplots(results):
         # hue_order=["TD1", "TD2", "TD3", "TD4", "TD5", "TD6"],
         hue_order=["Train", "Test", "Simulation"],
         legend_out=False,
-        kind="boxen",
+        kind="box",
         showfliers=False,
-        # whis=(0.01, 0.99)
+        whis=(0.01, 0.99)
     )
     fg.set_xlabels("")
     fg.ax.legend(loc="best")
@@ -228,18 +228,18 @@ def plot_storage_performance_boxplots(results):
     # NSE - TD5 is best
     # MASE - TD3 is best
     # RMSE - TD1 and TD2 are tied
-    metric = "MASE"
+    metric = "NSE"
     train = select_results(results, "train_data")
     test = select_results(results, "test_data")
     simul = select_results(results, "simmed_data")
 
-    train_storage = df.loc[train["TD0"].index, "storage"]
-    test_storage = df.loc[test["TD0"].index, "storage"]
-    simul_storage = df.loc[simul["TD0"].index, "storage"]
+    train_storage = df.loc[train["TD1"].index, "storage"]
+    test_storage = df.loc[test["TD1"].index, "storage"]
+    simul_storage = df.loc[simul["TD1"].index, "storage"]
 
-    train_storage_pre = df.loc[train["TD0"].index, "storage_pre"]
-    test_storage_pre = df.loc[test["TD0"].index, "storage_pre"]
-    simul_storage_pre = df.loc[simul["TD0"].index, "storage_pre"]
+    train_storage_pre = df.loc[train["TD1"].index, "storage_pre"]
+    test_storage_pre = df.loc[test["TD1"].index, "storage_pre"]
+    simul_storage_pre = df.loc[simul["TD1"].index, "storage_pre"]
 
     train_storage_init = train_storage_pre.groupby("site_name").apply(lambda x: x.head(1))
     test_storage_init = test_storage_pre.groupby("site_name").apply(lambda x: x.head(1))
@@ -350,9 +350,6 @@ def plot_storage_performance_boxplots(results):
     ss_mean_rank = ss_mean.unstack().T.rank(ascending=ascending)
     ss_std_rank = ss_std.unstack().T.rank(ascending=ascending)
     perf = ss_mean_rank.mean(axis=1) + ss_std_rank.mean(axis=1)
-    II()
-    import sys
-    sys.exit()
 
     fg = sns.catplot(
         data=simul_score,
@@ -369,58 +366,6 @@ def plot_storage_performance_boxplots(results):
     )
     fg.set_xlabels("")
     # fg.ax.legend(loc="best")
-    plt.show()
-
-def plot_third_performance_boxplots(results):
-    train = select_results(results, "train_data")
-    test = select_results(results, "test_data")
-    simul = select_results(results, "simmed_data")
-
-    train = {i: make_bin(j, res=True).reset_index() for i, j in train.items()}
-    test = {i: make_bin(j, res=True).reset_index() for i, j in test.items()}
-    simul = {i: make_bin(j, res=True).reset_index() for i, j in simul.items()}
-
-    train_score = get_model_scores(train, metric="RMSE", grouper=["site_name", "bin"])
-    test_score = get_model_scores(test, metric="RMSE", grouper=["site_name", "bin"])
-    simul_score = get_model_scores(simul, metric="RMSE", grouper=["site_name", "bin"])
-
-    train_score = combine_dict_to_df(train_score, "Model").reset_index()
-    test_score = combine_dict_to_df(test_score, "Model").reset_index()
-    simul_score = combine_dict_to_df(simul_score, "Model").reset_index()
-
-    scores = combine_dict_to_df(
-        {"Train": train_score, "Test": test_score, "Simulation": simul_score},
-        "Data Set"
-    )
-
-    means = train["TRM"].groupby("bin")["actual"].mean().values
-
-    fg = sns.catplot(
-        data=scores,
-        y="RMSE",
-        hue="Model",
-        x="Data Set",
-        hue_order=["TD1", "TD2", "TD3", "TD4", "TD5", "TD6"],
-        row="bin",
-        legend_out=False,
-        kind="box",
-        sharey=False
-    )
-
-    fg.set_ylabels("RMSE [1000 acre-ft/day]")
-    fg.set_xlabels("")
-
-    axes = fg.axes.flatten()
-    for m, ax in zip(means, axes):
-        ax.axhline(m, c="r", linestyle="--")
-
-    handles, labels = axes[0].get_legend_handles_labels()
-    axes[0].get_legend().remove()
-
-    line = mlines.Line2D([], [], c="r", linestyle="--")
-    handles.append(line)
-    labels.append("Mean Release")
-    axes[0].legend(handles, labels, ncol=3, loc="upper left")
     plt.show()
 
 
@@ -1030,9 +975,9 @@ def plot_upper_lower_perf(results):
     test = select_results(results, "test_data")
     simul = select_results(results, "simmed_data")
 
-    train_inflow = df.loc[train["TD0"].index, "inflow"]
-    test_inflow = df.loc[test["TD0"].index, "inflow"]
-    simul_inflow = df.loc[simul["TD0"].index, "inflow"]
+    train_inflow = df.loc[train["TD1"].index, "inflow"]
+    test_inflow = df.loc[test["TD1"].index, "inflow"]
+    simul_inflow = df.loc[simul["TD1"].index, "inflow"]
 
     # train_pct = {i: j.groupby("site_name")["actual"].rank(pct=True)
     #              for i, j in train.items()}
@@ -1209,7 +1154,7 @@ def plot_perf_vs_datalength(results):
     simul_score = combine_dict_to_df(simul_score, "Model").reset_index()
 
     ntrees = simul_score["Model"].unique().size
-    counts = simul["TD0"].index.get_level_values("site_name").value_counts()
+    counts = simul["TD4"].index.get_level_values("site_name").value_counts()
     train_counts = counts / 0.2 * 0.8
 
     simul_score = simul_score.set_index("site_name")
@@ -1221,6 +1166,45 @@ def plot_perf_vs_datalength(results):
         y="NSE",
         hue="Model"
     )
+    plt.show()
+
+
+def pct_to_bin(pcts, nbins):
+    frac = 1.0 / nbins
+    bins = []
+    for p in pcts:
+        for i in range(1, nbins+1):
+            if p <= frac * i:
+                bins.append(i)
+                break
+    return bins
+
+def plot_quantile_performance(results, metric="nRMSE", nquants=3):
+    simul = select_results(results, "simmed_data")
+    pcts = simul["TD1"]["actual"].groupby("site_name").rank(pct=True)
+    bins = pct_to_bin(pcts, nquants)
+    for key, value in simul.items():
+        value["bin"] = bins
+        simul[key] = value
+    scores = get_model_scores(simul, metric=metric, grouper="bin")
+    scores = combine_dict_to_df(scores, "Model").reset_index()
+
+    scores = scores.pivot(index="Model", columns="bin")
+    scores.columns = scores.columns.droplevel(0)
+
+    fig, ax = plt.subplots(1, 1)
+    markers = ["o", "s", "X", "v", ">", "<", "2", "8", "p", "h"]
+    frac = 1.0 / nquants
+    labels = [
+        r"$\leq$ {:.0%}".format(frac),
+        *[r"{:.0%} $\leq$ {:.0%}".format(i*frac, (i+1)*frac) for i in range(1, nquants-1)],
+        r"> {:.0%}".format((nquants - 1) * frac)
+    ]
+    for i, col in enumerate(scores.columns):
+        scores[col].plot.line(ax=ax, label=labels[i].center(15), marker=markers[i])
+    
+    ax.set_ylabel(metric)
+    ax.legend(loc="best")
     plt.show()
 
 
@@ -1237,12 +1221,14 @@ if __name__ == "__main__":
     # plot_seasonal_performance(results)
     # plot_upper_lower_perf(results)
     # plot_constinency_analysis(results)
-    # plot_perf_vs_datalength(results)
+    plot_perf_vs_datalength(results)
 
     #* FIGURE 1
     # plot_res_locs()
     #* FIGURE 2
     # plot_variable_correlations_new()
     #* FIGURE 3
-    plot_performance_boxplots(results)
-    # plot_storage_performance_boxplots(results)
+    # plot_performance_boxplots(results)
+    # plot_storage_performance_boxplots(results) #* STORAGE PERFORMANCE IS BAD
+    #* this is to be expected over long simulation periods though. 
+    # plot_quantile_performance(results, "nRMSE", 5)
