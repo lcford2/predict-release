@@ -1,18 +1,11 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import r2_score, mean_squared_error
+import argparse
+
 plt.style.use("ggplot")
 sns.set_context("talk")
-
-
-# In[4]:
 
 
 def load_mss_results():
@@ -30,9 +23,6 @@ def load_mss_results():
     return results
 
 
-# In[62]:
-
-
 def select_res_results(res, results):
     output = {}
     for mss, df in results.items():
@@ -40,9 +30,6 @@ def select_res_results(res, results):
         rdf = mdf[mdf.index.get_level_values(0).isin(res)]
         output[mss] = rdf
     return output
-
-
-# In[63]:
 
 
 def calc_res_score(res_results, metric="NSE"):
@@ -54,9 +41,6 @@ def calc_res_score(res_results, metric="NSE"):
     return {
         mss: df.groupby("site_name").apply(lambda x: metric_func(x["actual"], x["model"])) for mss, df in res_results.items()
     }
-
-
-# In[64]:
 
 
 def plot_score_boxes(res_scores, title, score_metric):
@@ -74,23 +58,36 @@ def plot_score_boxes(res_scores, title, score_metric):
     )
     ax = fg.ax
     ax.set_title(title)
-    ax.set_ylabel("MSS")
-    ax.set_xlabel(score_metric)
+    ax.set_xlabel("MSS")
+    ax.set_ylabel(score_metric)
     plt.show()  
 
 
-# In[66]:
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "top_res",
+        choices=["release_cv", "storage_cv", "release", "storage"],
+        help="Define what reservoirs to show the plot for."
+    )
+    parser.add_argument(
+        "metric",
+        choices=["NSE", "RMSE"],
+        help="What metric to plot."
+    )
+    return parser.parse_args()
 
 
-top_res = pd.read_pickle("../pickles/top_resers.pickle")
-results = load_mss_results()
-res_results = select_res_results(top_res["release_cv"], results)
-res_scores = calc_res_score(res_results, metric="NSE")
-plot_score_boxes(res_scores, "Top 20 Storage Reservoirs", "NSE")
-
-
-# In[ ]:
-
-
-
-
+if __name__ == "__main__":
+    title_map = {
+        "release_cv": r"Top 20 Release $CV$ Reservoirs",
+        "storage_cv": r"Top 20 Storage $CV$ Reservoirs",
+        "release": r"Top 20 Release Reservoirs",
+        "storage": r"Top 20 Storage Reservoirs"
+    }
+    args = parse_args()
+    top_res = pd.read_pickle("../pickles/top_resers.pickle")
+    results = load_mss_results()
+    res_results = select_res_results(top_res[args.top_res], results)
+    res_scores = calc_res_score(res_results, metric=args.metric)
+    plot_score_boxes(res_scores, title_map[args.top_res], args.metric)
