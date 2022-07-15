@@ -55,6 +55,7 @@ def plot_score_boxes(res_scores, title, score_metric):
         legend_out=False,
         height=10,
         aspect=19/10,
+        whis=(0.05, 0.95)
     )
     ax = fg.ax
     ax.set_title(title)
