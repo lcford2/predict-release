@@ -1058,11 +1058,11 @@ if __name__ == "__main__":
     #* FIGURE 1
     # plot_res_locs()
     #* FIGURE 2
-    # plot_variable_correlations_new()
+    plot_variable_correlations()
     #* FIGURE 3
     # plot_performance_boxplots(results)
 
-    # plot_grid_search_results(ds="train", metric="MASE")
+    # plot_grid_search_results(ds="simul", metric="nRMSE")
     # plot_data_assim_results()
     # plot_best_and_worst_reservoirs("NSE")
-    plot_top_characteristic_res("NSE")
+    # plot_top_characteristic_res("NSE")
