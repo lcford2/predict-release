@@ -40,7 +40,7 @@ def write_pickle(obj, file):
         pickle.dump(obj, f)
 
 def read_results():
-    path_format = "../results/tclr_model_drop_res_sto_diff_pers_testing/all/TD{}_RT_MS_exhaustive/results.pickle".format
+    path_format = "../results/tclr_model_drop_res_sto_diff_pers_testing_minsamples/all/TD{}_RT_MS_exhaustive/results.pickle".format
     models = {
         # "TD0": path_format(0),
         "TD1": path_format(1),
