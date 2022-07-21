@@ -261,15 +261,25 @@ def plot_variable_correlations():
     # sns.set_context("notebook")
     fig = plt.figure()
     fig.set_alpha(0.0)
-    gs = GS.GridSpec(2, 1, height_ratios=[1, 1])
+    gs = GS.GridSpec(2, 2, height_ratios=[1, 1], width_ratios=[10, 0.5])
     axes = [
-        fig.add_subplot(gs[0]),
-        fig.add_subplot(gs[1])
+        fig.add_subplot(gs[0,0]),
+        fig.add_subplot(gs[1,0])
     ]
+    ex_ax = fig.add_subplot(gs[:,1])
+    ex_ax.patch.set_alpha(0.0)
+    ex_x = np.random.normal(0, 1, 10000)
+    sns.boxplot(y=ex_x, showfliers=False, ax=ex_ax)
+    ex_ax.tick_params(axis="both", bottom=False, top=False, left=False, right=False, labelleft=False)
+    # ex_ax.text(-0.5, 0.680, r"75th %ile")
+    # ex_ax.text(-0.5, -0.665, r"25th %ile")
 
     basins = ["Columbia", "Missouri", "Colorado", "Tennessee"]
     colors = sns.color_palette("tab10")
     ax = axes[0]
+
+    axes[0].axhline(0, c="k", linewidth=2, zorder=1, linestyle="--")
+    axes[1].axvline(0, c="k", linewidth=2, zorder=1, linestyle="--")
 
     sns.boxplot(
         data=inf_corr,
@@ -278,13 +288,12 @@ def plot_variable_correlations():
         hue="basin",
         palette="tab10",
         whis=(0.05, 0.95),
-        ax=ax
+        ax=ax,
+        showfliers=False
     )
     axes[0].legend(loc="lower right", ncol=4)
 
     stcorr["basin"] = rbasins
-    II()
-    sys.exit()
 
     sns.boxplot(
         data=stcorr.melt(id_vars=["basin"]),
@@ -293,9 +302,10 @@ def plot_variable_correlations():
         hue="basin",
         palette="tab10",
         ax=axes[-1],
-        whis=(0.05, 0.95)
+        whis=(0.05, 0.95),
+        showfliers=False
     )
-    axes[1].legend(loc="upper left", ncol=2)
+    axes[1].legend(loc="lower right", ncol=4)
 
     axes[0].set_ylabel("$r(R_t, I_L)$")
     axes[0].set_xlabel("Lag $L$ [days]")
@@ -309,6 +319,7 @@ def plot_variable_correlations():
             r"$S_{t-1} \times I_{t}$",
             r"$S_{t-1} - \bar{S}_{t-1}^7$",
     ])
+
 
     style_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     handles = [
@@ -910,7 +921,7 @@ def plot_best_and_worst_reservoirs(metric="NSE"):
     plt.show()
 
 
-def plot_top_characteristic_res(metric="NSE"):
+def get_top_btm_res_characteristic(metric="NSE", count=20):
     from tclr_model import read_basin_data, get_basin_meta_data
     from find_basin_groups import prep_seasonalities
     files = [
@@ -947,19 +958,19 @@ def plot_top_characteristic_res(metric="NSE"):
     
     cv = df.groupby(df.index.get_level_values(0))["release"].std() / df.groupby(df.index.get_level_values(0))["release"].mean()
 
-    top_ssn_res = seasonalities["SI_rel"].sort_values().tail(20).index
-    top_ssn_sto_res = seasonalities["SI_sto"].sort_values().tail(20).index
-    top_sto_res = meta["max_sto"].sort_values().tail(20).index
-    top_rel_res = df.groupby(df.index.get_level_values(0))["release"].mean().sort_values().tail(20).index
-    top_cv_res = cv.sort_values().tail(20).index
-    top_rts_res = meta["rts"].sort_values().tail(20).index
+    top_ssn_res = seasonalities["SI_rel"].sort_values().tail(count).index
+    top_ssn_sto_res = seasonalities["SI_sto"].sort_values().tail(count).index
+    top_sto_res = meta["max_sto"].sort_values().tail(count).index
+    top_rel_res = df.groupby(df.index.get_level_values(0))["release"].mean().sort_values().tail(count).index
+    top_cv_res = cv.sort_values().tail(count).index
+    top_rts_res = meta["rts"].sort_values().tail(count).index
     
-    btm_ssn_res = seasonalities["SI_rel"].sort_values().head(20).index
-    btm_ssn_sto_res = seasonalities["SI_sto"].sort_values().head(20).index
-    btm_sto_res = meta["max_sto"].sort_values().head(20).index
-    btm_rel_res = df.groupby(df.index.get_level_values(0))["release"].mean().sort_values().head(20).index
-    btm_cv_res = cv.sort_values().head(20).index
-    btm_rts_res = meta["rts"].sort_values().head(20).index
+    btm_ssn_res = seasonalities["SI_rel"].sort_values().head(count).index
+    btm_ssn_sto_res = seasonalities["SI_sto"].sort_values().head(count).index
+    btm_sto_res = meta["max_sto"].sort_values().head(count).index
+    btm_rel_res = df.groupby(df.index.get_level_values(0))["release"].mean().sort_values().head(count).index
+    btm_cv_res = cv.sort_values().head(count).index
+    btm_rts_res = meta["rts"].sort_values().head(count).index
 
     top_ssn_perf = {
         key: df.loc[top_ssn_res] for key, df in simmed_scores.items()
@@ -999,41 +1010,45 @@ def plot_top_characteristic_res(metric="NSE"):
     }
     records = []
     for key in simmed_scores.keys():
-        for res, score in top_ssn_perf[key]["NSE"].items():
-            records.append((key, "Top 20", "Release Seasonality", res, score))
-        for res, score in top_ssn_sto_perf[key]["NSE"].items():
-            records.append((key, "Top 20", "Storage Seasonality", res, score))
-        for res, score in top_sto_perf[key]["NSE"].items():
-            records.append((key, "Top 20", "Max Storage", res, score))
-        for res, score in top_rel_perf[key]["NSE"].items():
-            records.append((key, "Top 20", "Mean Release", res, score))
-        for res, score in top_rts_perf[key]["NSE"].items():
-            records.append((key, "Top 20", "Residence Time", res, score))
-        for res, score in top_cv_perf[key]["NSE"].items():
-            records.append((key, "Top 20", r"Release $CV$", res, score))
-        for res, score in btm_ssn_perf[key]["NSE"].items():
-            records.append((key, "Bottom 20", "Release Seasonality", res, score))
-        for res, score in btm_ssn_sto_perf[key]["NSE"].items():
-            records.append((key, "Bottom 20", "Storage Seasonality", res, score))
-        for res, score in btm_sto_perf[key]["NSE"].items():
-            records.append((key, "Bottom 20", "Max Storage", res, score))
-        for res, score in btm_rel_perf[key]["NSE"].items():
-            records.append((key, "Bottom 20", "Mean Release", res, score))
-        for res, score in btm_rts_perf[key]["NSE"].items():
-            records.append((key, "Bottom 20", "Residence Time", res, score))
-        for res, score in btm_cv_perf[key]["NSE"].items():
-            records.append((key, "Bottom 20", r"Release $CV$", res, score))
+        for res, score in top_ssn_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Release Seasonality", res, score))
+        for res, score in top_ssn_sto_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Storage Seasonality", res, score))
+        for res, score in top_sto_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Max Storage", res, score))
+        for res, score in top_rel_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Mean Release", res, score))
+        for res, score in top_rts_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Residence Time", res, score))
+        for res, score in top_cv_perf[key][metric].items():
+            records.append((key, f"Top {count}", r"Release $CV$", res, score))
+        for res, score in btm_ssn_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Release Seasonality", res, score))
+        for res, score in btm_ssn_sto_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Storage Seasonality", res, score))
+        for res, score in btm_sto_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Max Storage", res, score))
+        for res, score in btm_rel_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Mean Release", res, score))
+        for res, score in btm_rts_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Residence Time", res, score))
+        for res, score in btm_cv_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", r"Release $CV$", res, score))
     perf_df = pd.DataFrame.from_records(
         records, columns=["Model", "group", "Characteristic", "Reservoir", metric]
     )
+    return perf_df
+
+def plot_top_characteristic_res(metric="NSE", count=20):
+    char_df = get_top_btm_res_characteristic(metric, count)
     fg = sns.catplot(
-        data=perf_df,
+        data=char_df,
         row="Model",
         x="Characteristic",
         y=metric,
         hue="group",
-        kind="box",
-        whis=(0.1, 0.9),
+        kind="strip",
+        # whis=(0.1, 0.9),
         order=["Release Seasonality", "Storage Seasonality", "Max Storage", "Mean Release", r"Release $CV$", "Residence Time"],
         legend=False
     )
@@ -1042,7 +1057,80 @@ def plot_top_characteristic_res(metric="NSE"):
     axes[1].set_title("TD 5 - MSS 0.01")
     axes[1].legend(loc="best")
     plt.show()
-    # II()
+
+
+def get_res_characteristic(metric="NSE"):
+    from tclr_model import read_basin_data, get_basin_meta_data
+    from find_basin_groups import prep_seasonalities
+    files = [
+        "../results/tclr_model_testing/all/TD2_MSS0.20_RT_MS_exhaustive_new_hoover/results.pickle",
+        "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle"
+    ]
+    keys = [(2, 0.2), (5, 0.01)]
+    results = {}
+    for k, f in zip(keys, files):
+        with open(f, "rb") as f:
+            results[k] = pickle.load(f)
+    
+    # train_data = select_results(results, "train_data")
+    # test_data = select_results(results, "test_data")
+    simmed_data = select_results(results, "simmed_data")
+    
+    # train_scores = get_model_scores(train_data, metric=metric, grouper="site_name")
+    # test_scores =  get_model_scores(test_data, metric=metric, grouper="site_name")
+    simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+
+    df = read_basin_data("all")
+    meta = get_basin_meta_data("all")
+
+    drop_res = ["Causey", "Lost Creek", "Echo", "Smith & Morehouse Reservoir",
+                "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa ", "MCPHEE"]
+    drop_res = [i.upper() for i in drop_res]
+    meta = meta.drop(drop_res)
+    df = df[~df.index.get_level_values(0).isin(drop_res)]
+    mmeans = df.groupby(
+        [df.index.get_level_values(0),
+        df.index.get_level_values(1).month]
+    ).mean()
+    seasonalities = prep_seasonalities(mmeans)
+    
+    cv = df.groupby(df.index.get_level_values(0))["release"].std() / df.groupby(df.index.get_level_values(0))["release"].mean()
+    
+    char_df = pd.DataFrame(index=seasonalities.index, columns=[
+        "Release Seasonality", "Storage Seasonality", "Maximum Storage",
+        "Mean Release", r"Release $CV$", "Residence Time"
+    ])
+    char_df["Release Seasonality"] = seasonalities["SI_rel"]
+    char_df["Storage Seasonality"] = seasonalities["SI_sto"]
+    char_df["Maximum Storage"] = meta["max_sto"]
+    char_df["Mean Release"] = df.groupby(df.index.get_level_values(0))["release"].mean()
+    char_df[r"Release $CV$"] = cv
+    char_df["Residence Time"] = meta["rts"]
+    for key, value in simmed_scores.items():
+        df_key = f"TD{key[0]}-MSS{key[1]:.2f}"
+        char_df[df_key] = value
+    return char_df
+
+
+def plot_top_characteristic_res_scatter(metric="NSE"):
+    char_df = get_res_characteristic(metric)
+    fig, axes = plt.subplots(3, 2, sharey=True, sharex=False)
+    axes = axes.flatten()
+    pvars = [
+        "Release Seasonality", "Storage Seasonality", "Maximum Storage",
+        "Mean Release", r"Release $CV$", "Residence Time"
+    ]
+    markers = ["o", "s",]
+    # colors = sns.color_palette("Tab2", 2)
+    for i, var in enumerate(pvars):
+        axes[i].scatter(char_df[var], char_df["TD2-MSS0.20"], label="TD2-MSS0.20")
+        axes[i].scatter(char_df[var], char_df["TD5-MSS0.01"], label="TD5-MSS0.01")
+        axes[i].set_xlabel(var)
+        axes[i].set_ylabel(metric)
+
+    axes[0].legend(loc="best")
+    fig.align_ylabels()
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -1058,11 +1146,12 @@ if __name__ == "__main__":
     #* FIGURE 1
     # plot_res_locs()
     #* FIGURE 2
-    # plot_variable_correlations_new()
+    # plot_variable_correlations()
     #* FIGURE 3
     # plot_performance_boxplots(results)
 
-    # plot_grid_search_results(ds="train", metric="MASE")
-    plot_data_assim_results()
+    # plot_grid_search_results(ds="simul", metric="nRMSE")
+    # plot_data_assim_results()
     # plot_best_and_worst_reservoirs("NSE")
-    # plot_top_characteristic_res("NSE")
+    plot_top_characteristic_res("nRMSE", 10)
+    # plot_top_characteristic_res_scatter("NSE")
