@@ -921,7 +921,7 @@ def plot_best_and_worst_reservoirs(metric="NSE"):
     plt.show()
 
 
-def plot_top_characteristic_res(metric="NSE"):
+def get_top_btm_res_characteristic(metric="NSE", count=20):
     from tclr_model import read_basin_data, get_basin_meta_data
     from find_basin_groups import prep_seasonalities
     files = [
@@ -958,19 +958,19 @@ def plot_top_characteristic_res(metric="NSE"):
     
     cv = df.groupby(df.index.get_level_values(0))["release"].std() / df.groupby(df.index.get_level_values(0))["release"].mean()
 
-    top_ssn_res = seasonalities["SI_rel"].sort_values().tail(20).index
-    top_ssn_sto_res = seasonalities["SI_sto"].sort_values().tail(20).index
-    top_sto_res = meta["max_sto"].sort_values().tail(20).index
-    top_rel_res = df.groupby(df.index.get_level_values(0))["release"].mean().sort_values().tail(20).index
-    top_cv_res = cv.sort_values().tail(20).index
-    top_rts_res = meta["rts"].sort_values().tail(20).index
+    top_ssn_res = seasonalities["SI_rel"].sort_values().tail(count).index
+    top_ssn_sto_res = seasonalities["SI_sto"].sort_values().tail(count).index
+    top_sto_res = meta["max_sto"].sort_values().tail(count).index
+    top_rel_res = df.groupby(df.index.get_level_values(0))["release"].mean().sort_values().tail(count).index
+    top_cv_res = cv.sort_values().tail(count).index
+    top_rts_res = meta["rts"].sort_values().tail(count).index
     
-    btm_ssn_res = seasonalities["SI_rel"].sort_values().head(20).index
-    btm_ssn_sto_res = seasonalities["SI_sto"].sort_values().head(20).index
-    btm_sto_res = meta["max_sto"].sort_values().head(20).index
-    btm_rel_res = df.groupby(df.index.get_level_values(0))["release"].mean().sort_values().head(20).index
-    btm_cv_res = cv.sort_values().head(20).index
-    btm_rts_res = meta["rts"].sort_values().head(20).index
+    btm_ssn_res = seasonalities["SI_rel"].sort_values().head(count).index
+    btm_ssn_sto_res = seasonalities["SI_sto"].sort_values().head(count).index
+    btm_sto_res = meta["max_sto"].sort_values().head(count).index
+    btm_rel_res = df.groupby(df.index.get_level_values(0))["release"].mean().sort_values().head(count).index
+    btm_cv_res = cv.sort_values().head(count).index
+    btm_rts_res = meta["rts"].sort_values().head(count).index
 
     top_ssn_perf = {
         key: df.loc[top_ssn_res] for key, df in simmed_scores.items()
