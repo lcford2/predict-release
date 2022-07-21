@@ -40,7 +40,7 @@ def write_pickle(obj, file):
         pickle.dump(obj, f)
 
 def read_results():
-    path_format = "../results/tclr_model_drop_res_sto_diff_pers_testing/all/TD{}_RT_MS_exhaustive/results.pickle".format
+    path_format = "../results/tclr_model_drop_res_sto_diff_pers_testing_minsamples/all/TD{}_RT_MS_exhaustive/results.pickle".format
     models = {
         # "TD0": path_format(0),
         "TD1": path_format(1),
@@ -212,9 +212,9 @@ def plot_performance_boxplots(results):
         # hue_order=["TD1", "TD2", "TD3", "TD4", "TD5", "TD6"],
         hue_order=["Train", "Test", "Simulation"],
         legend_out=False,
-        kind="boxen",
+        kind="box",
         showfliers=False,
-        # whis=(0.01, 0.99)
+        whis=(0.01, 0.99)
     )
     fg.set_xlabels("")
     fg.ax.legend(loc="best")
@@ -628,9 +628,9 @@ def plot_upper_lower_perf(results):
     test = select_results(results, "test_data")
     simul = select_results(results, "simmed_data")
 
-    train_inflow = df.loc[train["TD0"].index, "inflow"]
-    test_inflow = df.loc[test["TD0"].index, "inflow"]
-    simul_inflow = df.loc[simul["TD0"].index, "inflow"]
+    train_inflow = df.loc[train["TD1"].index, "inflow"]
+    test_inflow = df.loc[test["TD1"].index, "inflow"]
+    simul_inflow = df.loc[simul["TD1"].index, "inflow"]
 
     # train_pct = {i: j.groupby("site_name")["actual"].rank(pct=True)
     #              for i, j in train.items()}
@@ -699,7 +699,7 @@ def plot_perf_vs_datalength(results):
     simul_score = combine_dict_to_df(simul_score, "Model").reset_index()
 
     ntrees = simul_score["Model"].unique().size
-    counts = simul["TD0"].index.get_level_values("site_name").value_counts()
+    counts = simul["TD4"].index.get_level_values("site_name").value_counts()
     train_counts = counts / 0.2 * 0.8
 
     simul_score = simul_score.set_index("site_name")
