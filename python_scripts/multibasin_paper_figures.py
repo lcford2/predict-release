@@ -1057,7 +1057,80 @@ def plot_top_characteristic_res(metric="NSE", count=20):
     axes[1].set_title("TD 5 - MSS 0.01")
     axes[1].legend(loc="best")
     plt.show()
-    # II()
+
+
+def get_res_characteristic(metric="NSE"):
+    from tclr_model import read_basin_data, get_basin_meta_data
+    from find_basin_groups import prep_seasonalities
+    files = [
+        "../results/tclr_model_testing/all/TD2_MSS0.20_RT_MS_exhaustive_new_hoover/results.pickle",
+        "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle"
+    ]
+    keys = [(2, 0.2), (5, 0.01)]
+    results = {}
+    for k, f in zip(keys, files):
+        with open(f, "rb") as f:
+            results[k] = pickle.load(f)
+    
+    # train_data = select_results(results, "train_data")
+    # test_data = select_results(results, "test_data")
+    simmed_data = select_results(results, "simmed_data")
+    
+    # train_scores = get_model_scores(train_data, metric=metric, grouper="site_name")
+    # test_scores =  get_model_scores(test_data, metric=metric, grouper="site_name")
+    simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+
+    df = read_basin_data("all")
+    meta = get_basin_meta_data("all")
+
+    drop_res = ["Causey", "Lost Creek", "Echo", "Smith & Morehouse Reservoir",
+                "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa ", "MCPHEE"]
+    drop_res = [i.upper() for i in drop_res]
+    meta = meta.drop(drop_res)
+    df = df[~df.index.get_level_values(0).isin(drop_res)]
+    mmeans = df.groupby(
+        [df.index.get_level_values(0),
+        df.index.get_level_values(1).month]
+    ).mean()
+    seasonalities = prep_seasonalities(mmeans)
+    
+    cv = df.groupby(df.index.get_level_values(0))["release"].std() / df.groupby(df.index.get_level_values(0))["release"].mean()
+    
+    char_df = pd.DataFrame(index=seasonalities.index, columns=[
+        "Release Seasonality", "Storage Seasonality", "Maximum Storage",
+        "Mean Release", r"Release $CV$", "Residence Time"
+    ])
+    char_df["Release Seasonality"] = seasonalities["SI_rel"]
+    char_df["Storage Seasonality"] = seasonalities["SI_sto"]
+    char_df["Maximum Storage"] = meta["max_sto"]
+    char_df["Mean Release"] = df.groupby(df.index.get_level_values(0))["release"].mean()
+    char_df[r"Release $CV$"] = cv
+    char_df["Residence Time"] = meta["rts"]
+    for key, value in simmed_scores.items():
+        df_key = f"TD{key[0]}-MSS{key[1]:.2f}"
+        char_df[df_key] = value
+    return char_df
+
+
+def plot_top_characteristic_res_scatter(metric="NSE"):
+    char_df = get_res_characteristic(metric)
+    fig, axes = plt.subplots(3, 2, sharey=True, sharex=False)
+    axes = axes.flatten()
+    pvars = [
+        "Release Seasonality", "Storage Seasonality", "Maximum Storage",
+        "Mean Release", r"Release $CV$", "Residence Time"
+    ]
+    markers = ["o", "s",]
+    # colors = sns.color_palette("Tab2", 2)
+    for i, var in enumerate(pvars):
+        axes[i].scatter(char_df[var], char_df["TD2-MSS0.20"], label="TD2-MSS0.20")
+        axes[i].scatter(char_df[var], char_df["TD5-MSS0.01"], label="TD5-MSS0.01")
+        axes[i].set_xlabel(var)
+        axes[i].set_ylabel(metric)
+
+    axes[0].legend(loc="best")
+    fig.align_ylabels()
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -1073,11 +1146,12 @@ if __name__ == "__main__":
     #* FIGURE 1
     # plot_res_locs()
     #* FIGURE 2
-    plot_variable_correlations()
+    # plot_variable_correlations()
     #* FIGURE 3
     # plot_performance_boxplots(results)
 
     # plot_grid_search_results(ds="simul", metric="nRMSE")
     # plot_data_assim_results()
     # plot_best_and_worst_reservoirs("NSE")
-    # plot_top_characteristic_res("NSE")
+    plot_top_characteristic_res("nRMSE", 10)
+    # plot_top_characteristic_res_scatter("NSE")
