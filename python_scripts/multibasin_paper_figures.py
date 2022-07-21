@@ -261,15 +261,25 @@ def plot_variable_correlations():
     # sns.set_context("notebook")
     fig = plt.figure()
     fig.set_alpha(0.0)
-    gs = GS.GridSpec(2, 1, height_ratios=[1, 1])
+    gs = GS.GridSpec(2, 2, height_ratios=[1, 1], width_ratios=[10, 0.5])
     axes = [
-        fig.add_subplot(gs[0]),
-        fig.add_subplot(gs[1])
+        fig.add_subplot(gs[0,0]),
+        fig.add_subplot(gs[1,0])
     ]
+    ex_ax = fig.add_subplot(gs[:,1])
+    ex_ax.patch.set_alpha(0.0)
+    ex_x = np.random.normal(0, 1, 10000)
+    sns.boxplot(y=ex_x, showfliers=False, ax=ex_ax)
+    ex_ax.tick_params(axis="both", bottom=False, top=False, left=False, right=False, labelleft=False)
+    # ex_ax.text(-0.5, 0.680, r"75th %ile")
+    # ex_ax.text(-0.5, -0.665, r"25th %ile")
 
     basins = ["Columbia", "Missouri", "Colorado", "Tennessee"]
     colors = sns.color_palette("tab10")
     ax = axes[0]
+
+    axes[0].axhline(0, c="k", linewidth=2, zorder=1, linestyle="--")
+    axes[1].axvline(0, c="k", linewidth=2, zorder=1, linestyle="--")
 
     sns.boxplot(
         data=inf_corr,
@@ -278,13 +288,12 @@ def plot_variable_correlations():
         hue="basin",
         palette="tab10",
         whis=(0.05, 0.95),
-        ax=ax
+        ax=ax,
+        showfliers=False
     )
     axes[0].legend(loc="lower right", ncol=4)
 
     stcorr["basin"] = rbasins
-    II()
-    sys.exit()
 
     sns.boxplot(
         data=stcorr.melt(id_vars=["basin"]),
@@ -293,9 +302,10 @@ def plot_variable_correlations():
         hue="basin",
         palette="tab10",
         ax=axes[-1],
-        whis=(0.05, 0.95)
+        whis=(0.05, 0.95),
+        showfliers=False
     )
-    axes[1].legend(loc="upper left", ncol=2)
+    axes[1].legend(loc="lower right", ncol=4)
 
     axes[0].set_ylabel("$r(R_t, I_L)$")
     axes[0].set_xlabel("Lag $L$ [days]")
@@ -309,6 +319,7 @@ def plot_variable_correlations():
             r"$S_{t-1} \times I_{t}$",
             r"$S_{t-1} - \bar{S}_{t-1}^7$",
     ])
+
 
     style_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     handles = [
