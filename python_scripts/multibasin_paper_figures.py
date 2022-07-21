@@ -821,7 +821,7 @@ def plot_data_assim_results(metric="NSE"):
         kind="box",
         order=["daily", "weekly", "monthly", "seasonally", "semi-annually"],
         whis=(0.1,0.9),
-        showfliers=False
+        showfliers=True
     )
     fg.axes[0,0].set_title("TD 2 - MSS 0.20")
     fg.axes[1,0].set_title("TD 5 - MSS 0.01")
@@ -893,7 +893,7 @@ def plot_best_and_worst_reservoirs(metric="NSE"):
         hue="Model",
         kind="box",
         whis=(0.1,0.9),
-        showfliers=False,
+        showfliers=True,
         sharey=False,
         legend=False
     )
@@ -1063,6 +1063,6 @@ if __name__ == "__main__":
     # plot_performance_boxplots(results)
 
     # plot_grid_search_results(ds="train", metric="MASE")
-    # plot_data_assim_results()
+    plot_data_assim_results()
     # plot_best_and_worst_reservoirs("NSE")
-    plot_top_characteristic_res("NSE")
+    # plot_top_characteristic_res("NSE")
