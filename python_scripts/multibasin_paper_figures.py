@@ -1042,13 +1042,13 @@ def get_top_btm_res_characteristic(metric="NSE", count=20):
 def plot_top_characteristic_res(metric="NSE", count=20):
     char_df = get_top_btm_res_characteristic(metric, count)
     fg = sns.catplot(
-        data=perf_df,
+        data=char_df,
         row="Model",
         x="Characteristic",
         y=metric,
         hue="group",
-        kind="box",
-        whis=(0.1, 0.9),
+        kind="strip",
+        # whis=(0.1, 0.9),
         order=["Release Seasonality", "Storage Seasonality", "Max Storage", "Mean Release", r"Release $CV$", "Residence Time"],
         legend=False
     )
