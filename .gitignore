@@ -50,3 +50,6 @@ results/**/model.pickle
 # hpc output
 python_scripts/slurm_out
 **/*remora*/*
+
+# vs code log files
+.vscode/*.log
