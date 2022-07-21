@@ -1010,30 +1010,30 @@ def get_top_btm_res_characteristic(metric="NSE", count=20):
     }
     records = []
     for key in simmed_scores.keys():
-        for res, score in top_ssn_perf[key]["NSE"].items():
-            records.append((key, "Top 20", "Release Seasonality", res, score))
-        for res, score in top_ssn_sto_perf[key]["NSE"].items():
-            records.append((key, "Top 20", "Storage Seasonality", res, score))
-        for res, score in top_sto_perf[key]["NSE"].items():
-            records.append((key, "Top 20", "Max Storage", res, score))
-        for res, score in top_rel_perf[key]["NSE"].items():
-            records.append((key, "Top 20", "Mean Release", res, score))
-        for res, score in top_rts_perf[key]["NSE"].items():
-            records.append((key, "Top 20", "Residence Time", res, score))
-        for res, score in top_cv_perf[key]["NSE"].items():
-            records.append((key, "Top 20", r"Release $CV$", res, score))
-        for res, score in btm_ssn_perf[key]["NSE"].items():
-            records.append((key, "Bottom 20", "Release Seasonality", res, score))
-        for res, score in btm_ssn_sto_perf[key]["NSE"].items():
-            records.append((key, "Bottom 20", "Storage Seasonality", res, score))
-        for res, score in btm_sto_perf[key]["NSE"].items():
-            records.append((key, "Bottom 20", "Max Storage", res, score))
-        for res, score in btm_rel_perf[key]["NSE"].items():
-            records.append((key, "Bottom 20", "Mean Release", res, score))
-        for res, score in btm_rts_perf[key]["NSE"].items():
-            records.append((key, "Bottom 20", "Residence Time", res, score))
-        for res, score in btm_cv_perf[key]["NSE"].items():
-            records.append((key, "Bottom 20", r"Release $CV$", res, score))
+        for res, score in top_ssn_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Release Seasonality", res, score))
+        for res, score in top_ssn_sto_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Storage Seasonality", res, score))
+        for res, score in top_sto_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Max Storage", res, score))
+        for res, score in top_rel_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Mean Release", res, score))
+        for res, score in top_rts_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Residence Time", res, score))
+        for res, score in top_cv_perf[key][metric].items():
+            records.append((key, f"Top {count}", r"Release $CV$", res, score))
+        for res, score in btm_ssn_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Release Seasonality", res, score))
+        for res, score in btm_ssn_sto_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Storage Seasonality", res, score))
+        for res, score in btm_sto_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Max Storage", res, score))
+        for res, score in btm_rel_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Mean Release", res, score))
+        for res, score in btm_rts_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Residence Time", res, score))
+        for res, score in btm_cv_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", r"Release $CV$", res, score))
     perf_df = pd.DataFrame.from_records(
         records, columns=["Model", "group", "Characteristic", "Reservoir", metric]
     )
