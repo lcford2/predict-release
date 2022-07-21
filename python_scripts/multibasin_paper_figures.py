@@ -1037,6 +1037,10 @@ def get_top_btm_res_characteristic(metric="NSE", count=20):
     perf_df = pd.DataFrame.from_records(
         records, columns=["Model", "group", "Characteristic", "Reservoir", metric]
     )
+    return perf_df
+
+def plot_top_characteristic_res(metric="NSE", count=20):
+    char_df = get_top_btm_res_characteristic(metric, count)
     fg = sns.catplot(
         data=perf_df,
         row="Model",
