@@ -196,3 +196,9 @@ def swap_index_levels(df):
     )
     df.index = new_index
     return df
+
+def linear_scale_values(values, min_val=0, max_val=1):
+    max_raw = max(values)
+    min_raw = min(values)
+    ratio = (max_val - min_val) / (max_raw - min_raw)
+    return [i*ratio + min_val for i in values]
