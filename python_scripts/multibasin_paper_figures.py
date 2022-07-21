@@ -22,7 +22,8 @@ from mpl_toolkits.basemap import Basemap
 import seaborn as sns
 import geopandas as gpd
 from IPython import embed as II
-from simulate_reservoir import simulate_storage
+
+from utils.helper_functions import linear_scale_values
 
 
 if hostname == "CCEE-DT-094":
@@ -1132,6 +1133,52 @@ def plot_top_characteristic_res_scatter(metric="NSE"):
     fig.align_ylabels()
     plt.show()
 
+def plot_characteristic_res_line_plot(metric="NSE"):
+    char_df = get_res_characteristic(metric)
+    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(19, 10))
+    # axes = axes.flatten()
+    fig.patch.set_alpha(0.0)
+
+    pvars = [
+        "Release Seasonality", "Storage Seasonality", "Maximum Storage",
+        "Mean Release", r"Release $CV$", "Residence Time"
+    ]
+    zeros = np.zeros_like(char_df["TD2-MSS0.20"].values)
+    max_size = 500
+    min_size = 20
+
+    # size_df = char_df.copy()
+    # for column in pvars:
+    #     size_df[column] = linear_scale_values(size_df[column], min_size, max_size)
+
+    # mdf = size_df.melt(id_vars=["TD2-MSS0.20", "TD5-MSS0.01"], var_name="Characteristic").melt(
+    #     id_vars=["Characteristic", "value"], var_name="Model", value_name=metric)
+    
+    # sns.stripplot(
+    #     data=mdf, 
+    #     y="Characteristic",
+    #     x=metric,
+    #     hue="Model",
+    #     size="value",
+    # )
+    
+    colors = sns.color_palette("tab10", 2)
+    for i, var in enumerate(pvars):
+        y = np.zeros_like(char_df["TD2-MSS0.20"]) + i
+        axes.scatter(char_df["TD2-MSS0.20"], y, color=colors[0],
+            s=linear_scale_values(char_df[var], min_size, max_size), label="TD2-MSS0.20")
+        axes.scatter(char_df["TD5-MSS0.01"], y, color=colors[1],
+            s=linear_scale_values(char_df[var], min_size, max_size), label="TD5-MSS0.01")
+        # axes.set_xlabel(var)
+        axes.set_xlabel(metric)
+    
+    axes.set_yticks(range(len(pvars)))
+    axes.set_yticklabels(pvars)
+    handles, labels = axes.get_legend_handles_labels()
+    axes.legend(handles[:2], labels[:2], loc="best")
+    fig.align_ylabels()
+    plt.show()
+
 
 if __name__ == "__main__":
     plt.style.use("seaborn")
@@ -1142,7 +1189,7 @@ if __name__ == "__main__":
     # plot_seasonal_performance(results)
     # plot_upper_lower_perf(results)
     # plot_perf_vs_datalength(results)
-
+    
     #* FIGURE 1
     # plot_res_locs()
     #* FIGURE 2
@@ -1153,5 +1200,6 @@ if __name__ == "__main__":
     # plot_grid_search_results(ds="simul", metric="nRMSE")
     # plot_data_assim_results()
     # plot_best_and_worst_reservoirs("NSE")
-    plot_top_characteristic_res("nRMSE", 10)
+    # plot_top_characteristic_res("nRMSE", 10)
     # plot_top_characteristic_res_scatter("NSE")
+    plot_characteristic_res_line_plot("nRMSE")
