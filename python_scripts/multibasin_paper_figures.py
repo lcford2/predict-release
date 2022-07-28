@@ -22,14 +22,15 @@ from mpl_toolkits.basemap import Basemap
 import seaborn as sns
 import geopandas as gpd
 from IPython import embed as II
+import sys
 
-from utils.helper_functions import linear_scale_values
+from utils.helper_functions import linear_scale_values, make_bin_label_map
 
 
 if hostname == "CCEE-DT-094":
     GIS_DIR = pathlib.Path("G:/My Drive/PHD/GIS")
 elif hostname == "inspiron13":
-    GIS_DIR = pathlib.Path("~/data/GIS")
+    GIS_DIR = pathlib.Path("/home/lford/data/GIS")
 
 def load_pickle(file):
     with open(file, "rb") as f:
@@ -825,22 +826,112 @@ def plot_data_assim_results(metric="NSE"):
         for res, value in values[metric].items():
             simmed_scores_records.append([int(key[0]), key[1], float(key[2]), res, value])
     simmed_scores = pd.DataFrame.from_records(simmed_scores_records, columns=columns)
+
+    # simmed_scores[metric] = np.log(simmed_scores[metric])
+    
     fg = sns.catplot(
         data=simmed_scores,
-        row="TD",
+        hue="TD",
         x="Assim",
         y=metric,
         kind="box",
         order=["daily", "weekly", "monthly", "seasonally", "semi-annually"],
         whis=(0.1,0.9),
-        showfliers=True
+        showfliers=False,
+        legend_out=False,
     )
-    fg.axes[0,0].set_title("TD 2 - MSS 0.20")
-    fg.axes[1,0].set_title("TD 5 - MSS 0.01")
-    fg.axes[1,0].set_xticklabels(["Daily", "Weekly", "Monthly", "Seasonally", "Semi-annually"])
-    fg.axes[1,0].set_xlabel("Assimilation Frequency")
-    # II()
+    strip = sns.stripplot(
+        data=simmed_scores,
+        hue="TD",
+        x="Assim",
+        y=metric,
+        order=["daily", "weekly", "monthly", "seasonally", "semi-annually"],
+        ax=fg.ax,
+        dodge=True,
+        jitter=0.2
+    )
+    for col in strip.collections:
+        col.set_color("#808080")
+        col.set_alpha(0.5)
+        col.set_edgecolors("k")
+        col.set_linewidth(1)
+    fg.ax.set_xticklabels(["Daily", "Weekly", "Monthly", "Seasonally", "Semi-annually"])
+    fg.ax.set_xlabel("Assimilation Frequency")
+
+    fg.ax.set_xticks([], minor=True)
+    fg.despine(left=False, right=False, top=False, bottom=False)
+
+    handles, labels = fg.ax.get_legend_handles_labels()
+    handles = handles[:2]
+    labels = ["TD2-MSS0.20", "TD5-MSS0.01"]
+    fg.ax.legend(handles, labels, loc="best")
+
+    # fg.ax.set_yscale("log")
+    II()
+
     plt.show()
+
+def plot_assim_score_ridgelines(metric="NSE"):
+    import glob
+    import re
+    files = glob.glob(
+        "../results/tclr_model_testing/all/TD?_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+    )
+    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    matches = [re.search(td_mss_assim_pat, i) for i in files]
+    td_mss_assim = [i.groups() for i in matches]
+    results = {}
+    for key, file in zip(td_mss_assim, files):
+        with open(file, "rb") as f:
+            results[key] = pickle.load(f)
+    train_data = select_results(results, "train_data")
+    test_data = select_results(results, "test_data")
+    simmed_data = select_results(results, "simmed_data")
+    
+    train_scores = get_model_scores(train_data, metric=metric, grouper="site_name")
+    test_scores =  get_model_scores(test_data, metric=metric, grouper="site_name")
+    simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+
+    columns = ["TD", "Assim", "MSS", "Reservoir", metric]
+    train_scores_records = []
+    for key, values in train_scores.items():
+        for res, value in values[metric].items():
+            train_scores_records.append([int(key[0]), key[1], float(key[2]), res, value])
+    train_scores = pd.DataFrame.from_records(train_scores_records, columns=columns)
+    test_scores_records = []
+    for key, values in test_scores.items():
+        for res, value in values[metric].items():
+            test_scores_records.append([int(key[0]), key[1], float(key[2]), res, value])
+    test_scores = pd.DataFrame.from_records(test_scores_records, columns=columns)
+    simmed_scores_records = []
+    for key, values in simmed_scores.items():
+        for res, value in values[metric].items():
+            simmed_scores_records.append([int(key[0]), key[1], float(key[2]), res, value])
+    simmed_scores = pd.DataFrame.from_records(simmed_scores_records, columns=columns)
+    fg = sns.FacetGrid(simmed_scores, row="Assim", hue="TD", sharey=False, #) aspect=15, height=0.5,)
+        row_order=["daily", "weekly", "monthly", "seasonally", "semi-annually"]
+    )
+    fg.fig.patch.set_alpha(0.0)
+    for ax in fg.axes.flatten():
+        ax.patch.set_alpha(0.0)
+        ax.grid(False)
+
+
+    fg.map(sns.kdeplot, metric, bw_adjust=0.5, clip_on=False,
+        fill=True, alpha=1, linewidth=1.5)
+    fg.map(sns.kdeplot, metric, clip_on=False, color="k", lw=2, bw_adjust=0.5)
+
+
+    fg.figure.subplots_adjust(hspace=-0.25)
+    fg.set_titles("")
+    fg.set(yticks=[], ylabel="")
+    row_order=["daily", "weekly", "monthly", "seasonally", "semi-annually"]
+    for ax, label in zip(fg.axes.flatten(), row_order):
+        ax.set_ylabel(label.capitalize(), rotation=0)
+    
+    fg.axes.flatten()[0].legend(loc="best")
+    fg.fig.align_ylabels()
+
 
 
 def plot_best_and_worst_reservoirs(metric="NSE"):
