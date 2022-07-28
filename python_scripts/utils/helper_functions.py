@@ -238,9 +238,9 @@ class ColorInterpolator:
     def setup_interpolators(self):
         self.interpolators = [
             LinearEquation(
-                (self.stop_color[i] - self.start_color[i])/(self.stop_value - self.start_value),
-                self.start_color[i]
-            ) for i in range(3)
+                (stop_col - start_col)/(self.stop_value - self.start_value),
+                 start_col
+            ) for start_col, stop_col in zip(self.start_color, self.stop_color)
         ]  
     
     def hex_to_rgb(self, hex_value):
