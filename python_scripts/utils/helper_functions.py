@@ -6,6 +6,7 @@ import pandas as pd
 from datetime import datetime
 from utils.timing_function import time_function
 import matplotlib.pyplot as plt
+from dataclasses import dataclass
 from IPython import embed as II
 
 tva_res = ['BlueRidge', 'Chikamauga', 'Guntersville', 'Hiwassee', 
@@ -213,5 +214,59 @@ def make_bin_label_map(nbins, start_index=1):
         j = i - start_index
         label_map[i] = f"{j*pct:.0%} - {(j+1)*pct:.0%}"
     label_map[nbins+start_index - 1] = f"< 100%"
-    print(label_map)
     return label_map
+
+@dataclass
+class LinearEquation:
+    slope: float
+    intercept: float
+
+class ColorInterpolator:
+    def __init__(self, start_color, stop_color, start, stop):
+        self.start_value = start
+        self.stop_value = stop
+        if isinstance(start_color, str):
+            self.start_color = self.hex_to_rgb(start_color)
+        else:
+            self.start_color = start_color
+        if isinstance(stop_color, str):
+            self.stop_color = self.hex_to_rgb(stop_color)
+        else:
+            self.stop_color = stop_color
+        self.setup_interpolators()
+
+    def setup_interpolators(self):
+        self.interpolators = [
+            LinearEquation(
+                (self.stop_color[i] - self.start_color[i])/(self.stop_value - self.start_value),
+                self.start_color[i]
+            ) for i in range(3)
+        ]  
+    
+    def hex_to_rgb(self, hex_value):
+        hex_num = hex_value.strip("#")
+        r = int(hex_num[0:2], 16)
+        g = int(hex_num[2:4], 16)
+        b = int(hex_num[4:6], 16)
+        return (r, g, b)
+
+    def rgb_to_hex(self, rgb):
+        hex_num = hex.strip("#")
+        r = hex(rgb[0])[2:]
+        g = hex(rgb[1])[2:]
+        b = hex(rgb[2])[2:]
+        return f"#{r}{g}{b}"
+
+    def get_color(self, value, as_hex=False):
+        rgb = (p.slope * value + p.intercept for p in self.interpolators)
+        if as_hex:
+            return self.rgb_to_hex(rgb)
+        else:
+            return rgb
+
+    def __call__(self, value, as_hex=False):
+        return self.get_color(value, as_hex)
+    
+    def __repr__(self):
+        return f"ColorInterpolator({self.start_color}, {self.stop_color}, {self.start_value}, {self.stop_value})"
+    
