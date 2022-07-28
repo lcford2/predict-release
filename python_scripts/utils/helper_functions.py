@@ -257,15 +257,20 @@ class ColorInterpolator:
         b = hex(rgb[2])[2:]
         return f"#{r}{g}{b}"
 
-    def get_color(self, value, as_hex=False):
-        rgb = (p.slope * value + p.intercept for p in self.interpolators)
+    def get_color(self, value, normalize=True, as_hex=False):
+        if normalize and as_hex:
+            raise ArgumentError("`normalize` and `as_hex` cannot both be `True`")
+        rgb = [p.slope * (value - self.start_value) + p.intercept for p in self.interpolators]
         if as_hex:
             return self.rgb_to_hex(rgb)
         else:
+            if normalize:
+                return [i / 255 for i in rgb]
+            else:
             return rgb
 
-    def __call__(self, value, as_hex=False):
-        return self.get_color(value, as_hex)
+    def __call__(self, value, normalize=True, as_hex=False):
+        return self.get_color(value, normalize, as_hex)
     
     def __repr__(self):
         return f"ColorInterpolator({self.start_color}, {self.stop_color}, {self.start_value}, {self.stop_value})"
