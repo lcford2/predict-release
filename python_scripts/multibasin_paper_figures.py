@@ -1270,6 +1270,45 @@ def plot_characteristic_res_line_plot(metric="NSE"):
     fig.align_ylabels()
     plt.show()
 
+def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
+    char_df = get_res_characteristic(metric)
+    pvars = [
+        "Release Seasonality", "Storage Seasonality", "Maximum Storage",
+        "Mean Release", r"Release $CV$", "Residence Time"
+    ]
+    for var in pvars:
+        char_df[var] = pd.qcut(char_df[var], nbins, labels=False) + 1
+
+    m1_df = pd.DataFrame(index=range(1, nbins+1), columns=pvars)
+    m2_df = pd.DataFrame(index=range(1, nbins+1), columns=pvars)
+
+    for var in pvars:
+        m1_df[var] = char_df.groupby(var)["TD2-MSS0.20"].mean()
+        m2_df[var] = char_df.groupby(var)["TD5-MSS0.01"].mean()
+    
+    m1_df["Model"] = "TD2-MSS0.20"
+    m2_df["Model"] = "TD5-MSS0.01"
+    m1_df = m1_df.reset_index().rename(columns={"index":"Bin"}).melt(id_vars=["Model", "Bin"])
+    m2_df = m2_df.reset_index().rename(columns={"index":"Bin"}).melt(id_vars=["Model", "Bin"])
+
+    df = pd.concat([m1_df, m2_df])
+    label_map = make_bin_label_map(nbins, start_index=1)
+    df["Bin"] = df["Bin"].replace(label_map)
+    fg = sns.catplot(
+        data=df, 
+        x="Bin",
+        y="value", 
+        hue="Model", 
+        col="variable", 
+        col_wrap=2, 
+        kind="bar",
+        legend_out=False
+    )
+    fg.set_titles("{col_name}")
+    fg.set_ylabels(metric)
+    fg.set_xlabels("Characteristic Percentile")
+
+    plt.show()
 
 if __name__ == "__main__":
     plt.style.use("seaborn")
