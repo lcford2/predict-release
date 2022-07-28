@@ -24,7 +24,7 @@ import geopandas as gpd
 from IPython import embed as II
 import sys
 
-from utils.helper_functions import linear_scale_values, make_bin_label_map
+from utils.helper_functions import linear_scale_values, make_bin_label_map, ColorInterpolator
 
 
 if hostname == "CCEE-DT-094":
@@ -1406,12 +1406,15 @@ def plot_res_characteristic_map(metric="NSE"):
     # maps = [make_map(i, other_bound=basins) for i in axes]
     units = ["", "", " [1000 acre-ft]", " [1000 acre-ft/day]", "", " [Days]"]
     make_maps(axes, other_bound=basins)
+    model_key = "TD2-MSS0.20"
+    color_map = ColorInterpolator("#FFFFFF", "#EF2727", char_df[model_key].min(), char_df[model_key].max())
+    colors = [color_map(v) for v in char_df.loc[res_locs.index, model_key]]
     for ax, var, unit in zip(axes, pvars, units):
         max_size = 400
         min_size = 20
         values = char_df.loc[res_locs.index, var]
         size = np.array(linear_scale_values(values, min_size, max_size))
-        ax.scatter(res_locs["long"], res_locs["lat"], s=size, facecolor="#ef2727", edgecolor="k", zorder=4)
+        ax.scatter(res_locs["long"], res_locs["lat"], s=size, facecolor=colors, edgecolor="k", zorder=4)
         legend_scores = np.linspace(values.min(), values.max(), 4)
         legend_sizes = linear_scale_values(legend_scores, min_size, max_size)
         legend_markers = [plt.scatter(
