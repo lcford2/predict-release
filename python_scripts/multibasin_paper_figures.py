@@ -412,6 +412,73 @@ def make_map(ax=None, coords=None, other_bound=None):
 
     return m
 
+def make_maps(axes, coords=None, other_bound=None):
+    if coords:
+        west, south, east, north = coords
+    else:
+        west, south, east, north = (
+            -127.441406, 23.807069, -66.093750, 49.392373
+        )
+    
+    # parallels = np.arange(0.0, 81, 10.0)
+    # meridians = np.arange(-180.0, 181.0, 20.0)
+    parallels = np.arange(south+5, north-5, 10.0)
+    meridians = np.arange(west+10, east-10, 20.0)
+
+    states_path = GIS_DIR / "cb_2017_us_state_500k.shp"
+    states = gpd.read_file(states_path.as_posix())
+
+    rivers = [
+        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusLC_trimmed_flowlines_noz").as_posix(),
+        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusUC_trimmed_flowlines_noz").as_posix(),
+        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusTN_trimmed_flowlines_noz").as_posix(),
+        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusML_trimmed_flowlines_noz").as_posix(),
+        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusMU_trimmed_flowlines_noz").as_posix(),
+        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusPN_trimmed_flowlines_noz").as_posix()
+    ]
+
+    river_gdfs = [gpd.read_file(river+".shp") for river in rivers]
+    
+    other_gdfs = []
+    if other_bound:
+        for b, c in other_bound:
+            other_gdfs.append((gpd.read_file(b+".shp"), c))
+
+    label_map = {
+        0: dict(labelleft=True, labelright=False, labeltop=True, labelbottom=False),
+        1: dict(labelleft=False, labelright=True, labeltop=True, labelbottom=False),
+        2: dict(labelleft=True, labelright=False, labeltop=False, labelbottom=False),
+        3: dict(labelleft=False, labelright=True, labeltop=False, labelbottom=False),
+        4: dict(labelleft=True, labelright=False, labeltop=False, labelbottom=True),
+        5: dict(labelleft=False, labelright=True, labeltop=False, labelbottom=True),
+    }
+    for i, ax in enumerate(axes):
+        states.plot(ax=ax, edgecolor="k", facecolor="None")
+        for gdf in river_gdfs:
+            gdf.plot(ax=ax, color="b", linewidth=0.3, alpha=1.0)
+        for gdf, c in other_gdfs:
+            gdf.plot(ax=ax, facecolor=c, alpha=0.5, zorder=2)
+
+        ax.set_ylim(south, north)
+        ax.set_xlim(west, east)
+        ax.patch.set_alpha(0.0)
+        ax.grid(False)
+        ax.tick_params(axis="both", which="major",
+            direction="in",
+            bottom=True,
+            top=True,
+            left=True,
+            right=True,
+            **label_map[i]
+        )
+        ax.set_yticks(parallels)
+        ax.set_yticklabels([f"{i:.0f}$^\circ$N" for i in parallels], fontsize=10)
+        ax.set_xticks(meridians)
+        ax.set_xticklabels([f"{abs(i):.0f}$^\circ$W" for i in meridians], fontsize=10)
+        ax.set_frame_on(True)
+        for spine in ax.spines.values():
+            spine.set_edgecolor('black')        
+    
 
 def plot_res_locs():
     res_locs = pd.read_csv("../geo_data/reservoirs.csv")
@@ -421,8 +488,6 @@ def plot_res_locs():
                 "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa "]
     drop_res = [i.upper() for i in drop_res]
     res_locs = res_locs.drop(drop_res)
-    II()
-    sys.exit()
     
     with open("../geo_data/extents.json", "r") as f:
         coords = json.load(f)
@@ -1309,9 +1374,74 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
     fg.set_xlabels("Characteristic Percentile")
 
     plt.show()
+    
+def plot_res_characteristic_map(metric="NSE"):
+    char_df = get_res_characteristic(metric)
+    pvars = [
+        "Release Seasonality", "Storage Seasonality", "Maximum Storage",
+        "Mean Release", r"Release $CV$", "Residence Time"
+    ]
+
+    fig, axes = plt.subplots(3, 2, sharex=True, sharey=True)
+    fig.patch.set_alpha(0.0)
+    axes = axes.flatten()
+    res_locs = pd.read_csv("../geo_data/reservoirs.csv")
+    res_locs = res_locs.set_index("site_name")
+
+    drop_res = ["Causey", "Lost Creek", "Echo", "Smith & Morehouse Reservoir",
+                "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa "]
+    drop_res = [i.upper() for i in drop_res]
+    res_locs = res_locs.drop(drop_res)
+    
+    with open("../geo_data/extents.json", "r") as f:
+        coords = json.load(f)
+    color_map = sns.color_palette("Set2")
+    basins = [((GIS_DIR/"columbia_shp"/"Shape"/"WBDHU2").as_posix(), color_map[0]),
+              ((GIS_DIR/"missouri_shp"/"Shape"/"WBDHU2").as_posix(), color_map[1]),
+            #   (GIS_DIR/"lowercol_shp"/"Shape"/"WBDHU2").as_posix(),
+            #   (GIS_DIR/"uppercol_shp"/"Shape"/"WBDHU2").as_posix(),
+              ((GIS_DIR/"colorado_shp"/"Shape"/"WBDHU2").as_posix(), color_map[2]),
+              ((GIS_DIR/"tennessee_shp"/"Shape"/"WBDHU2").as_posix(), color_map[3])]
+
+    # maps = [make_map(i, other_bound=basins) for i in axes]
+    units = ["", "", " [1000 acre-ft]", " [1000 acre-ft/day]", "", " [Days]"]
+    make_maps(axes, other_bound=basins)
+    for ax, var, unit in zip(axes, pvars, units):
+        max_size = 400
+        min_size = 20
+        values = char_df.loc[res_locs.index, var]
+        size = np.array(linear_scale_values(values, min_size, max_size))
+        ax.scatter(res_locs["long"], res_locs["lat"], s=size, facecolor="#ef2727", edgecolor="k", zorder=4)
+        legend_scores = np.linspace(values.min(), values.max(), 4)
+        legend_sizes = linear_scale_values(legend_scores, min_size, max_size)
+        legend_markers = [plt.scatter(
+                                [], [], s=i, edgecolors="k", c="#ef2727", alpha=1
+                            ) for i in legend_sizes]
+        leg_kwargs = dict(ncol=4, frameon=True, handlelength=1, loc='lower right', borderpad=1,
+                        scatterpoints=1, handletextpad=1, labelspacing=1, markerfirst=False,
+                        title=var, fontsize=6)
+        if var == pvars[2]:
+            legend_labels = [f"{round(i, -2):.0f}" for i in legend_scores]
+        elif var == pvars[3]:
+            legend_labels = [f"{round(i, -1):.0f}" for i in legend_scores]
+        elif var == pvars[5]:
+            legend_labels = [f"{i:.0f}" for i in legend_scores]
+        else:
+            legend_labels = [f"{i:.2f}" for i in legend_scores]
+        ax.legend(
+            legend_markers, legend_labels, 
+            ncol=4, loc="lower left", title=f"{var}{unit}", fontsize=8, handlelength=1, 
+            columnspacing=1, title_fontsize=8, handletextpad=1, borderpad=1,
+            labelspacing=1)
+    plt.show()
 
 if __name__ == "__main__":
-    plt.style.use("seaborn")
+    args = sys.argv[1:]
+    if len(args) > 0:
+        metric = args[0]
+    else:
+        metric = "NSE"
+    plt.style.use("seaborn-notebook")
     # plt.style.use(["science", "nature"])
     sns.set_context("notebook", font_scale=1.4)
     # results = read_results()
@@ -1327,9 +1457,11 @@ if __name__ == "__main__":
     #* FIGURE 3
     # plot_performance_boxplots(results)
 
-    # plot_grid_search_results(ds="simul", metric="nRMSE")
-    # plot_data_assim_results()
-    # plot_best_and_worst_reservoirs("NSE")
-    # plot_top_characteristic_res("nRMSE", 10)
-    # plot_top_characteristic_res_scatter("NSE")
-    plot_characteristic_res_line_plot("nRMSE")
+    # plot_grid_search_results(ds="simul", metric=metric)
+    # plot_data_assim_results(metric)
+    # plot_best_and_worst_reservoirs(metric)
+    # plot_top_characteristic_res(metric, 10)
+    # plot_top_characteristic_res_scatter(metric)
+    # plot_characteristic_res_line_plot(metric)
+    # plot_res_characteristic_bin_performance(metric, 5)
+    plot_res_characteristic_map(metric)
