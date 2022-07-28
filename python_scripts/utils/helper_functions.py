@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 from utils.timing_function import time_function
+import matplotlib.pyplot as plt
 from IPython import embed as II
 
 tva_res = ['BlueRidge', 'Chikamauga', 'Guntersville', 'Hiwassee', 
@@ -197,8 +198,20 @@ def swap_index_levels(df):
     df.index = new_index
     return df
 
-def linear_scale_values(values, min_val=0, max_val=1):
+def linear_scale_values(values, min_val=0.0, max_val=1.0):
     max_raw = max(values)
     min_raw = min(values)
     ratio = (max_val - min_val) / (max_raw - min_raw)
     return [i*ratio + min_val for i in values]
+
+def make_bin_label_map(nbins, start_index=1):
+    pct = 1/nbins
+    label_map = {
+        start_index: f"< {pct:.0%}" 
+    }
+    for i in range(start_index+1, (nbins+start_index) - 1):
+        j = i - start_index
+        label_map[i] = f"{j*pct:.0%} - {(j+1)*pct:.0%}"
+    label_map[nbins+start_index - 1] = f"< 100%"
+    print(label_map)
+    return label_map
