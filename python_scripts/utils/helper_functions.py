@@ -259,7 +259,7 @@ class ColorInterpolator:
 
     def get_color(self, value, normalize=True, as_hex=False):
         if normalize and as_hex:
-            raise ArgumentError("`normalize` and `as_hex` cannot both be `True`")
+            raise ValueError("`normalize` and `as_hex` cannot both be `True`")
         rgb = [p.slope * (value - self.start_value) + p.intercept for p in self.interpolators]
         if as_hex:
             return self.rgb_to_hex(rgb)
@@ -267,7 +267,7 @@ class ColorInterpolator:
             if normalize:
                 return [i / 255 for i in rgb]
             else:
-            return rgb
+                return rgb
 
     def __call__(self, value, normalize=True, as_hex=False):
         return self.get_color(value, normalize, as_hex)
