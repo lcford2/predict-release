@@ -1382,9 +1382,22 @@ def plot_res_characteristic_map(metric="NSE"):
         "Mean Release", r"Release $CV$", "Residence Time"
     ]
 
-    fig, axes = plt.subplots(3, 2, sharex=True, sharey=True)
+    # fig, axes = plt.subplots(3, 2, sharex=True, sharey=True)
+    # axes = axes.flatten()
+    fig = plt.figure()
+    gs = GS.GridSpec(3, 3, height_ratios=[1, 1, 1], width_ratios=[10, 10, 0.5])
     fig.patch.set_alpha(0.0)
-    axes = axes.flatten()
+    #
+    #  [0,0], [0,1], [0,2
+    #
+    #
+    #
+    #
+    axes = [fig.add_subplot(gs[0,0])]
+    for pair in [(0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]:
+        axes.append(fig.add_subplot(gs[pair], sharex=axes[0], sharey=axes[0]))
+    axes = np.array(axes)
+    cbar_ax = fig.add_subplot(gs[:, 2])   
     res_locs = pd.read_csv("../geo_data/reservoirs.csv")
     res_locs = res_locs.set_index("site_name")
 
@@ -1392,9 +1405,9 @@ def plot_res_characteristic_map(metric="NSE"):
                 "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa "]
     drop_res = [i.upper() for i in drop_res]
     res_locs = res_locs.drop(drop_res)
-    
-    with open("../geo_data/extents.json", "r") as f:
-        coords = json.load(f)
+
+    # with open("../geo_data/extents.json", "r") as f:
+    #     coords = json.load(f)
     color_map = sns.color_palette("Set2")
     basins = [((GIS_DIR/"columbia_shp"/"Shape"/"WBDHU2").as_posix(), color_map[0]),
               ((GIS_DIR/"missouri_shp"/"Shape"/"WBDHU2").as_posix(), color_map[1]),
@@ -1407,18 +1420,37 @@ def plot_res_characteristic_map(metric="NSE"):
     units = ["", "", " [1000 acre-ft]", " [1000 acre-ft/day]", "", " [Days]"]
     make_maps(axes, other_bound=basins)
     model_key = "TD2-MSS0.20"
-    color_map = ColorInterpolator("#FFFFFF", "#EF2727", char_df[model_key].min(), char_df[model_key].max())
-    colors = [color_map(v) for v in char_df.loc[res_locs.index, model_key]]
+    min_color = "#FFFFFF"
+    max_color = "#EF2727"
+    min_value = char_df[model_key].min()
+    max_value = char_df[model_key].max()
+    #* use custom colormap
+    # color_map = ColorInterpolator("#FFFFFF", "#EF2727", char_df[model_key].min(), char_df[model_key].max())
+    # color_map = ColorInterpolator(min_color, max_color, min_value, max_value)
+    # colors = [color_map(v) for v in char_df.loc[res_locs.index, model_key]]
+    # norm = Normalize(vmin=min_value, vmax=max_value)
+    norm = LogNorm(vmin=min_value, vmax=max_value)
+    cmap = "inferno"
+    if metric == "nRMSE":
+        # want bright colors to be high performing reserviors
+        color_map = get_cmap(cmap).reversed()
+    else:
+        color_map = get_cmap(cmap)
+    colors = [color_map(norm(i)) for i in char_df.loc[res_locs.index, model_key]]
     for ax, var, unit in zip(axes, pvars, units):
         max_size = 400
         min_size = 20
         values = char_df.loc[res_locs.index, var]
         size = np.array(linear_scale_values(values, min_size, max_size))
-        ax.scatter(res_locs["long"], res_locs["lat"], s=size, facecolor=colors, edgecolor="k", zorder=4)
+        ax.scatter(res_locs["long"], res_locs["lat"],
+                                 facecolor=colors,
+                                 s=size, edgecolor="k", zorder=4,
+                                 linewidths=1
+        )
         legend_scores = np.linspace(values.min(), values.max(), 4)
         legend_sizes = linear_scale_values(legend_scores, min_size, max_size)
         legend_markers = [plt.scatter(
-                                [], [], s=i, edgecolors="k", c="#ef2727", alpha=1
+                                [], [], s=i, edgecolors="k", c="#ef2727", alpha=1, linewidths=1
                             ) for i in legend_sizes]
         leg_kwargs = dict(ncol=4, frameon=True, handlelength=1, loc='lower right', borderpad=1,
                         scatterpoints=1, handletextpad=1, labelspacing=1, markerfirst=False,
@@ -1436,6 +1468,14 @@ def plot_res_characteristic_map(metric="NSE"):
             ncol=4, loc="lower left", title=f"{var}{unit}", fontsize=8, handlelength=1, 
             columnspacing=1, title_fontsize=8, handletextpad=1, borderpad=1,
             labelspacing=1)
+    #* use the comment out lines if creating custom colormap
+    # cmap = LinearSegmentedColormap.from_list("mcmap", [min_color, max_color])
+    # norm = Normalize(vmin=min_value, vmax=max_value)
+    cbar = plt.colorbar(ScalarMappable(norm=norm, cmap=color_map), cax=cbar_ax)
+    cbar.outline.set_edgecolor("k")
+    cbar.outline.set_linewidth(1)
+    cbar.ax.tick_params(labelsize=12)
+    cbar.set_label(metric, fontsize=14)
     plt.show()
 
 if __name__ == "__main__":
