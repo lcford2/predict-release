@@ -29,6 +29,7 @@ import seaborn as sns
 from IPython import embed as II
 from matplotlib.cm import ScalarMappable, get_cmap
 from matplotlib.colors import LinearSegmentedColormap, LogNorm, Normalize
+from matplotlib.transforms import Bbox
 from mpl_toolkits.basemap import Basemap
 from scipy.stats import boxcox
 from sklearn.metrics import mean_squared_error, r2_score
@@ -591,6 +592,57 @@ def make_maps(axes, coords=None, other_bound=None):
         ax.set_frame_on(True)
         for spine in ax.spines.values():
             spine.set_edgecolor("black")
+
+def make_basin_map(ax, basin_info):
+    river_gdfs = [
+        gpd.read_file(i+".shp") for i in basin_info["rivers"]
+    ]
+    bound_gdf = gpd.read_file(basin_info["shp"]+".shp")
+    west, south, east, north = basin_info["extents"]
+    pstep = int(np.ceil((north - south) / 4))
+    mstep = int(np.ceil((east - west) / 4))
+    # pstep = 2
+    # mstep = 4
+    parallels = np.arange(south + pstep / 2, north - pstep / 2, pstep)
+    meridians = np.arange(west + mstep / 2, east - mstep / 2, mstep)
+
+    states_path = GIS_DIR / "cb_2017_us_state_500k.shp"
+    states = gpd.read_file(states_path.as_posix())
+
+    label_map = {
+        "labelleft": True, "labelright": False,
+        "labeltop": False, "labelbottom": True
+    }
+
+    states.plot(ax=ax, edgecolor="k", facecolor="None", linewidth=0.5)
+    for river in river_gdfs:
+        river.plot(ax=ax, color="b", linewidth=0.3, alpha=1.0)
+    bound_gdf.plot(ax=ax, facecolor=basin_info["color"], alpha=0.5, zorder=2)
+
+    ax.set_ylim(south, north)
+    ax.set_xlim(west, east)
+    ax.patch.set_alpha(0.0)
+    ax.grid=False
+    ax.tick_params(
+        axis="both",
+        which="major",
+        direction="in",
+        bottom=True,
+        top=True,
+        left=True,
+        right=True,
+        length=6,
+        width=1,
+        **label_map,
+    )
+
+    ax.set_yticks(parallels)
+    ax.set_yticklabels([f"{i:.0f}$^\circ$N" for i in parallels], fontsize=10)
+    ax.set_xticks(meridians)
+    ax.set_xticklabels([f"{abs(i):.0f}$^\circ$W" for i in meridians], fontsize=10)
+    ax.set_frame_on(True)
+    for spine in ax.spines.values():
+        spine.set_edgecolor("black")
 
 
 def plot_res_locs():
@@ -1708,6 +1760,115 @@ def plot_res_characteristic_map(metric="NSE"):
     cbar.ax.tick_params(labelsize=12)
     cbar.set_label(metric, fontsize=14)
     plt.show()
+
+
+def plot_res_characteristic_split_map():
+    char_df = get_res_characteristic()
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    rename = {
+        "upper_col": "colorado",
+        "lower_col": "colorado",
+        "pnw": "columbia",
+        "tva": "tennessee",
+    }
+    rbasins = rbasins.replace(rename)
+    rbasins = rbasins.str.capitalize()
+    char_df["basin"] = rbasins
+
+    res_locs = pd.read_csv("../geo_data/reservoirs.csv")
+    res_locs = res_locs.set_index("site_name")
+    char_df["x"] = res_locs["long"]
+    char_df["y"] = res_locs["lat"]
+    
+    for var in CHAR_VARS:
+        char_df[var] = char_df[var].rank(pct=True)
+
+    drop_res = [
+        "Causey",
+        "Lost Creek",
+        "Echo",
+        "Smith & Morehouse Reservoir",
+        "Jordanelle",
+        "Deer Creek",
+        "Hyrum",
+        "Santa Rosa ",
+    ]
+    drop_res = [i.upper() for i in drop_res]
+    res_locs = res_locs.drop(drop_res)
+
+    with open("../geo_data/extents.json", "r") as f:
+        coords = json.load(f)
+    basin_color_map = sns.color_palette("Set2")
+    basin_info = {
+        "Columbia": {
+            "extents": coords["Columbia"],
+            "shp": (GIS_DIR / "columbia_shp" / "Shape" / "WBDHU2").as_posix(),
+            "color": basin_color_map[0],
+            "rivers": [
+                (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusPN_trimmed_flowlines_noz").as_posix()
+            ]
+        },
+        "Missouri": {
+            "extents": coords["Missouri"],
+            "shp": (GIS_DIR / "missouri_shp" / "Shape" / "WBDHU2").as_posix(),
+            "color": basin_color_map[1],
+            "rivers": [
+                (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusMU_trimmed_flowlines_noz").as_posix(),
+                (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusML_trimmed_flowlines_noz").as_posix()
+            ]
+        },
+        "Colorado": {
+            "extents": coords["Colorado"],
+            "shp": (GIS_DIR / "colorado_shp" / "Shape" / "WBDHU2").as_posix(),
+            "color": basin_color_map[2],
+            "rivers": [
+                (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusUC_trimmed_flowlines_noz").as_posix(),
+                (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusLC_trimmed_flowlines_noz").as_posix()
+            ]
+        },
+        "Tennessee": {
+            "extents": coords["Tennessee"],
+            "shp": (GIS_DIR / "tennessee_shp" / "Shape" / "WBDHU2").as_posix(),
+            "color": basin_color_map[3],
+            "rivers": [
+                (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusTN_trimmed_flowlines_noz").as_posix()
+            ]
+        },
+    }
+
+    norm = Normalize(vmin=0, vmax=1)
+    cmap = "inferno"
+    color_map = get_cmap(cmap)
+    for var in CHAR_VARS:
+        fig = plt.figure(figsize=(19, 10))
+        gs = GS.GridSpec(2, 2, height_ratios=[1,1], width_ratios=[1,1])
+        fig.patch.set_alpha(0.0)
+        axes = [
+            fig.add_subplot(gs[0,0]),
+            fig.add_subplot(gs[0,1]),
+            fig.add_subplot(gs[1,0]),
+            fig.add_subplot(gs[1,1]),
+        ]
+        
+        positions = [
+            Bbox([[0.24340625350138054, 0.5379881391965984], [0.4408909297545936, 0.9728096676737158]]), 
+            Bbox([[0.5086472454653168, 0.5379881391965984], [0.8070555712787091, 0.9728096676737158]]),
+            Bbox([[0.2452846166142043, 0.05158330535974043], [0.43901256664176985, 0.48640483383685795]]),
+            Bbox([[0.47861855895825467, 0.05158330535974043], [0.8370842577857711, 0.48640483383685795]])
+        ]
+        for ax, pos, (basin, binfo) in zip(axes, positions, basin_info.items()):
+            make_basin_map(ax, binfo)
+            ax.set_position(pos)
+            bdf = char_df[char_df["basin"] == basin]
+            ax.scatter(bdf["x"], bdf["y"], edgecolor="k", linewidths=0.5,
+                    facecolor=[color_map(norm(i)) for i in bdf[var].values],
+                    zorder=4 
+            )
+        
+        mng = plt.get_current_fig_manager()
+        # mng.window.showMaximized()
+        # plt.show()
+        plt.savefig(f"C:\\Users\\lcford2\\Dropbox\\PHD\\multibasin_model_figures\\new_paper_figures\\split_char_map_{var}.png", dpi=400)
 
 
 if __name__ == "__main__":
