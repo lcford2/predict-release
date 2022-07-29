@@ -1879,6 +1879,52 @@ def char_split_map_for_parallel(var, char_df, basin_info):
     plt.savefig(f"C:\\Users\\lcford2\\Dropbox\\PHD\\multibasin_model_figures\\new_paper_figures\\split_char_map_{var}_larger.png", dpi=400)
 
 
+def plot_data_assim_scatter(metric="NSE"):
+    import glob
+    import re
+
+    files = glob.glob(
+        "../results/tclr_model_testing/all/TD?_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+    )
+    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    matches = [re.search(td_mss_assim_pat, i) for i in files]
+    td_mss_assim = [i.groups() for i in matches]
+    results = {}
+    for key, file in zip(td_mss_assim, files):
+        with open(file, "rb") as f:
+            results[key] = pickle.load(f)
+    simmed_data = select_results(results, "simmed_data")
+
+    simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+
+    fig, axes = plt.subplots(1, 2, sharex=True, sharey=True)
+    axes = axes.flatten()
+
+    ya = "daily"
+    xa = "weekly"
+    y1_key = ("5", ya, "0.01")
+    x1_key = ("5", xa, "0.01")
+    y2_key = ("2", ya, "0.20")
+    x2_key = ("2", xa, "0.20")
+    ax = axes[0]
+    ax.scatter(simmed_scores[x1_key], simmed_scores[y1_key], label="TD5-MSS0.01")
+    ax.scatter(simmed_scores[x2_key], simmed_scores[y2_key], label="TD2-MSS0.20")
+    ax.set_ylabel(f"{ya.capitalize()} Assim. Performance ({metric})")
+    ax.set_xlabel(f"{xa.capitalize()} Assim. Performance ({metric})")
+
+    ya = "monthly"
+    xa = "semi-annually"
+    y1_key = ("5", ya, "0.01")
+    x1_key = ("5", xa, "0.01")
+    y2_key = ("2", ya, "0.20")
+    x2_key = ("2", xa, "0.20")
+    ax = axes[1]
+    ax.scatter(simmed_scores[x1_key], simmed_scores[y1_key], label="TD5-MSS0.01")
+    ax.scatter(simmed_scores[x2_key], simmed_scores[y2_key], label="TD2-MSS0.20")
+    ax.set_ylabel(f"{ya.capitalize()} Assim. Performance ({metric})")
+    ax.set_xlabel(f"{xa.capitalize()} Assim. Performance ({metric})")
+    plt.show()
+
 
 if __name__ == "__main__":
     args = sys.argv[1:]
@@ -1909,4 +1955,6 @@ if __name__ == "__main__":
     # plot_top_characteristic_res_scatter(metric)
     # plot_characteristic_res_line_plot(metric)
     # plot_res_characteristic_bin_performance(metric, 5)
-    plot_res_characteristic_map(metric)
+    # plot_res_characteristic_map(metric)
+    plot_res_characteristic_split_map()
+    # plot_data_assim_scatter(metric)
