@@ -5,6 +5,7 @@ import pathlib
 import pickle
 import socket
 from datetime import datetime
+from joblib import Parallel, delayed
 
 hostname = socket.gethostname()
 if hostname == "CCEE-DT-094":
@@ -28,7 +29,7 @@ import pandas as pd
 import seaborn as sns
 from IPython import embed as II
 from matplotlib.cm import ScalarMappable, get_cmap
-from matplotlib.colors import LinearSegmentedColormap, LogNorm, Normalize
+from matplotlib.colors import LinearSegmentedColormap, LogNorm, Normalize, ListedColormap
 from matplotlib.transforms import Bbox
 from mpl_toolkits.basemap import Basemap
 from scipy.stats import boxcox
@@ -1836,10 +1837,18 @@ def plot_res_characteristic_split_map():
         },
     }
 
+    Parallel(n_jobs=len(CHAR_VARS), verbose=11)(
+        delayed(char_split_map_for_parallel)(
+            var, char_df, basin_info
+        ) for var in CHAR_VARS
+    )
+
+def char_split_map_for_parallel(var, char_df, basin_info):
     norm = Normalize(vmin=0, vmax=1)
-    cmap = "inferno"
-    color_map = get_cmap(cmap)
-    for var in CHAR_VARS:
+    # cmap = "inferno"
+    # color_map = get_cmap(cmap)
+    colors = ("#DAFF47","#EDA200","#D24E71","#91008D","#001889")
+    color_map = ListedColormap(colors, "qual_inferno")
         fig = plt.figure(figsize=(19, 10))
         gs = GS.GridSpec(2, 2, height_ratios=[1,1], width_ratios=[1,1])
         fig.patch.set_alpha(0.0)
@@ -1862,13 +1871,13 @@ def plot_res_characteristic_split_map():
             bdf = char_df[char_df["basin"] == basin]
             ax.scatter(bdf["x"], bdf["y"], edgecolor="k", linewidths=0.5,
                     facecolor=[color_map(norm(i)) for i in bdf[var].values],
-                    zorder=4 
+                zorder=4, s=250
             )
         
         mng = plt.get_current_fig_manager()
         # mng.window.showMaximized()
-        # plt.show()
-        plt.savefig(f"C:\\Users\\lcford2\\Dropbox\\PHD\\multibasin_model_figures\\new_paper_figures\\split_char_map_{var}.png", dpi=400)
+    plt.savefig(f"C:\\Users\\lcford2\\Dropbox\\PHD\\multibasin_model_figures\\new_paper_figures\\split_char_map_{var}_larger.png", dpi=400)
+
 
 
 if __name__ == "__main__":
