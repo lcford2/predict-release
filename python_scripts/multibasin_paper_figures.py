@@ -600,7 +600,7 @@ def make_basin_map(ax, basin_info):
     bound_gdf = gpd.read_file(basin_info["shp"]+".shp")
     west, south, east, north = basin_info["extents"]
     pstep = int(np.ceil((north - south) / 4))
-    mstep = int(np.ceil((east - west) / 4))
+    mstep = int(np.ceil((east - west) / 3))
     # pstep = 2
     # mstep = 4
     parallels = np.arange(south + pstep / 2, north - pstep / 2, pstep)
@@ -637,9 +637,9 @@ def make_basin_map(ax, basin_info):
     )
 
     ax.set_yticks(parallels)
-    ax.set_yticklabels([f"{i:.0f}$^\circ$N" for i in parallels], fontsize=10)
+    ax.set_yticklabels([f"{i:.0f}$^\circ$N" for i in parallels], fontsize=16)
     ax.set_xticks(meridians)
-    ax.set_xticklabels([f"{abs(i):.0f}$^\circ$W" for i in meridians], fontsize=10)
+    ax.set_xticklabels([f"{abs(i):.0f}$^\circ$W" for i in meridians], fontsize=16)
     ax.set_frame_on(True)
     for spine in ax.spines.values():
         spine.set_edgecolor("black")
