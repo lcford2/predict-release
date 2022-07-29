@@ -1462,14 +1462,6 @@ def plot_top_characteristic_res_scatter(metric="NSE"):
     char_df = get_res_characteristic(metric)
     fig, axes = plt.subplots(3, 2, sharey=True, sharex=False)
     axes = axes.flatten()
-    CHAR_VARS = [
-        "Release Seasonality",
-        "Storage Seasonality",
-        "Maximum Storage",
-        "Mean Release",
-        r"Release $CV$",
-        "Residence Time",
-    ]
     markers = [
         "o",
         "s",
@@ -1492,14 +1484,6 @@ def plot_characteristic_res_line_plot(metric="NSE"):
     # axes = axes.flatten()
     fig.patch.set_alpha(0.0)
 
-    CHAR_VARS = [
-        "Release Seasonality",
-        "Storage Seasonality",
-        "Maximum Storage",
-        "Mean Release",
-        r"Release $CV$",
-        "Residence Time",
-    ]
     zeros = np.zeros_like(char_df["TD2-MSS0.20"].values)
     max_size = 500
     min_size = 20
@@ -1549,14 +1533,6 @@ def plot_characteristic_res_line_plot(metric="NSE"):
 
 def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
     char_df = get_res_characteristic(metric)
-    CHAR_VARS = [
-        "Release Seasonality",
-        "Storage Seasonality",
-        "Maximum Storage",
-        "Mean Release",
-        r"Release $CV$",
-        "Residence Time",
-    ]
     for var in CHAR_VARS:
         char_df[var] = pd.qcut(char_df[var], nbins, labels=False) + 1
 
