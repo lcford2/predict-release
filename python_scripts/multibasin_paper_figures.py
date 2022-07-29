@@ -18,7 +18,10 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as GS
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatch
+from matplotlib.cm import ScalarMappable, get_cmap
+from matplotlib.colors import LinearSegmentedColormap, Normalize, LogNorm
 from mpl_toolkits.basemap import Basemap
+from scipy.stats import boxcox
 import seaborn as sns
 import geopandas as gpd
 from IPython import embed as II
@@ -68,6 +71,13 @@ def mean_absolute_scaled_error(yact, ymod):
     lagerror = np.absolute(yact[1:] - yact[:-1]).mean()
     return error / lagerror
 
+
+def trmse(act, mod):
+    tact = boxcox(act, 0.3)
+    tmod = boxcox(mod, 0.3)
+    return mean_squared_error(tact, tmod, squared=False)
+
+
 def get_r2score(df, grouper=None):
     if grouper:
         return pd.DataFrame(
@@ -108,6 +118,19 @@ def get_mase(df, grouper=None):
         )
     else:
         return mean_absolute_scaled_error(df["actual"], df["model"])
+
+
+def get_ntrmse(df, grouper=None):
+    normer = "mean"
+    if grouper:
+        return pd.DataFrame(
+            {"nTRMSE": df.groupby(grouper).apply(
+                lambda x: mean_squared_error(x["actual"], x["model"], squared=False) / np.mean(boxcox(x["actual"], 0.3)))
+            }
+        )
+    else:
+        return mean_squared_error(df["actual"], df["model"], squared=False) / np.mean(boxcox(df["actual"], 0.3))
+
 
 def get_model_scores(model_dfs, metric="NSE", grouper=None):
     if metric == "NSE":
