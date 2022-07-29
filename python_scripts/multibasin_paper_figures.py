@@ -1397,7 +1397,8 @@ def get_res_characteristic(metric="NSE"):
 
     # train_scores = get_model_scores(train_data, metric=metric, grouper="site_name")
     # test_scores =  get_model_scores(test_data, metric=metric, grouper="site_name")
-    simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+    if metric:
+        simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
 
     df = read_basin_data("all")
     meta = get_basin_meta_data("all")
@@ -1443,9 +1444,10 @@ def get_res_characteristic(metric="NSE"):
     char_df["Mean Release"] = df.groupby(df.index.get_level_values(0))["release"].mean()
     char_df[r"Release $CV$"] = cv
     char_df["Residence Time"] = meta["rts"]
-    for key, value in simmed_scores.items():
-        df_key = f"TD{key[0]}-MSS{key[1]:.2f}"
-        char_df[df_key] = value
+    if metric:
+        for key, value in simmed_scores.items():
+            df_key = f"TD{key[0]}-MSS{key[1]:.2f}"
+            char_df[df_key] = value
     return char_df
 
 
