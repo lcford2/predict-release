@@ -43,6 +43,14 @@ if hostname == "CCEE-DT-094":
 elif hostname == "inspiron13":
     GIS_DIR = pathlib.Path("/home/lford/data/GIS")
 
+CHAR_VARS = [
+    "Release Seasonality",
+    "Storage Seasonality",
+    "Maximum Storage",
+    "Mean Release",
+    r"Release $CV$",
+    "Residence Time",
+]
 
 def load_pickle(file):
     with open(file, "rb") as f:
@@ -1073,7 +1081,6 @@ def plot_data_assim_results(metric="NSE"):
     fg.ax.legend(handles, labels, loc="best")
 
     # fg.ax.set_yscale("log")
-    II()
 
     plt.show()
 
@@ -1377,7 +1384,7 @@ def plot_top_characteristic_res(metric="NSE", count=20):
     plt.show()
 
 
-def get_res_characteristic(metric="NSE"):
+def get_res_characteristic(metric=None):
     from find_basin_groups import prep_seasonalities
     from tclr_model import get_basin_meta_data, read_basin_data
 
@@ -1455,7 +1462,7 @@ def plot_top_characteristic_res_scatter(metric="NSE"):
     char_df = get_res_characteristic(metric)
     fig, axes = plt.subplots(3, 2, sharey=True, sharex=False)
     axes = axes.flatten()
-    pvars = [
+    CHAR_VARS = [
         "Release Seasonality",
         "Storage Seasonality",
         "Maximum Storage",
@@ -1468,7 +1475,7 @@ def plot_top_characteristic_res_scatter(metric="NSE"):
         "s",
     ]
     # colors = sns.color_palette("Tab2", 2)
-    for i, var in enumerate(pvars):
+    for i, var in enumerate(CHAR_VARS):
         axes[i].scatter(char_df[var], char_df["TD2-MSS0.20"], label="TD2-MSS0.20")
         axes[i].scatter(char_df[var], char_df["TD5-MSS0.01"], label="TD5-MSS0.01")
         axes[i].set_xlabel(var)
@@ -1485,7 +1492,7 @@ def plot_characteristic_res_line_plot(metric="NSE"):
     # axes = axes.flatten()
     fig.patch.set_alpha(0.0)
 
-    pvars = [
+    CHAR_VARS = [
         "Release Seasonality",
         "Storage Seasonality",
         "Maximum Storage",
@@ -1498,7 +1505,7 @@ def plot_characteristic_res_line_plot(metric="NSE"):
     min_size = 20
 
     # size_df = char_df.copy()
-    # for column in pvars:
+    # for column in CHAR_VARS:
     #     size_df[column] = linear_scale_values(size_df[column], min_size, max_size)
 
     # mdf = size_df.melt(id_vars=["TD2-MSS0.20", "TD5-MSS0.01"], var_name="Characteristic").melt(
@@ -1513,7 +1520,7 @@ def plot_characteristic_res_line_plot(metric="NSE"):
     # )
 
     colors = sns.color_palette("tab10", 2)
-    for i, var in enumerate(pvars):
+    for i, var in enumerate(CHAR_VARS):
         y = np.zeros_like(char_df["TD2-MSS0.20"]) + i
         axes.scatter(
             char_df["TD2-MSS0.20"],
@@ -1532,8 +1539,8 @@ def plot_characteristic_res_line_plot(metric="NSE"):
         # axes.set_xlabel(var)
         axes.set_xlabel(metric)
 
-    axes.set_yticks(range(len(pvars)))
-    axes.set_yticklabels(pvars)
+    axes.set_yticks(range(len(CHAR_VARS)))
+    axes.set_yticklabels(CHAR_VARS)
     handles, labels = axes.get_legend_handles_labels()
     axes.legend(handles[:2], labels[:2], loc="best")
     fig.align_ylabels()
@@ -1542,7 +1549,7 @@ def plot_characteristic_res_line_plot(metric="NSE"):
 
 def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
     char_df = get_res_characteristic(metric)
-    pvars = [
+    CHAR_VARS = [
         "Release Seasonality",
         "Storage Seasonality",
         "Maximum Storage",
@@ -1550,13 +1557,13 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         r"Release $CV$",
         "Residence Time",
     ]
-    for var in pvars:
+    for var in CHAR_VARS:
         char_df[var] = pd.qcut(char_df[var], nbins, labels=False) + 1
 
-    m1_df = pd.DataFrame(index=range(1, nbins + 1), columns=pvars)
-    m2_df = pd.DataFrame(index=range(1, nbins + 1), columns=pvars)
+    m1_df = pd.DataFrame(index=range(1, nbins + 1), columns=CHAR_VARS)
+    m2_df = pd.DataFrame(index=range(1, nbins + 1), columns=CHAR_VARS)
 
-    for var in pvars:
+    for var in CHAR_VARS:
         m1_df[var] = char_df.groupby(var)["TD2-MSS0.20"].mean()
         m2_df[var] = char_df.groupby(var)["TD5-MSS0.01"].mean()
 
@@ -1595,14 +1602,6 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
 
 def plot_res_characteristic_map(metric="NSE"):
     char_df = get_res_characteristic(metric)
-    pvars = [
-        "Release Seasonality",
-        "Storage Seasonality",
-        "Maximum Storage",
-        "Mean Release",
-        r"Release $CV$",
-        "Residence Time",
-    ]
 
     # fig, axes = plt.subplots(3, 2, sharex=True, sharey=True)
     # axes = axes.flatten()
@@ -1669,7 +1668,7 @@ def plot_res_characteristic_map(metric="NSE"):
     else:
         color_map = get_cmap(cmap)
     colors = [color_map(norm(i)) for i in char_df.loc[res_locs.index, model_key]]
-    for ax, var, unit in zip(axes, pvars, units):
+    for ax, var, unit in zip(axes, CHAR_VARS, units):
         max_size = 400
         min_size = 20
         values = char_df.loc[res_locs.index, var]
@@ -1702,11 +1701,11 @@ def plot_res_characteristic_map(metric="NSE"):
             title=var,
             fontsize=6,
         )
-        if var == pvars[2]:
+        if var == CHAR_VARS[2]:
             legend_labels = [f"{round(i, -2):.0f}" for i in legend_scores]
-        elif var == pvars[3]:
+        elif var == CHAR_VARS[3]:
             legend_labels = [f"{round(i, -1):.0f}" for i in legend_scores]
-        elif var == pvars[5]:
+        elif var == CHAR_VARS[5]:
             legend_labels = [f"{i:.0f}" for i in legend_scores]
         else:
             legend_labels = [f"{i:.2f}" for i in legend_scores]
