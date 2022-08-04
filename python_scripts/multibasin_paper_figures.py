@@ -370,6 +370,7 @@ def plot_variable_correlations():
     ex_ax.tick_params(
         axis="both", bottom=False, top=False, left=False, right=False, labelleft=False
     )
+    sns.despine(ax=ex_ax, left=True, bottom=True)
     # ex_ax.text(-0.5, 0.680, r"75th %ile")
     # ex_ax.text(-0.5, -0.665, r"25th %ile")
 
@@ -386,7 +387,8 @@ def plot_variable_correlations():
         y="Correlation",
         hue="basin",
         palette="tab10",
-        whis=(0.05, 0.95),
+        whis=(5.0, 95.0),
+        # whis=(0.01, 0.99),
         ax=ax,
         showfliers=False,
     )
@@ -401,12 +403,13 @@ def plot_variable_correlations():
         hue="basin",
         palette="tab10",
         ax=axes[-1],
-        whis=(0.05, 0.95),
+        # whis=(0.01, 0.99),
+        whis=(5.0, 95.0),
         showfliers=False,
     )
     axes[1].legend(loc="lower right", ncol=4)
 
-    axes[0].set_ylabel("$r(R_t, I_L)$")
+    axes[0].set_ylabel("$r(R_t, NI_L)$")
     axes[0].set_xlabel("Lag $L$ [days]")
 
     axes[-1].set_xlabel(r"Pearson's $r$ with Release")
@@ -415,7 +418,7 @@ def plot_variable_correlations():
         [
             r"$S_{t-1}$",
             r"$\bar{S}_{t-1}^7$",
-            r"$S_{t-1} \times I_{t}$",
+            r"$S_{t-1} \times NI_{t}$",
             r"$S_{t-1} - \bar{S}_{t-1}^7$",
         ]
     )
@@ -1059,13 +1062,15 @@ def plot_grid_search_results(ds="simul", metric="NSE"):
         y=metric,
         kind="box",
         palette="tab10",
-        whis=(0.1, 0.9),
+        whis=(5, 95),
         showfliers=False,
         legend=False
         # ci=None,
     )
     fg.ax.legend(loc="best", ncol=4, title="Max Depth")
     # fg.ax.set_xticklabels(fg.ax.get_xticklabels(), rotation=45, ha="right")
+    # if metric == "nRMSE":
+    #     fg.ax.set_yscale("log")
     plt.show()
 
 
@@ -1267,7 +1272,7 @@ def plot_data_assim_results(metric="NSE"):
         y=metric,
         kind="box",
         order=["daily", "weekly", "monthly", "seasonally", "semi-annually"],
-        whis=(0.1, 0.9),
+        whis=(5, 95),
         showfliers=False,
         legend_out=False,
     )
@@ -2178,7 +2183,7 @@ if __name__ == "__main__":
         metric = args[0]
     else:
         metric = "NSE"
-    plt.style.use("seaborn-notebook")
+    plt.style.use("seaborn-paper")
     # plt.style.use(["science", "nature"])
     sns.set_context("notebook", font_scale=1.4)
     # results = read_results()
@@ -2194,7 +2199,7 @@ if __name__ == "__main__":
     # * FIGURE 3
     # plot_performance_boxplots(results)
 
-    # plot_grid_search_results(ds="simul", metric=metric)
+    plot_grid_search_results(ds="simul", metric=metric)
     plot_data_assim_results(metric)
     # plot_best_and_worst_reservoirs(metric)
     # plot_top_characteristic_res(metric, 10)
