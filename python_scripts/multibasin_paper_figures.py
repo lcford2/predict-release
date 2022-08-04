@@ -1074,12 +1074,10 @@ def determine_assim_large_change_reservoirs(scores):
         ("semi-annually", "seasonally"),
         ("seasonally", "monthly"),
         ("monthly", "weekly"),
-        ("weekly", "daily")
+        ("weekly", "daily"),
     ]
     output = {}
-    models = [
-        ("2", "0.20"), ("5", "0.01")
-    ]
+    models = [("2", "0.20"), ("5", "0.01")]
     for m in models:
         for pair in diff_pairs:
             key1 = (m[0], pair[0], m[1])
@@ -1093,11 +1091,10 @@ def determine_assim_large_change_reservoirs(scores):
             output[key2] = outdf
     return output
 
+
 def determine_assime_improvement(scores):
     output = {}
-    models = [
-        ("2", "0.20"), ("5", "0.01")
-    ]
+    models = [("2", "0.20"), ("5", "0.01")]
     assims = ["semi-annually", "seasonally", "monthly", "weekly", "daily"]
 
     for m in models:
@@ -1112,23 +1109,36 @@ def determine_assime_improvement(scores):
     return output
 
 
-def stripplot(data, x, y, hue=None, order=None, hue_order=None, jitter=True, 
-              dodge=True, palette=None, size=None, ax=None, **kwgs):
-    
+def stripplot(
+    data,
+    x,
+    y,
+    hue=None,
+    order=None,
+    hue_order=None,
+    jitter=True,
+    dodge=True,
+    palette=None,
+    size=None,
+    ax=None,
+    colors=None,
+    **kwgs,
+):
+
     df = data.copy()
-    df = df.rename(columns={x: "x", y: "y", hue:"hue", size:"size"})
+    df = df.rename(columns={x: "x", y: "y", hue: "hue", size: "size"})
 
     order = order if order else df["x"].unique()
     hue_order = hue_order if hue_order else df["hue"].unique()
 
     xticks = list(range(df["x"].unique().size))
     nhue = df["hue"].unique().size
-    width = 0.8/nhue
+    width = 0.8 / nhue
     if dodge:
-        adjs = linear_scale_values(range(nhue), -0.4 + width/2, 0.4 - width/2)
+        adjs = linear_scale_values(range(nhue), -0.4 + width / 2, 0.4 - width / 2)
     else:
         adjs = [0.0 for i in range(nhue)]
-    
+
     if jitter is True:
         jlim = 0.1
     else:
@@ -1138,7 +1148,7 @@ def stripplot(data, x, y, hue=None, order=None, hue_order=None, jitter=True,
 
     jlim *= width
     jitterer = partial(np.random.uniform, low=-jlim, high=+jlim)
-    njitter =  df.shape[0] / nhue / len(order)
+    njitter = df.shape[0] / nhue / len(order)
     jitter = jitterer(size=int(njitter))
 
     for i, hue in enumerate(hue_order):
@@ -1147,11 +1157,13 @@ def stripplot(data, x, y, hue=None, order=None, hue_order=None, jitter=True,
         pdf = df[df["hue"] == hue]
         for j, var in enumerate(order):
             vdf = pdf[pdf["x"] == var]
-            ax.scatter(
-                x_adj[j] + jitter, vdf["y"], color=palette[i], s=vdf["size"],
-                **kwgs
-            ) 
+            if colors:
+                color = vdf[colors]
+            else:
+                color = palette[i]
+            ax.scatter(x_adj[j] + jitter, vdf["y"], color=color, s=vdf["size"], **kwgs)
     return ax
+
 
 def plot_data_assim_results(metric="NSE"):
     import glob
@@ -1167,9 +1179,15 @@ def plot_data_assim_results(metric="NSE"):
     for key, file in zip(td_mss_assim, files):
         with open(file, "rb") as f:
             results[key] = pickle.load(f)
-    with open("../results/tclr_model_testing/all/TD2_MSS0.20_RT_MS_exhaustive_new_hoover/results.pickle", "rb") as f:
+    with open(
+        "../results/tclr_model_testing/all/TD2_MSS0.20_RT_MS_exhaustive_new_hoover/results.pickle",
+        "rb",
+    ) as f:
         results[("2", "never", "0.20")] = pickle.load(f)
-    with open("../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle", "rb") as f:
+    with open(
+        "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
+        "rb",
+    ) as f:
         results[("5", "never", "0.01")] = pickle.load(f)
 
     simmed_data = select_results(results, "simmed_data")
@@ -1179,7 +1197,7 @@ def plot_data_assim_results(metric="NSE"):
     improvements = determine_assime_improvement(simmed_scores)
     del simmed_scores[("2", "never", "0.20")]
     del simmed_scores[("5", "never", "0.01")]
-    # simmed_large_diffs = determine_assim_large_change_reservoirs(simmed_scores)
+    simmed_large_diffs = determine_assim_large_change_reservoirs(simmed_scores)
 
     columns = ["TD", "Assim", "MSS", "Reservoir", metric]
     simmed_scores_records = []
@@ -1189,17 +1207,54 @@ def plot_data_assim_results(metric="NSE"):
     simmed_scores = pd.DataFrame.from_records(simmed_scores_records, columns=columns)
 
     simmed_diff_records = []
+    for key, values in simmed_large_diffs.items():
+        for i, row in values.iterrows():
+            simmed_diff_records.append(
+                [
+                    int(key[0]),
+                    key[1],
+                    float(key[2]),
+                    i,
+                    row[metric],
+                    row["diff"],
+                    row["pdiff"],
+                ]
+            )
+    simmed_diffs = pd.DataFrame.from_records(
+        simmed_diff_records, columns=columns + ["diff", "pdiff"]
+    )
+
+    simmed_improve_records = []
     for key, values in improvements.items():
         for i, row in values.iterrows():
-            simmed_diff_records.append([int(key[0]), key[1], float(key[2]), i, row[metric], row["diff"], row["pdiff"]])
-    simmed_diffs = pd.DataFrame.from_records(simmed_diff_records, columns=columns+["diff", "pdiff"])
+            simmed_improve_records.append(
+                [
+                    int(key[0]),
+                    key[1],
+                    float(key[2]),
+                    i,
+                    row[metric],
+                    row["diff"],
+                    row["pdiff"],
+                ]
+            )
+    simmed_improves = pd.DataFrame.from_records(
+        simmed_improve_records, columns=columns + ["diff", "pdiff"]
+    )
 
     simmed_scores = simmed_scores.set_index(["TD", "Assim", "MSS", "Reservoir"])
     simmed_diffs = simmed_diffs.set_index(["TD", "Assim", "MSS", "Reservoir"])
+    simmed_improves = simmed_improves.set_index(["TD", "Assim", "MSS", "Reservoir"])
 
-    simmed_scores["pdiff"] = simmed_diffs["pdiff"]
-    simmed_scores["pdiff"] = simmed_scores["pdiff"].fillna(0.0)
-    simmed_scores["size"] = linear_scale_values(simmed_scores["pdiff"], 50, 400)
+    simmed_scores["pdiff_improve"] = simmed_improves["pdiff"]
+    simmed_scores["pdiff_improve"] = simmed_scores["pdiff_improve"].fillna(0.0)
+    simmed_scores["size"] = linear_scale_values(simmed_scores["pdiff_improve"], 20, 500)
+
+    simmed_scores["pdiff_diff"] = simmed_diffs["pdiff"]
+    simmed_scores["color"] = simmed_scores["pdiff_diff"].apply(
+        lambda x: "#00FF00" if x > 0.5 else "#808080"
+    )
+
     simmed_scores = simmed_scores.reset_index()
 
     # simmed_scores_for_strip = simmed_scores.merge(simmed_diffs, indicator=True, how="outer").query(
@@ -1225,7 +1280,8 @@ def plot_data_assim_results(metric="NSE"):
         ax=fg.ax,
         dodge=True,
         jitter=0.8,
-        palette=["#808080", "#808080"],
+        # palette=["#808080", "#808080"],
+        colors="color",
         edgecolor="k",
         alpha=0.5,
         linewidth=1,
