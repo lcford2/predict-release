@@ -4,7 +4,6 @@ import os
 import pathlib
 import pickle
 import socket
-from datetime import datetime
 from functools import partial
 
 from joblib import Parallel, delayed
@@ -31,21 +30,12 @@ import pandas as pd
 import seaborn as sns
 from IPython import embed as II
 from matplotlib.cm import ScalarMappable, get_cmap
-from matplotlib.colors import (
-    LinearSegmentedColormap,
-    ListedColormap,
-    LogNorm,
-    Normalize,
-)
+from matplotlib.colors import ListedColormap, LogNorm, Normalize
 from matplotlib.transforms import Bbox
 from mpl_toolkits.basemap import Basemap
 from scipy.stats import boxcox
 from sklearn.metrics import mean_squared_error, r2_score
-from utils.helper_functions import (
-    ColorInterpolator,
-    linear_scale_values,
-    make_bin_label_map,
-)
+from utils.helper_functions import linear_scale_values, make_bin_label_map
 
 if hostname == "CCEE-DT-094":
     GIS_DIR = pathlib.Path("G:/My Drive/PHD/GIS")
@@ -1382,10 +1372,10 @@ def plot_assim_score_ridgelines(metric="NSE"):
 
 def plot_best_and_worst_reservoirs(metric="NSE"):
     files = [
-        "../results/tclr_model_testing/all/TD2_MSS0.20_RT_MS_exhaustive_new_hoover/results.pickle",
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
         "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
     ]
-    keys = [(2, 0.2), (5, 0.01)]
+    keys = [(4, 0.1), (5, 0.01)]
     results = {}
     for k, f in zip(keys, files):
         with open(f, "rb") as f:
@@ -1399,38 +1389,48 @@ def plot_best_and_worst_reservoirs(metric="NSE"):
     test_scores = get_model_scores(test_data, metric=metric, grouper="site_name")
     simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
 
+    ascending = True
+    if metric == "nRMSE":
+        ascending = False
+
     train_top_20 = {
-        key: df.sort_values(by=metric).tail(20) for key, df in train_scores.items()
+        key: df.sort_values(by=metric, ascending=ascending).tail(20)
+        for key, df in train_scores.items()
     }
     test_top_20 = {
-        key: df.sort_values(by=metric).tail(20) for key, df in test_scores.items()
+        key: df.sort_values(by=metric, ascending=ascending).tail(20)
+        for key, df in test_scores.items()
     }
     simmed_top_20 = {
-        key: df.sort_values(by=metric).tail(20) for key, df in simmed_scores.items()
+        key: df.sort_values(by=metric, ascending=ascending).tail(20)
+        for key, df in simmed_scores.items()
     }
     train_btm_20 = {
-        key: df.sort_values(by=metric).head(20) for key, df in train_scores.items()
+        key: df.sort_values(by=metric, ascending=ascending).head(20)
+        for key, df in train_scores.items()
     }
     test_btm_20 = {
-        key: df.sort_values(by=metric).head(20) for key, df in test_scores.items()
+        key: df.sort_values(by=metric, ascending=ascending).head(20)
+        for key, df in test_scores.items()
     }
     simmed_btm_20 = {
-        key: df.sort_values(by=metric).head(20) for key, df in simmed_scores.items()
+        key: df.sort_values(by=metric, ascending=ascending).head(20)
+        for key, df in simmed_scores.items()
     }
     records = []
 
     for key in keys:
-        for res, value in train_top_20[key]["NSE"].items():
+        for res, value in train_top_20[key][metric].items():
             records.append((key, "Train", "Best 20", res, value))
-        for res, value in test_top_20[key]["NSE"].items():
+        for res, value in test_top_20[key][metric].items():
             records.append((key, "Test", "Best 20", res, value))
-        for res, value in simmed_top_20[key]["NSE"].items():
+        for res, value in simmed_top_20[key][metric].items():
             records.append((key, "Simmed", "Best 20", res, value))
-        for res, value in train_btm_20[key]["NSE"].items():
+        for res, value in train_btm_20[key][metric].items():
             records.append((key, "Train", "Worst 20", res, value))
-        for res, value in test_btm_20[key]["NSE"].items():
+        for res, value in test_btm_20[key][metric].items():
             records.append((key, "Test", "Worst 20", res, value))
-        for res, value in simmed_btm_20[key]["NSE"].items():
+        for res, value in simmed_btm_20[key][metric].items():
             records.append((key, "Simmed", "Worst 20", res, value))
     df = pd.DataFrame.from_records(
         records, columns=["Model", "Data Set", "group", "Reservoir", metric]
@@ -1442,9 +1442,9 @@ def plot_best_and_worst_reservoirs(metric="NSE"):
         y=metric,
         row="group",
         hue="Model",
-        kind="box",
-        whis=(0.1, 0.9),
-        showfliers=True,
+        kind="violin",
+        # whis=(0.1, 0.9),
+        # showfliers=True,
         sharey=False,
         legend=False,
     )
@@ -1458,6 +1458,59 @@ def plot_best_and_worst_reservoirs(metric="NSE"):
     axes[1].legend(handles, labels, loc="best")
 
     axes[1].set_xlabel("")
+    plt.show()
+
+
+def plot_two_best_models(metric="NSE"):
+    files = [
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
+        "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
+    ]
+    keys = [(4, 0.1), (5, 0.01)]
+    key_map = {i: f"TD{i[0]}-MSS{i[1]:.2f}" for i in keys}
+    results = {}
+    for k, f in zip(keys, files):
+        with open(f, "rb") as f:
+            results[k] = pickle.load(f)
+
+    simmed_data = select_results(results, "simmed_data")
+
+    simmed_nrmse = get_model_scores(simmed_data, metric="nRMSE", grouper="site_name")
+    simmed_nse = get_model_scores(simmed_data, metric="NSE", grouper="site_name")
+
+    dfs = []
+    for key, label in key_map.items():
+        df1 = simmed_nrmse[key]
+        # kdf["metric"] = "nRMSE"
+        df1 = df1.set_index(
+            pd.MultiIndex.from_product(([label], df1.index), names=["model", "site_name"])
+        )
+
+        df2 = simmed_nse[key]
+        df2 = df2.set_index(
+            pd.MultiIndex.from_product(([label], df2.index), names=["model", "site_name"])
+        )
+        df1["NSE"] = df2["NSE"]
+        # kdf["model"] = label
+        # # kdf["metric"] = "NSE"
+        # # kdf = kdf.rename(columns={"NSE": "value"})
+        dfs.append(df1)
+    sdf = pd.concat(dfs).reset_index()
+    II()
+    sys.exit()
+    sdf = simmed_scores[keys[0]]
+    sdf[keys[1]] = simmed_scores[keys[1]]
+    sdf = sdf.rename(columns=key_map)
+    sdf = sdf.reset_index().melt(id_vars=["site_name"])
+
+    # fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(19, 10))
+    # plt.scatter(sdf[keys[0]], sdf[keys[1]])
+
+    # ax.set_xlabel(keys[0])
+    # ax.set_ylabel(keys[1])
+
+    fg = sns.catplot(data=sdf, x="value", y="variable", kind="box", whis=(5, 95))
+
     plt.show()
 
 
@@ -1612,10 +1665,10 @@ def get_res_characteristic(metric=None):
     from tclr_model import get_basin_meta_data, read_basin_data
 
     files = [
-        "../results/tclr_model_testing/all/TD2_MSS0.20_RT_MS_exhaustive_new_hoover/results.pickle",
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
         "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
     ]
-    keys = [(2, 0.2), (5, 0.01)]
+    keys = [(4, 0.1), (5, 0.01)]
     results = {}
     for k, f in zip(keys, files):
         with open(f, "rb") as f:
@@ -1763,10 +1816,10 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
     m2_df = pd.DataFrame(index=range(1, nbins + 1), columns=CHAR_VARS)
 
     for var in CHAR_VARS:
-        m1_df[var] = char_df.groupby(var)["TD2-MSS0.20"].mean()
+        m1_df[var] = char_df.groupby(var)["TD4-MSS0.10"].mean()
         m2_df[var] = char_df.groupby(var)["TD5-MSS0.01"].mean()
 
-    m1_df["Model"] = "TD2-MSS0.20"
+    m1_df["Model"] = "TD4-MSS0.10"
     m2_df["Model"] = "TD5-MSS0.01"
     m1_df = (
         m1_df.reset_index()
@@ -1782,6 +1835,7 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
     df = pd.concat([m1_df, m2_df])
     label_map = make_bin_label_map(nbins, start_index=1)
     df["Bin"] = df["Bin"].replace(label_map)
+
     fg = sns.catplot(
         data=df,
         x="Bin",
@@ -1791,11 +1845,21 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         col_wrap=2,
         kind="bar",
         legend_out=False,
+        palette="colorblind",
     )
-    fg.set_titles("{col_name}")
-    fg.set_ylabels(metric)
-    fg.set_xlabels("Characteristic Percentile")
+    for ax in fg.axes:
+        ax.grid(False)
+        ax.patch.set_alpha(0.0)
+        ax.set_axis_on()
+        ax.spines["bottom"].set_color("black")
+        ax.spines["left"].set_color("black")
+        ax.tick_params(axis="both", color="black", labelcolor="black")
 
+    fg.set_titles("{col_name}")
+    fg.set_ylabels(metric, color="black")
+    fg.set_xlabels("Attribute Percentile", color="black")
+    handles, labels = fg.axes[0].get_legend_handles_labels()
+    fg.axes[0].legend(handles, labels, frameon=False)
     plt.show()
 
 
@@ -2183,9 +2247,9 @@ if __name__ == "__main__":
         metric = args[0]
     else:
         metric = "NSE"
-    plt.style.use("seaborn-paper")
+    plt.style.use("tableau-colorblind10")
     # plt.style.use(["science", "nature"])
-    sns.set_context("notebook", font_scale=1.4)
+    # sns.set_context("paper", font_scale=1.4)
     # results = read_results()
     # plot_res_perf_map(results)
     # plot_seasonal_performance(results)
@@ -2197,15 +2261,18 @@ if __name__ == "__main__":
     # * FIGURE 2
     # plot_variable_correlations()
     # * FIGURE 3
-    # plot_performance_boxplots(results)
-
-    plot_grid_search_results(ds="simul", metric=metric)
-    plot_data_assim_results(metric)
+    # plot_grid_search_results(ds="simul", metric=metric)
+    # * FIGURE 4
+    # * This is the optimal tree for TD4 MSS0.10
+    # * FIGURE 5 - NOT INCLUDING AT THE MOMENT
     # plot_best_and_worst_reservoirs(metric)
+    # * FIGURE 5
+    plot_res_characteristic_bin_performance(metric, 5)
+
+    # plot_data_assim_results(metric)
     # plot_top_characteristic_res(metric, 10)
     # plot_top_characteristic_res_scatter(metric)
     # plot_characteristic_res_line_plot(metric)
-    # plot_res_characteristic_bin_performance(metric, 5)
     # plot_res_characteristic_map(metric)
     # plot_res_characteristic_split_map()
     # plot_data_assim_scatter(metric)
