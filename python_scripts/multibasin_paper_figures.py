@@ -1812,39 +1812,46 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
     for var in CHAR_VARS:
         char_df[var] = pd.qcut(char_df[var], nbins, labels=False) + 1
 
-    m1_df = pd.DataFrame(index=range(1, nbins + 1), columns=CHAR_VARS)
-    m2_df = pd.DataFrame(index=range(1, nbins + 1), columns=CHAR_VARS)
+    # m1_df = pd.DataFrame(index=range(1, nbins + 1), columns=CHAR_VARS)
+    # m2_df = pd.DataFrame(index=range(1, nbins + 1), columns=CHAR_VARS)
+    # II()
 
-    for var in CHAR_VARS:
-        m1_df[var] = char_df.groupby(var)["TD4-MSS0.10"].mean()
-        m2_df[var] = char_df.groupby(var)["TD5-MSS0.01"].mean()
+    # for var in CHAR_VARS:
+    #     m1_df[var] = char_df.groupby(var)["TD4-MSS0.10"].mean()
+    #     m2_df[var] = char_df.groupby(var)["TD5-MSS0.01"].mean()
 
-    m1_df["Model"] = "TD4-MSS0.10"
-    m2_df["Model"] = "TD5-MSS0.01"
-    m1_df = (
-        m1_df.reset_index()
-        .rename(columns={"index": "Bin"})
-        .melt(id_vars=["Model", "Bin"])
-    )
-    m2_df = (
-        m2_df.reset_index()
-        .rename(columns={"index": "Bin"})
-        .melt(id_vars=["Model", "Bin"])
-    )
+    # m1_df["Model"] = "TD4-MSS0.10"
+    # m2_df["Model"] = "TD5-MSS0.01"
+    # m1_df = (
+    #     m1_df.reset_index()
+    #     .rename(columns={"index": "Bin"})
+    #     .melt(id_vars=["Model", "Bin"])
+    # )
+    # m2_df = (
+    #     m2_df.reset_index()
+    #     .rename(columns={"index": "Bin"})
+    #     .melt(id_vars=["Model", "Bin"])
+    # )
 
-    df = pd.concat([m1_df, m2_df])
+    # df = pd.concat([m1_df, m2_df])
     label_map = make_bin_label_map(nbins, start_index=1)
-    df["Bin"] = df["Bin"].replace(label_map)
+    df = char_df.melt(
+        id_vars=["TD4-MSS0.10", "TD5-MSS0.01"], value_name="bin"
+    ).melt(
+        id_vars=["variable", "bin"], var_name="model", value_name=metric
+    )
+    df["bin"] = df["bin"].replace(label_map)
 
     fg = sns.catplot(
         data=df,
-        x="Bin",
-        y="value",
-        hue="Model",
+        x="bin",
+        y=metric,
+        hue="model",
         col="variable",
         col_wrap=2,
         kind="bar",
         legend_out=False,
+        ci="sd",
         palette="colorblind",
     )
     for ax in fg.axes:
