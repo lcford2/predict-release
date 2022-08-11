@@ -1,46 +1,70 @@
-import socket
-import pickle
-import pathlib
-import json
-from datetime import datetime
 import calendar
+import json
 import os
+import pathlib
+import pickle
+import socket
+from functools import partial
+
+from joblib import Parallel, delayed
+
 hostname = socket.gethostname()
 if hostname == "CCEE-DT-094":
-    os.environ["PROJ_LIB"] = r"C:\\Users\\lcford2\\AppData\\Local\\Continuum\\anaconda3\\envs\\sry-env\\Library\\share"
+    os.environ[
+        "PROJ_LIB"
+    ] = r"C:\\Users\\lcford2\\AppData\\Local\\Continuum\\anaconda3\\envs\\sry-env\\Library\\share"
 elif hostname == "inspiron-laptop":
-    os.environ["PROJ_LIB"] = r"C:\\Users\\lcford\\miniconda3\\envs\\sry-env\\Library\\share"
+    os.environ[
+        "PROJ_LIB"
+    ] = r"C:\\Users\\lcford\\miniconda3\\envs\\sry-env\\Library\\share"
 
-import numpy as np
-import pandas as pd
-from sklearn.metrics import r2_score, mean_squared_error
-import matplotlib.pyplot as plt
+import sys
+
+import geopandas as gpd
 import matplotlib.gridspec as GS
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatch
-from mpl_toolkits.basemap import Basemap
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
-import geopandas as gpd
 from IPython import embed as II
-from simulate_reservoir import simulate_storage
-
+from matplotlib.cm import ScalarMappable, get_cmap
+from matplotlib.colors import ListedColormap, LogNorm, Normalize
+from matplotlib.transforms import Bbox
+from mpl_toolkits.basemap import Basemap
+from scipy.stats import boxcox
+from sklearn.metrics import mean_squared_error, r2_score
+from utils.helper_functions import linear_scale_values, make_bin_label_map
 
 if hostname == "CCEE-DT-094":
     GIS_DIR = pathlib.Path("G:/My Drive/PHD/GIS")
 elif hostname == "inspiron13":
-    GIS_DIR = pathlib.Path("~/data/GIS")
+    GIS_DIR = pathlib.Path("/home/lford/data/GIS")
+
+CHAR_VARS = [
+    "Release Seasonality",
+    "Storage Seasonality",
+    "Maximum Storage",
+    "Mean Release",
+    r"Release $CV$",
+    "Residence Time",
+]
+
 
 def load_pickle(file):
     with open(file, "rb") as f:
         data = pickle.load(f)
     return data
 
+
 def write_pickle(obj, file):
     with open(file, "wb") as f:
         pickle.dump(obj, f)
 
+
 def read_results():
-    path_format = "../results/tclr_model_drop_res_sto_diff_pers_testing/all/TD{}_RT_MS_exhaustive/results.pickle".format
+    path_format = "../results/tclr_model_drop_res_sto_diff_pers_testing_minsamples/all/TD{}_RT_MS_exhaustive/results.pickle".format
     models = {
         # "TD0": path_format(0),
         "TD1": path_format(1),
@@ -57,8 +81,10 @@ def read_results():
 
     return {i: load_pickle(j) for i, j in models.items()}
 
+
 def select_results(results, get_item):
     return {i: j[get_item] for i, j in results.items()}
+
 
 def mean_absolute_scaled_error(yact, ymod):
     error = (ymod - yact).abs().mean()
@@ -66,46 +92,86 @@ def mean_absolute_scaled_error(yact, ymod):
     lagerror = np.absolute(yact[1:] - yact[:-1]).mean()
     return error / lagerror
 
+
+def trmse(act, mod):
+    tact = boxcox(act, 0.3)
+    tmod = boxcox(mod, 0.3)
+    return mean_squared_error(tact, tmod, squared=False)
+
+
 def get_r2score(df, grouper=None):
     if grouper:
         return pd.DataFrame(
-            {"NSE": df.groupby(grouper).apply(
-                lambda x: r2_score(x["actual"], x["model"])
-            )}
+            {
+                "NSE": df.groupby(grouper).apply(
+                    lambda x: r2_score(x["actual"], x["model"])
+                )
+            }
         )
     else:
         return r2_score(df["actual"], df["model"])
 
+
 def get_rmse(df, grouper=None):
     if grouper:
         return pd.DataFrame(
-            {"RMSE": df.groupby(grouper).apply(
-                lambda x: mean_squared_error(x["actual"], x["model"], squared=False)
-            )}
+            {
+                "RMSE": df.groupby(grouper).apply(
+                    lambda x: mean_squared_error(x["actual"], x["model"], squared=False)
+                )
+            }
         )
     else:
         return mean_squared_error(df["actual"], df["model"], squared=False)
+
 
 def get_nrmse(df, grouper=None):
     normer = "mean"
     if grouper:
         return pd.DataFrame(
-            {"nRMSE": df.groupby(grouper).apply(
-                lambda x: mean_squared_error(x["actual"], x["model"], squared=False) / getattr(x["actual"], normer)())
+            {
+                "nRMSE": df.groupby(grouper).apply(
+                    lambda x: mean_squared_error(x["actual"], x["model"], squared=False)
+                    / getattr(x["actual"], normer)()
+                )
             }
         )
     else:
-        return mean_squared_error(df["actual"], df["model"], squared=False) / getattr(df["actual"], normer)()
+        return (
+            mean_squared_error(df["actual"], df["model"], squared=False)
+            / getattr(df["actual"], normer)()
+        )
+
 
 def get_mase(df, grouper=None):
     if grouper:
         return pd.DataFrame(
-            {"MASE": df.groupby(grouper).apply(
-                lambda x: mean_absolute_scaled_error(x["actual"], x["model"])
-            )}
+            {
+                "MASE": df.groupby(grouper).apply(
+                    lambda x: mean_absolute_scaled_error(x["actual"], x["model"])
+                )
+            }
         )
     else:
         return mean_absolute_scaled_error(df["actual"], df["model"])
+
+
+def get_ntrmse(df, grouper=None):
+    normer = "mean"
+    if grouper:
+        return pd.DataFrame(
+            {
+                "nTRMSE": df.groupby(grouper).apply(
+                    lambda x: mean_squared_error(x["actual"], x["model"], squared=False)
+                    / np.mean(boxcox(x["actual"], 0.3))
+                )
+            }
+        )
+    else:
+        return mean_squared_error(df["actual"], df["model"], squared=False) / np.mean(
+            boxcox(df["actual"], 0.3)
+        )
+
 
 def get_model_scores(model_dfs, metric="NSE", grouper=None):
     if metric == "NSE":
@@ -117,12 +183,14 @@ def get_model_scores(model_dfs, metric="NSE", grouper=None):
     elif metric == "nRMSE":
         return {i: get_nrmse(j, grouper) for i, j in model_dfs.items()}
 
+
 def combine_dict_to_df(dct, colname):
     output = []
     for key, df in dct.items():
         df[colname] = key
         output.append(df)
     return pd.concat(output)
+
 
 def get_name_replacements():
     with open("../pnw_data/dam_names.json", "r") as f:
@@ -139,14 +207,16 @@ def get_name_replacements():
             tva[key] = value
     return pnw | tva | missouri
 
+
 def make_bin(df, res=True):
     def bins(x):
-        if x <= 1/3:
+        if x <= 1 / 3:
             return 1
-        elif x <= 2/3:
+        elif x <= 2 / 3:
             return 2
         else:
             return 3
+
     if res:
         df["pct"] = df.groupby("site_name")["actual"].rank(pct=True)
     else:
@@ -154,6 +224,7 @@ def make_bin(df, res=True):
 
     df["bin"] = df["pct"].apply(bins)
     return df
+
 
 def plot_performance_boxplots(results):
     # calculating the mean and std of the performance across basins
@@ -177,16 +248,21 @@ def plot_performance_boxplots(results):
     simul_score = combine_dict_to_df(simul_score, "Model").reset_index()
 
     scores = combine_dict_to_df(
-        {"Train": train_score, "Test": test_score, "Simulation": simul_score},
-        "Data Set"
+        {"Train": train_score, "Test": test_score, "Simulation": simul_score}, "Data Set"
     )
     from tclr_model import get_basin_meta_data
+
     meta = get_basin_meta_data("all")
     scores = scores.set_index("site_name")
     scores[["rts", "max_sto"]] = meta[["rts", "max_sto"]]
 
     rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
-    rename = {"upper_col": "colorado", "lower_col": "colorado", "pnw": "columbia", "tva": "tennessee"}
+    rename = {
+        "upper_col": "colorado",
+        "lower_col": "colorado",
+        "pnw": "columbia",
+        "tva": "tennessee",
+    }
     rbasins = rbasins.replace(rename)
     rbasins = rbasins.str.capitalize()
 
@@ -212,340 +288,18 @@ def plot_performance_boxplots(results):
         # hue_order=["TD1", "TD2", "TD3", "TD4", "TD5", "TD6"],
         hue_order=["Train", "Test", "Simulation"],
         legend_out=False,
-        kind="boxen",
+        kind="box",
         showfliers=False,
-        # whis=(0.01, 0.99)
+        whis=(0.01, 0.99),
     )
     fg.set_xlabels("")
     fg.ax.legend(loc="best")
     plt.show()
 
-def plot_storage_performance_boxplots(results):
-    from tclr_model import read_basin_data
-    df = read_basin_data("all")
-
-    # nRMSE - TD4 is best
-    # NSE - TD5 is best
-    # MASE - TD3 is best
-    # RMSE - TD1 and TD2 are tied
-    metric = "MASE"
-    train = select_results(results, "train_data")
-    test = select_results(results, "test_data")
-    simul = select_results(results, "simmed_data")
-
-    train_storage = df.loc[train["TD0"].index, "storage"]
-    test_storage = df.loc[test["TD0"].index, "storage"]
-    simul_storage = df.loc[simul["TD0"].index, "storage"]
-
-    train_storage_pre = df.loc[train["TD0"].index, "storage_pre"]
-    test_storage_pre = df.loc[test["TD0"].index, "storage_pre"]
-    simul_storage_pre = df.loc[simul["TD0"].index, "storage_pre"]
-
-    train_storage_init = train_storage_pre.groupby("site_name").apply(lambda x: x.head(1))
-    test_storage_init = test_storage_pre.groupby("site_name").apply(lambda x: x.head(1))
-    simul_storage_init = simul_storage_pre.groupby("site_name").apply(lambda x: x.head(1))
-
-
-    train_storage_init.index = train_storage_init.index.get_level_values(0)
-    test_storage_init.index = test_storage_init.index.get_level_values(0)
-    simul_storage_init.index = simul_storage_init.index.get_level_values(0)
-
-    train_storage_sim = {}
-    test_storage_sim = {}
-    simul_storage_sim = {}
-    for key in simul.keys():
-        # rdf = train[key]
-        # resers = rdf.index.get_level_values("site_name").unique()
-        # storage = []
-        # indexes = []
-        # idx = pd.IndexSlice
-        # for res in resers:
-        #     rindex = rdf.loc[idx[res, :], :].index
-        #     rst = simulate_storage(
-        #         train_storage_init[res],
-        #         df.loc[rindex, "inflow"],
-        #         rdf.loc[rindex, "model"]
-        #     )
-        #     storage.extend(rst)
-        #     indexes.extend(rindex)
-        # train_storage_sim[key] = pd.DataFrame(
-        #     {"model": storage},
-        #     index=pd.MultiIndex.from_tuples(indexes)
-        # )
-
-        # rdf = test[key]
-        # resers = rdf.index.get_level_values("site_name").unique()
-        # storage = []
-        # indexes = []
-        # idx = pd.IndexSlice
-        # for res in resers:
-        #     rindex = rdf.loc[idx[res, :], :].index
-        #     rst = simulate_storage(
-        #         test_storage_init[res],
-        #         df.loc[rindex, "inflow"],
-        #         rdf.loc[rindex, "model"]
-        #     )
-        #     storage.extend(rst)
-        #     indexes.extend(rindex)
-        # test_storage_sim[key] = pd.DataFrame(
-        #     {"model": storage},
-        #     index=pd.MultiIndex.from_tuples(indexes)
-        # )
-
-        rdf = simul[key]
-        resers = rdf.index.get_level_values("site_name").unique()
-        storage = []
-        indexes = []
-        idx = pd.IndexSlice
-        for res in resers:
-            rindex = rdf.loc[idx[res, :], :].index
-            rst = simulate_storage(
-                simul_storage_init[res],
-                df.loc[rindex, "inflow"],
-                rdf.loc[rindex, "model"]
-            )
-            storage.extend(rst)
-            indexes.extend(rindex)
-        simul_storage_sim[key] = pd.DataFrame(
-            {"model": storage},
-            index=pd.MultiIndex.from_tuples(indexes, names=["site_name", "datetime"])
-        )
-
-
-    for key, rdf in simul_storage_sim.items():
-        rdf["actual"] = simul_storage
-    # train_score = get_model_scores(train, metric=metric, grouper="site_name")
-    # test_score = get_model_scores(test, metric=metric, grouper="site_name")
-    simul_score = get_model_scores(simul_storage_sim, metric=metric, grouper="site_name")
-
-    # train_score = combine_dict_to_df(train_score, "Model").reset_index()
-    # test_score = combine_dict_to_df(test_score, "Model").reset_index()
-    simul_score = combine_dict_to_df(simul_score, "Model").reset_index()
-
-    # scores = combine_dict_to_df(
-        # {"Train": train_score, "Test": test_score, "Simulation": simul_score},
-        # "Data Set"
-    # )
-
-    # scores = combine_dict_to_df({"Simulation": simul_score}, "Data Set")
-    from tclr_model import get_basin_meta_data
-    meta = get_basin_meta_data("all")
-    scores = simul_score.set_index("site_name")
-    scores[["rts", "max_sto"]] = meta[["rts", "max_sto"]]
-
-    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
-    rename = {"upper_col": "colorado", "lower_col": "colorado", "pnw": "columbia", "tva": "tennessee"}
-    rbasins = rbasins.replace(rename)
-    rbasins = rbasins.str.capitalize()
-
-    scores["basin"] = rbasins
-    # scores = combine_dict_to_df({"Simulation": simul_score}, "Data Set")
-    # sim_scores = scores[scores["Data Set"] == "Simulation"]
-    ss_mean = scores.groupby(["basin", "Model"]).mean()[metric]
-    ss_std = scores.groupby(["basin", "Model"]).std()[metric]
-    if metric == "NSE":
-        ascending = False
-    else:
-        ascending = True
-    ss_mean_rank = ss_mean.unstack().T.rank(ascending=ascending)
-    ss_std_rank = ss_std.unstack().T.rank(ascending=ascending)
-    perf = ss_mean_rank.mean(axis=1) + ss_std_rank.mean(axis=1)
-    II()
-    import sys
-    sys.exit()
-
-    fg = sns.catplot(
-        data=simul_score,
-        y=metric,
-        # hue="Data Set",
-        # x="Data Set",
-        x="Model",
-        # hue_order=["TD1", "TD2", "TD3", "TD4", "TD5", "TD6"],
-        # hue_order=["Train", "Test", "Simulation"],
-        legend_out=False,
-        kind="boxen",
-        showfliers=False,
-        # whis=(0.01, 0.99)
-    )
-    fg.set_xlabels("")
-    # fg.ax.legend(loc="best")
-    plt.show()
-
-def plot_third_performance_boxplots(results):
-    train = select_results(results, "train_data")
-    test = select_results(results, "test_data")
-    simul = select_results(results, "simmed_data")
-
-    train = {i: make_bin(j, res=True).reset_index() for i, j in train.items()}
-    test = {i: make_bin(j, res=True).reset_index() for i, j in test.items()}
-    simul = {i: make_bin(j, res=True).reset_index() for i, j in simul.items()}
-
-    train_score = get_model_scores(train, metric="RMSE", grouper=["site_name", "bin"])
-    test_score = get_model_scores(test, metric="RMSE", grouper=["site_name", "bin"])
-    simul_score = get_model_scores(simul, metric="RMSE", grouper=["site_name", "bin"])
-
-    train_score = combine_dict_to_df(train_score, "Model").reset_index()
-    test_score = combine_dict_to_df(test_score, "Model").reset_index()
-    simul_score = combine_dict_to_df(simul_score, "Model").reset_index()
-
-    scores = combine_dict_to_df(
-        {"Train": train_score, "Test": test_score, "Simulation": simul_score},
-        "Data Set"
-    )
-
-    means = train["TRM"].groupby("bin")["actual"].mean().values
-
-    fg = sns.catplot(
-        data=scores,
-        y="RMSE",
-        hue="Model",
-        x="Data Set",
-        hue_order=["TD1", "TD2", "TD3", "TD4", "TD5", "TD6"],
-        row="bin",
-        legend_out=False,
-        kind="box",
-        sharey=False
-    )
-
-    fg.set_ylabels("RMSE [1000 acre-ft/day]")
-    fg.set_xlabels("")
-
-    axes = fg.axes.flatten()
-    for m, ax in zip(means, axes):
-        ax.axhline(m, c="r", linestyle="--")
-
-    handles, labels = axes[0].get_legend_handles_labels()
-    axes[0].get_legend().remove()
-
-    line = mlines.Line2D([], [], c="r", linestyle="--")
-    handles.append(line)
-    labels.append("Mean Release")
-    axes[0].legend(handles, labels, ncol=3, loc="upper left")
-    plt.show()
-
 
 def plot_variable_correlations():
-    # sns.set_context("notebook")
-    from tclr_model import read_basin_data
-    from statsmodels.tsa.stattools import acf
-    df = read_basin_data("all")
+    from tclr_model import get_basin_meta_data, read_basin_data
 
-    rel = df["release"].unstack()
-    res = rel.index
-    racf = {}
-    nlag = 30
-    for r in res:
-        racf[r] = acf(rel.loc[r].dropna(), nlags=nlag)
-    racf = pd.DataFrame(racf)
-    racf_std = racf.std(axis=1)
-    racf_quants = racf.quantile([0.25, 0.75], axis=1)
-    racf_mean = racf.median(axis=1)
-    racf_errbar = (racf_quants - racf_mean).abs()
-
-
-    inf_corr = {}
-    inflow = df.loc[:, ["release", "inflow"]]
-    for i in range(31):
-        inflow[i] = inflow["inflow"].groupby("site_name").shift(i)
-
-    inf_corr = inflow.groupby("site_name").corr()["release"].unstack()
-    inf_corr = inf_corr.drop(["release", "inflow"], axis=1)
-    inf_corr_mean = inf_corr.median()
-    inf_corr_quants = inf_corr.quantile([0.25, 0.75])
-    inf_corr_errbar = (inf_corr_quants - inf_corr_mean).abs()
-
-    st = df.loc[:,["release", "storage_pre", "storage_roll7", "storage_x_inflow"]]
-    st["sto_diff"] = df["storage_pre"] - df["storage_roll7"]
-    # std_st = st.groupby("site_name").apply(lambda x: (x - x.mean()) / x.std())
-
-    stcorr = st.groupby("site_name").corr()["release"].unstack()
-    stcorr = stcorr.drop("release", axis=1)
-
-    # fig, axes = plt.subplots(1, 2)
-    # axes = axes.flatten()
-    fig = plt.figure()
-    gs = GS.GridSpec(2, 2, width_ratios=[1.5,1], height_ratios=[1,1])
-    axes = [
-        fig.add_subplot(gs[0,0]),
-        fig.add_subplot(gs[1,0]),
-        fig.add_subplot(gs[:,1])
-    ]
-
-    lag_cors = pd.DataFrame({"Release": racf_mean, "Inflow": inf_corr_mean})
-
-    x = range(nlag+1)
-    width = 0.8
-    x_left = [i-width/2 for i in x]
-    x_right = [i+width/2 for i in x]
-
-    axes[0].bar(
-        x,
-        racf_mean,
-        width=width,
-        yerr=racf_errbar.values,
-        error_kw={
-            "elinewidth": 1.5,
-        }
-    )
-    axes[1].bar(
-        x,
-        inf_corr_mean,
-        width=width,
-        yerr=inf_corr_errbar.values,
-        error_kw={
-            "elinewidth": 1.5,
-        }
-    )
-    # racf_mean.plot.bar(
-    #     # yerr=racf_std,
-    #     yerr=racf_errbar.values,
-    #     width=0.7,
-    #     error_kw={
-    #         "elinewidth": 1.5,
-    #     },
-    #     ax=axes[0]
-    # )
-
-    sns.boxplot(
-        data=stcorr.melt(),
-        x="variable",
-        y="value",
-        ax=axes[2],
-        whis=(0.05, 0.95)
-    )
-
-    axes[0].set_ylabel("$r(R_t, R_L)$")
-    axes[1].set_ylabel("$r(R_t, I_L)$")
-    axes[1].set_xlabel("Lag $L$ [days]")
-    axes[0].set_xticks(x)
-    axes[1].set_xticks(x)
-    axes[0].set_xticklabels([])
-    axes[1].set_xticklabels(
-        range(nlag+1), rotation=0,
-    )
-
-    axes[2].set_ylabel(r"Pearson's $r$ with Release")
-    axes[2].set_xlabel("")
-    axes[2].set_xticklabels(
-        [
-            r"$S_{t-1}$",
-            r"$\bar{S}_{t-1}^7$",
-            r"$S_{t-1} \times I_{t}$",
-            r"$S_{t-1} - \bar{S}_{t-1}^7$",
-    ])
-
-    style_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-    handles = [
-        mpatch.Patch(facecolor=style_colors[0]),
-        mlines.Line2D([], [], linewidth=1.5, color="k")
-    ]
-    labels = [r"Median Pearson's $r$", "25 - 75 quantiles"]
-    axes[1].legend(handles, labels, loc="best")
-    plt.show()
-
-
-def plot_variable_correlations_new():
-    from tclr_model import read_basin_data, get_basin_meta_data
     df = read_basin_data("all")
 
     inf_corr = {}
@@ -561,7 +315,12 @@ def plot_variable_correlations_new():
     inf_corr_errbar = (inf_corr_quants - inf_corr_mean).abs()
 
     rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
-    rename = {"upper_col": "colorado", "lower_col": "colorado", "pnw": "columbia", "tva": "tennessee"}
+    rename = {
+        "upper_col": "colorado",
+        "lower_col": "colorado",
+        "pnw": "columbia",
+        "tva": "tennessee",
+    }
     rbasins = rbasins.replace(rename)
     rbasins = rbasins.str.capitalize()
     inf_corr["basin"] = rbasins
@@ -570,11 +329,19 @@ def plot_variable_correlations_new():
 
     inf_corr = inf_corr.melt(id_vars=["basin"], var_name="Lag", value_name="Correlation")
 
-    st = df.loc[:,["release", "storage_pre", "storage_roll7", "storage_x_inflow"]]
+    st = df.loc[:, ["release", "storage_pre", "storage_roll7", "storage_x_inflow"]]
     st["sto_diff"] = df["storage_pre"] - df["storage_roll7"]
 
-    drop_res = ["Causey", "Lost Creek", "Echo", "Smith & Morehouse Reservoir",
-                "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa "]
+    drop_res = [
+        "Causey",
+        "Lost Creek",
+        "Echo",
+        "Smith & Morehouse Reservoir",
+        "Jordanelle",
+        "Deer Creek",
+        "Hyrum",
+        "Santa Rosa ",
+    ]
     drop_res = [i.upper() for i in drop_res]
 
     st = st[~st.index.get_level_values(0).isin(drop_res)]
@@ -584,15 +351,25 @@ def plot_variable_correlations_new():
     # sns.set_context("notebook")
     fig = plt.figure()
     fig.set_alpha(0.0)
-    gs = GS.GridSpec(2, 1, height_ratios=[1, 1])
-    axes = [
-        fig.add_subplot(gs[0]),
-        fig.add_subplot(gs[1])
-    ]
+    gs = GS.GridSpec(2, 2, height_ratios=[1, 1], width_ratios=[10, 0.5])
+    axes = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[1, 0])]
+    ex_ax = fig.add_subplot(gs[:, 1])
+    ex_ax.patch.set_alpha(0.0)
+    ex_x = np.random.normal(0, 1, 10000)
+    sns.boxplot(y=ex_x, showfliers=False, ax=ex_ax)
+    ex_ax.tick_params(
+        axis="both", bottom=False, top=False, left=False, right=False, labelleft=False
+    )
+    sns.despine(ax=ex_ax, left=True, bottom=True)
+    # ex_ax.text(-0.5, 0.680, r"75th %ile")
+    # ex_ax.text(-0.5, -0.665, r"25th %ile")
 
     basins = ["Columbia", "Missouri", "Colorado", "Tennessee"]
     colors = sns.color_palette("tab10")
     ax = axes[0]
+
+    axes[0].axhline(0, c="k", linewidth=2, zorder=1, linestyle="--")
+    axes[1].axvline(0, c="k", linewidth=2, zorder=1, linestyle="--")
 
     sns.boxplot(
         data=inf_corr,
@@ -600,14 +377,14 @@ def plot_variable_correlations_new():
         y="Correlation",
         hue="basin",
         palette="tab10",
-        whis=(0.05, 0.95),
-        ax=ax
+        whis=(5.0, 95.0),
+        # whis=(0.01, 0.99),
+        ax=ax,
+        showfliers=False,
     )
     axes[0].legend(loc="lower right", ncol=4)
 
     stcorr["basin"] = rbasins
-    II()
-    sys.exit()
 
     sns.boxplot(
         data=stcorr.melt(id_vars=["basin"]),
@@ -616,11 +393,13 @@ def plot_variable_correlations_new():
         hue="basin",
         palette="tab10",
         ax=axes[-1],
-        whis=(0.05, 0.95)
+        # whis=(0.01, 0.99),
+        whis=(5.0, 95.0),
+        showfliers=False,
     )
-    axes[1].legend(loc="upper left", ncol=2)
+    axes[1].legend(loc="lower right", ncol=4)
 
-    axes[0].set_ylabel("$r(R_t, I_L)$")
+    axes[0].set_ylabel("$r(R_t, NI_L)$")
     axes[0].set_xlabel("Lag $L$ [days]")
 
     axes[-1].set_xlabel(r"Pearson's $r$ with Release")
@@ -629,17 +408,19 @@ def plot_variable_correlations_new():
         [
             r"$S_{t-1}$",
             r"$\bar{S}_{t-1}^7$",
-            r"$S_{t-1} \times I_{t}$",
+            r"$S_{t-1} \times NI_{t}$",
             r"$S_{t-1} - \bar{S}_{t-1}^7$",
-    ])
+        ]
+    )
 
     style_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     handles = [
         mpatch.Patch(facecolor=style_colors[0]),
-        mlines.Line2D([], [], linewidth=1.5, color="k")
+        mlines.Line2D([], [], linewidth=1.5, color="k"),
     ]
     labels = [r"Median Pearson's $r$", "25 - 75 quantiles"]
     plt.show()
+
 
 def make_map(ax=None, coords=None, other_bound=None):
     if not ax:
@@ -648,9 +429,7 @@ def make_map(ax=None, coords=None, other_bound=None):
     if coords:
         west, south, east, north = coords
     else:
-        west, south, east, north = (
-            -127.441406, 24.207069, -66.093750, 49.382373
-        )
+        west, south, east, north = (-127.441406, 24.207069, -66.093750, 49.382373)
     m = Basemap(
         # projection="merc",
         epsg=3857,
@@ -659,12 +438,12 @@ def make_map(ax=None, coords=None, other_bound=None):
         llcrnrlat=south,
         urcrnrlon=east,
         urcrnrlat=north,
-        ax=ax
+        ax=ax,
     )
     parallels = np.arange(0.0, 81, 10.0)
     meridians = np.arange(10.0, 351.0, 20.0)
-    pvals = m.drawparallels(parallels, linewidth=0.0, labels=[1,1,1,1])
-    mvals = m.drawmeridians(meridians, linewidth=0.0, labels=[1,1,1,1])
+    pvals = m.drawparallels(parallels, linewidth=0.0, labels=[1, 1, 1, 1])
+    mvals = m.drawmeridians(meridians, linewidth=0.0, labels=[1, 1, 1, 1])
     xticks = [i[1][0].get_position()[0] for i in mvals.values()]
     yticks = []
     for i in pvals.values():
@@ -673,7 +452,7 @@ def make_map(ax=None, coords=None, other_bound=None):
         except IndexError:
             pass
 
-    ax.set_xticks(xticks) 
+    ax.set_xticks(xticks)
     ax.set_yticks(yticks)
     ax.tick_params(
         axis="both",
@@ -686,7 +465,7 @@ def make_map(ax=None, coords=None, other_bound=None):
         labelright=False,
         labeltop=False,
         labelbottom=False,
-        zorder=10
+        zorder=10,
     )
 
     states_path = GIS_DIR / "cb_2017_us_state_500k"
@@ -695,16 +474,30 @@ def make_map(ax=None, coords=None, other_bound=None):
     states = m.readshapefile(states_path.as_posix(), "states")
 
     rivers = [
-        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusLC_trimmed_flowlines_noz").as_posix(),
-        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusUC_trimmed_flowlines_noz").as_posix(),
-        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusTN_trimmed_flowlines_noz").as_posix(),
-        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusML_trimmed_flowlines_noz").as_posix(),
-        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusMU_trimmed_flowlines_noz").as_posix(),
-        (GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusPN_trimmed_flowlines_noz").as_posix()
+        (
+            GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusLC_trimmed_flowlines_noz"
+        ).as_posix(),
+        (
+            GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusUC_trimmed_flowlines_noz"
+        ).as_posix(),
+        (
+            GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusTN_trimmed_flowlines_noz"
+        ).as_posix(),
+        (
+            GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusML_trimmed_flowlines_noz"
+        ).as_posix(),
+        (
+            GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusMU_trimmed_flowlines_noz"
+        ).as_posix(),
+        (
+            GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusPN_trimmed_flowlines_noz"
+        ).as_posix(),
     ]
 
     for i, r in enumerate(rivers):
-        river_lines = m.readshapefile(r, f"river_{i}", color="b", linewidth=0.5, default_encoding="latin-1")
+        river_lines = m.readshapefile(
+            r, f"river_{i}", color="b", linewidth=0.5, default_encoding="latin-1"
+        )
         river_lines[4].set_alpha(1.0)
 
     if other_bound:
@@ -713,7 +506,7 @@ def make_map(ax=None, coords=None, other_bound=None):
                 b,
                 "bound",
                 # color="#FF3BC6"
-                color=c
+                color=c,
             )
             # bound[4].set_facecolor("#FF3BC6")
             bound[4].set_facecolor(c)
@@ -723,27 +516,166 @@ def make_map(ax=None, coords=None, other_bound=None):
     return m
 
 
+def make_maps(axes, coords=None, other_bound=None):
+    if coords:
+        west, south, east, north = coords
+    else:
+        west, south, east, north = (-127.441406, 23.807069, -66.093750, 49.392373)
+
+    # parallels = np.arange(0.0, 81, 10.0)
+    # meridians = np.arange(-180.0, 181.0, 20.0)
+    parallels = np.arange(south + 5, north - 5, 10.0)
+    meridians = np.arange(west + 10, east - 10, 20.0)
+
+    states_path = GIS_DIR / "cb_2017_us_state_500k.shp"
+    states = gpd.read_file(states_path.as_posix())
+
+    rivers = [
+        (
+            GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusLC_trimmed_flowlines_noz"
+        ).as_posix(),
+        (
+            GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusUC_trimmed_flowlines_noz"
+        ).as_posix(),
+        (
+            GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusTN_trimmed_flowlines_noz"
+        ).as_posix(),
+        (
+            GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusML_trimmed_flowlines_noz"
+        ).as_posix(),
+        (
+            GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusMU_trimmed_flowlines_noz"
+        ).as_posix(),
+        (
+            GIS_DIR / "NHDPlus" / "trimmed_flowlines" / "NHDPlusPN_trimmed_flowlines_noz"
+        ).as_posix(),
+    ]
+
+    river_gdfs = [gpd.read_file(river + ".shp") for river in rivers]
+
+    other_gdfs = []
+    if other_bound:
+        for b, c in other_bound:
+            other_gdfs.append((gpd.read_file(b + ".shp"), c))
+
+    label_map = {
+        0: dict(labelleft=True, labelright=False, labeltop=True, labelbottom=False),
+        1: dict(labelleft=False, labelright=True, labeltop=True, labelbottom=False),
+        2: dict(labelleft=True, labelright=False, labeltop=False, labelbottom=False),
+        3: dict(labelleft=False, labelright=True, labeltop=False, labelbottom=False),
+        4: dict(labelleft=True, labelright=False, labeltop=False, labelbottom=True),
+        5: dict(labelleft=False, labelright=True, labeltop=False, labelbottom=True),
+    }
+    for i, ax in enumerate(axes):
+        states.plot(ax=ax, edgecolor="k", facecolor="None")
+        for gdf in river_gdfs:
+            gdf.plot(ax=ax, color="b", linewidth=0.3, alpha=1.0)
+        for gdf, c in other_gdfs:
+            gdf.plot(ax=ax, facecolor=c, alpha=0.5, zorder=2)
+
+        ax.set_ylim(south, north)
+        ax.set_xlim(west, east)
+        ax.patch.set_alpha(0.0)
+        ax.grid(False)
+        ax.tick_params(
+            axis="both",
+            which="major",
+            direction="in",
+            bottom=True,
+            top=True,
+            left=True,
+            right=True,
+            **label_map[i],
+        )
+        ax.set_yticks(parallels)
+        ax.set_yticklabels([f"{i:.0f}$^\circ$N" for i in parallels], fontsize=10)
+        ax.set_xticks(meridians)
+        ax.set_xticklabels([f"{abs(i):.0f}$^\circ$W" for i in meridians], fontsize=10)
+        ax.set_frame_on(True)
+        for spine in ax.spines.values():
+            spine.set_edgecolor("black")
+
+
+def make_basin_map(ax, basin_info):
+    river_gdfs = [gpd.read_file(i + ".shp") for i in basin_info["rivers"]]
+    bound_gdf = gpd.read_file(basin_info["shp"] + ".shp")
+    west, south, east, north = basin_info["extents"]
+    pstep = int(np.ceil((north - south) / 4))
+    mstep = int(np.ceil((east - west) / 3))
+    # pstep = 2
+    # mstep = 4
+    parallels = np.arange(south + pstep / 2, north - pstep / 2, pstep)
+    meridians = np.arange(west + mstep / 2, east - mstep / 2, mstep)
+
+    states_path = GIS_DIR / "cb_2017_us_state_500k.shp"
+    states = gpd.read_file(states_path.as_posix())
+
+    label_map = {
+        "labelleft": True,
+        "labelright": False,
+        "labeltop": False,
+        "labelbottom": True,
+    }
+
+    states.plot(ax=ax, edgecolor="k", facecolor="None", linewidth=0.5)
+    for river in river_gdfs:
+        river.plot(ax=ax, color="b", linewidth=0.3, alpha=1.0)
+    bound_gdf.plot(ax=ax, facecolor=basin_info["color"], alpha=0.5, zorder=2)
+
+    ax.set_ylim(south, north)
+    ax.set_xlim(west, east)
+    ax.patch.set_alpha(0.0)
+    ax.grid = False
+    ax.tick_params(
+        axis="both",
+        which="major",
+        direction="in",
+        bottom=True,
+        top=True,
+        left=True,
+        right=True,
+        length=6,
+        width=1,
+        **label_map,
+    )
+
+    ax.set_yticks(parallels)
+    ax.set_yticklabels([f"{i:.0f}$^\circ$N" for i in parallels], fontsize=16)
+    ax.set_xticks(meridians)
+    ax.set_xticklabels([f"{abs(i):.0f}$^\circ$W" for i in meridians], fontsize=16)
+    ax.set_frame_on(True)
+    for spine in ax.spines.values():
+        spine.set_edgecolor("black")
+
+
 def plot_res_locs():
     res_locs = pd.read_csv("../geo_data/reservoirs.csv")
     res_locs = res_locs.set_index("site_name")
 
-    drop_res = ["Causey", "Lost Creek", "Echo", "Smith & Morehouse Reservoir",
-                "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa "]
+    drop_res = [
+        "Causey",
+        "Lost Creek",
+        "Echo",
+        "Smith & Morehouse Reservoir",
+        "Jordanelle",
+        "Deer Creek",
+        "Hyrum",
+        "Santa Rosa ",
+    ]
     drop_res = [i.upper() for i in drop_res]
     res_locs = res_locs.drop(drop_res)
-    II()
-    sys.exit()
-    
+
     with open("../geo_data/extents.json", "r") as f:
         coords = json.load(f)
     color_map = sns.color_palette("Set2")
-    basins = [((GIS_DIR/"columbia_shp"/"Shape"/"WBDHU2").as_posix(), color_map[0]),
-              ((GIS_DIR/"missouri_shp"/"Shape"/"WBDHU2").as_posix(), color_map[1]),
-            #   (GIS_DIR/"lowercol_shp"/"Shape"/"WBDHU2").as_posix(),
-            #   (GIS_DIR/"uppercol_shp"/"Shape"/"WBDHU2").as_posix(),
-              ((GIS_DIR/"colorado_shp"/"Shape"/"WBDHU2").as_posix(), color_map[2]),
-              ((GIS_DIR/"tennessee_shp"/"Shape"/"WBDHU2").as_posix(), color_map[3])]
-
+    basins = [
+        ((GIS_DIR / "columbia_shp" / "Shape" / "WBDHU2").as_posix(), color_map[0]),
+        ((GIS_DIR / "missouri_shp" / "Shape" / "WBDHU2").as_posix(), color_map[1]),
+        #   (GIS_DIR/"lowercol_shp"/"Shape"/"WBDHU2").as_posix(),
+        #   (GIS_DIR/"uppercol_shp"/"Shape"/"WBDHU2").as_posix(),
+        ((GIS_DIR / "colorado_shp" / "Shape" / "WBDHU2").as_posix(), color_map[2]),
+        ((GIS_DIR / "tennessee_shp" / "Shape" / "WBDHU2").as_posix(), color_map[3]),
+    ]
 
     fig, ax = plt.subplots(1, 1)
     m = make_map(ax, other_bound=basins)
@@ -753,18 +685,14 @@ def plot_res_locs():
     size_var = "max_sto"
     max_value = res_locs[size_var].max()
     min_value = res_locs[size_var].min()
-    
+
     ratio = (max_size - min_size) / (max_value - min_value)
     sizes = [min_size + i * ratio for i in res_locs[size_var]]
     markers = ax.scatter(x, y, marker="v", edgecolor="k", s=sizes, zorder=4)
     marker_color = markers.get_facecolor()
-    
-    river_line = mlines.Line2D(
-        [], [], color="b", alpha=1, linewidth=0.5
-    )
-    river_basins = [
-        mpatch.Patch(facecolor=color_map[i], alpha=0.5) for i in range(4)
-    ]
+
+    river_line = mlines.Line2D([], [], color="b", alpha=1, linewidth=0.5)
+    river_basins = [mpatch.Patch(facecolor=color_map[i], alpha=0.5) for i in range(4)]
     size_legend_sizes = np.linspace(min_size, max_size, 4)
     # size_legend_labels = [(i-min_size) / ratio for i in size_legend_sizes]
     size_legend_labels = np.linspace(min_value, max_value, 4)
@@ -778,7 +706,7 @@ def plot_res_locs():
         size_markers,
         [
             f"{round(size_legend_labels[0]*1000, -2):.0f}",
-            *[f"{round(i / 1000, 0):,.0f} million" for i in size_legend_labels[1:]]
+            *[f"{round(i / 1000, 0):,.0f} million" for i in size_legend_labels[1:]],
         ],
         title="Maximum Storage [acre-feet]",
         loc="lower left",
@@ -793,12 +721,13 @@ def plot_res_locs():
             "Colorado HUC2",
             "Tennessee HUC2",
         ],
-        loc="lower right"
+        loc="lower right",
     )
     ax.add_artist(size_legend)
     ax.add_artist(hydro_legend)
 
     plt.show()
+
 
 def plot_res_perf_map(results):
     train = select_results(results, "train_data")
@@ -826,10 +755,17 @@ def plot_res_perf_map(results):
 
     max_size = 200
 
-    drop_res = ["Causey", "Lost Creek", "Echo", "Smith & Morehouse Reservoir",
-                "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa "]
+    drop_res = [
+        "Causey",
+        "Lost Creek",
+        "Echo",
+        "Smith & Morehouse Reservoir",
+        "Jordanelle",
+        "Deer Creek",
+        "Hyrum",
+        "Santa Rosa ",
+    ]
     drop_res = [i.upper() for i in drop_res]
-
 
     with open("../geo_data/extents.json", "r") as f:
         coords = json.load(f)
@@ -837,18 +773,17 @@ def plot_res_perf_map(results):
     II()
     sys.exit()
 
-
     fig, axes = plt.subplots(2, 2)
 
-    make_map(axes[0,0], coords["Columbia"])
-             # [(GIS_DIR/"columbia_shp"/"Shape"/"WBDHU2").as_posix()])
-    make_map(axes[0,1], coords["Missouri"])
-             # [(GIS_DIR/"missouri_shp"/"Shape"/"WBDHU2").as_posix()])
-    make_map(axes[1,0], coords["Colorado"])
-             # [(GIS_DIR/"lowercol_shp"/"Shape"/"WBDHU2").as_posix(),
-              # (GIS_DIR/"uppercol_shp"/"Shape"/"WBDHU2").as_posix()])
-    make_map(axes[1,1], coords["Tennessee"])
-             # [(GIS_DIR/"tennessee_shp"/"Shape"/"WBDHU2").as_posix()])
+    make_map(axes[0, 0], coords["Columbia"])
+    # [(GIS_DIR/"columbia_shp"/"Shape"/"WBDHU2").as_posix()])
+    make_map(axes[0, 1], coords["Missouri"])
+    # [(GIS_DIR/"missouri_shp"/"Shape"/"WBDHU2").as_posix()])
+    make_map(axes[1, 0], coords["Colorado"])
+    # [(GIS_DIR/"lowercol_shp"/"Shape"/"WBDHU2").as_posix(),
+    # (GIS_DIR/"uppercol_shp"/"Shape"/"WBDHU2").as_posix()])
+    make_map(axes[1, 1], coords["Tennessee"])
+    # [(GIS_DIR/"tennessee_shp"/"Shape"/"WBDHU2").as_posix()])
 
     basins = ["pnw", "missouri", "colorado", "tva"]
     titles = ["Columbia", "Missouri", "Colorado", "Tennessee"]
@@ -860,115 +795,39 @@ def plot_res_perf_map(results):
 
     plt.show()
 
-def plot_flood_analysis(results):
-    train_data = select_results(results, "train_data")
-    dates = {
-        "tennessee": ["04-01-2003", "07-01-2003"],
-        "colorado": ["05-01-1983", "08-01-1983"],
-        "columbia": ["01-01-1996", "04-01-1996"],
-        "missouri": ["06-01-1993", "09-01-1993"]
-    }
-
-    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
-    rename = {"upper_col": "colorado", "lower_col": "colorado"}
-    rbasins = rbasins.replace(rename)
-
-    resers = {
-        "tennessee": ["Apalachia", "Hiwassee", "WattsBar", "Chikamauga"],
-        "colorado": ["Lake Powell".upper()],
-        "columbia": rbasins[rbasins == "pnw"].index,
-        "missouri": rbasins[rbasins == "missouri"].index
-    }
-
-    idx = pd.IndexSlice
-    df = train_data["TD3"]
-    dfs = {b: df.loc[idx[r, :], :] for b, r in resers.items()}
-
-    trimmed_dfs = {}
-
-    for b, (start, stop) in dates.items():
-        bdf = dfs[b]
-        start = datetime.strptime(start, "%m-%d-%Y")
-        stop = datetime.strptime(stop, "%m-%d-%Y")
-        trimmed = bdf.loc[
-            (bdf.index.get_level_values("datetime") >= start) &
-            (bdf.index.get_level_values("datetime") < stop)
-        ]
-        trimmed_dfs[b] = trimmed
-
-    floodops = combine_dict_to_df(trimmed_dfs, "Basin")
-    floodops = floodops.drop("bin", axis=1).reset_index()
-    floodops = floodops.melt(id_vars=["site_name", "datetime", "Basin"])
-    fg = sns.displot(
-        data=floodops,
-        x="value",
-        hue="variable",
-        col="Basin",
-        col_wrap=2,
-        kind="ecdf",
-        facet_kws={
-            "sharex":False,
-            "legend_out": False
-    })
-    plt.show()
-
-
-def plot_overall_ecdf(results):
-    train = select_results(results, "train_data")
-    test = select_results(results, "test_data")
-    simul = select_results(results, "simmed_data")
-    train = train["TD3"]
-    test = test["TD3"]
-    simul = simul["TD3"]
-
-    df = combine_dict_to_df({
-        "train": train,
-        "test": test,
-        "simul": simul
-    }, "dataset")
-
-    df = df.drop("bin", axis=1).reset_index()
-    quant, bins = pd.qcut(df["actual"], 100, labels=False, retbins=True)
-    df["bin"] = quant
-
-    mase = df.groupby("bin").apply(
-        lambda x: mean_absolute_scaled_error(x["actual"], x["model"]))
-
-    II()
-    # df = df.melt(id_vars=["site_name", "datetime", "dataset"])
-
-    # sns.displot(
-    #     data=df,
-    #     x="value",
-    #     hue="variable",
-    #     col="dataset",
-    #     kind="ecdf",
-    #     facet_kws={
-    #         "sharex":True,
-    #         "legend_out": False
-    #     }
-    # )
-
-    # plt.show()
 
 def plot_seasonal_performance(results):
     train = select_results(results, "train_data")
     test = select_results(results, "test_data")
     simul = select_results(results, "simmed_data")
 
-    train_score = {i: j.groupby(
-        [j.index.get_level_values("site_name"),
-         j.index.get_level_values("datetime").month]
-    ).apply(lambda x: mean_squared_error(x["actual"], x["model"], squared=False)) for i, j in train.items()}
-    test_score = {i: j.groupby(
-        [j.index.get_level_values("site_name"),
-         j.index.get_level_values("datetime").month]
-    ).apply(lambda x: mean_squared_error(x["actual"], x["model"], squared=False)) for i, j in test.items()}
-    simul_score = {i: j.groupby(
-        [j.index.get_level_values("site_name"),
-         j.index.get_level_values("datetime").month]
-    ).apply(lambda x: mean_squared_error(x["actual"], x["model"], squared=False)) for i, j in simul.items()}
-
+    train_score = {
+        i: j.groupby(
+            [
+                j.index.get_level_values("site_name"),
+                j.index.get_level_values("datetime").month,
+            ]
+        ).apply(lambda x: mean_squared_error(x["actual"], x["model"], squared=False))
+        for i, j in train.items()
+    }
+    test_score = {
+        i: j.groupby(
+            [
+                j.index.get_level_values("site_name"),
+                j.index.get_level_values("datetime").month,
+            ]
+        ).apply(lambda x: mean_squared_error(x["actual"], x["model"], squared=False))
+        for i, j in test.items()
+    }
+    simul_score = {
+        i: j.groupby(
+            [
+                j.index.get_level_values("site_name"),
+                j.index.get_level_values("datetime").month,
+            ]
+        ).apply(lambda x: mean_squared_error(x["actual"], x["model"], squared=False))
+        for i, j in simul.items()
+    }
 
     train_dfs = []
     test_dfs = []
@@ -991,12 +850,18 @@ def plot_seasonal_performance(results):
     test_df = pd.concat(test_dfs).reset_index()
     simul_df = pd.concat(simul_dfs).reset_index()
 
-
     # pdf = simul_df.groupby(["Model", "datetime"]).quantile(0.5).reset_index()
 
-    simul_score = {i: pd.DataFrame({"RMSE": j.groupby(j.index.get_level_values("datetime").month).apply(
-        lambda x: mean_squared_error(x["actual"], x["model"], squared=False)
-    )}) for i, j in simul.items()}
+    simul_score = {
+        i: pd.DataFrame(
+            {
+                "RMSE": j.groupby(j.index.get_level_values("datetime").month).apply(
+                    lambda x: mean_squared_error(x["actual"], x["model"], squared=False)
+                )
+            }
+        )
+        for i, j in simul.items()
+    }
     simul_df = combine_dict_to_df(simul_score, "Model").reset_index()
 
     ax = sns.barplot(
@@ -1006,7 +871,7 @@ def plot_seasonal_performance(results):
         hue="Model",
         palette="tab10",
         errwidth=0,
-        alpha=0.6
+        alpha=0.6,
     )
 
     means = simul_df.groupby("Model").mean()["RMSE"]
@@ -1022,17 +887,19 @@ def plot_seasonal_performance(results):
 
     plt.show()
 
+
 def plot_upper_lower_perf(results):
     from tclr_model import read_basin_data
+
     df = read_basin_data("all")
 
     train = select_results(results, "train_data")
     test = select_results(results, "test_data")
     simul = select_results(results, "simmed_data")
 
-    train_inflow = df.loc[train["TD0"].index, "inflow"]
-    test_inflow = df.loc[test["TD0"].index, "inflow"]
-    simul_inflow = df.loc[simul["TD0"].index, "inflow"]
+    train_inflow = df.loc[train["TD1"].index, "inflow"]
+    test_inflow = df.loc[test["TD1"].index, "inflow"]
+    simul_inflow = df.loc[simul["TD1"].index, "inflow"]
 
     # train_pct = {i: j.groupby("site_name")["actual"].rank(pct=True)
     #              for i, j in train.items()}
@@ -1078,9 +945,13 @@ def plot_upper_lower_perf(results):
         simul_trimmed[d] = df
 
     df = combine_dict_to_df(simul_trimmed, "Depth")
-    scores = pd.DataFrame({"NSE": df.groupby(["Depth", "label"]).apply(
-        lambda x: r2_score(x["actual"], x["model"])
-    )})
+    scores = pd.DataFrame(
+        {
+            "NSE": df.groupby(["Depth", "label"]).apply(
+                lambda x: r2_score(x["actual"], x["model"])
+            )
+        }
+    )
 
     scores = scores.reset_index()
 
@@ -1094,114 +965,6 @@ def plot_upper_lower_perf(results):
     ax.legend(loc="best")
     plt.show()
 
-def plot_constinency_analysis(results):
-    simul = select_results(results, "simmed_data")
-
-    df = simul["TD3"]
-    means = df.groupby("site_name")["actual"].mean()
-    resers = df.index.get_level_values("site_name").unique()
-    idx = pd.IndexSlice
-    const = []
-    thresh = 0.05
-    window = 10
-    for res in resers:
-        rdf = df.loc[idx[res, :], :]
-        rconst = rdf["actual"].rolling(window).std() / means.loc[res]
-        const.append(rconst[rconst < thresh])
-
-    const = pd.concat(const)
-
-    indexes = []
-    for s, d in const.index:
-        date_range = pd.date_range(
-             d - np.timedelta64(window - 1, "D"), d
-        )
-        for dr in date_range:
-            indexes.append((s, dr))
-
-    indexes = list(set(indexes))
-
-    cdf = df.loc[indexes, :]
-    cdf = cdf.sort_index()
-
-    II()
-
-    # scores = pd.DataFrame({"NSE": cdf.groupby("site_name").apply(
-    #     lambda x: r2_score(x["actual"], x["model"])
-    # )})
-
-    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
-    # scores["basin"] = rbasins
-    # scores = scores.reset_index()
-    # scores = scores.sort_values(by=["basin", "NSE"])
-    # II()
-    # scores.plot.bar()
-    # scores = scores.melt(id_vars=["site_name", "basin"])
-    # sns.barplot(
-    #     data=scores,
-    #     x="site_name",
-    #     y="NSE",
-    #     hue="basin"
-    #     # hue="variable",
-    # )
-    # plt.show()
-
-    # import sys
-    # sys.exit()
-
-
-    name_replacements = get_name_replacements()
-
-    sds = cdf.groupby("site_name").rolling(window - 1).std()
-    sds["diff"] = sds["model"] - sds["actual"]
-    sds.index = sds.index.droplevel(0)
-
-    sds_means = pd.DataFrame({
-        "Observed": sds["actual"].groupby("site_name").mean(),
-        "Modeled": sds["model"].groupby("site_name").mean(),
-        "basin": rbasins
-    })
-    sds_means["Observed"] = sds_means["Observed"] / means
-    sds_means["Modeled"] = sds_means["Modeled"] / means
-
-    sds_means = sds_means.reset_index()
-    sds_means["site_name"] = sds_means["site_name"].replace(name_replacements).str.title()
-    sds_means = sds_means.melt(id_vars=["site_name", "basin"])
-
-    sds_means = sds_means.sort_values(by=["basin", "value"]).dropna()
-    ax = sns.barplot(
-        data=sds_means,
-        x="site_name",
-        y="value",
-        hue="variable"
-    )
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
-    ax.set_xlabel("")
-    ax.set_ylabel("Coefficient of Variation")
-    ax.legend(loc="best")
-
-    plt.show()
-
-    sds_means["basin"] = sds_means["basin"].replace(
-        {
-            "lower_col":"Colorado",
-            "upper_col":"Colorado",
-            "pnw": "Columbia",
-            "tva": "Tennessee"
-        }
-    )
-    sds_means["basin"] = sds_means["basin"].str.capitalize()
-
-    ax = sns.boxplot(
-        data=sds_means,
-        x="basin",
-        y="value",
-        hue="variable"
-    )
-    ax.legend(loc="best")
-    ax.set_xlabel("")
-    ax.set_ylabel("Coefficient of Variation")
-    plt.show()
 
 def plot_perf_vs_datalength(results):
     simul = select_results(results, "simmed_data")
@@ -1209,40 +972,1314 @@ def plot_perf_vs_datalength(results):
     simul_score = combine_dict_to_df(simul_score, "Model").reset_index()
 
     ntrees = simul_score["Model"].unique().size
-    counts = simul["TD0"].index.get_level_values("site_name").value_counts()
+    counts = simul["TD4"].index.get_level_values("site_name").value_counts()
     train_counts = counts / 0.2 * 0.8
 
     simul_score = simul_score.set_index("site_name")
-    simul_score["counts"] = train_counts  / 365
+    simul_score["counts"] = train_counts / 365
 
-    sns.scatterplot(
-        data=simul_score,
-        x="counts",
-        y="NSE",
-        hue="Model"
+    sns.scatterplot(data=simul_score, x="counts", y="NSE", hue="Model")
+    plt.show()
+
+
+def plot_grid_search_results(ds="simul", metric="NSE"):
+    import glob
+    import re
+
+    files = glob.glob(
+        "../results/tclr_model_testing/all/TD?_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
     )
+    td_mss_pat = re.compile("TD(\d)_MSS(\d\.\d\d)")
+    matches = [re.search(td_mss_pat, i) for i in files]
+    td_mss = [i.groups() for i in matches]
+    results = {}
+    for key, file in zip(td_mss, files):
+        with open(file, "rb") as f:
+            results[key] = pickle.load(f)
+    for key in td_mss:
+        if key[1] == "0.00":
+            del results[key]
+
+    train_data = select_results(results, "train_data")
+    test_data = select_results(results, "test_data")
+    simmed_data = select_results(results, "simmed_data")
+
+    train_scores = get_model_scores(train_data, metric=metric, grouper="site_name")
+    test_scores = get_model_scores(test_data, metric=metric, grouper="site_name")
+    simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+
+    train_scores_records = []
+    for key, values in train_scores.items():
+        for res, value in values[metric].items():
+            train_scores_records.append([int(key[0]), float(key[1]), res, value])
+    train_scores = pd.DataFrame.from_records(
+        train_scores_records, columns=["TD", "MSS", "Reservoir", metric]
+    )
+    test_scores_records = []
+    for key, values in test_scores.items():
+        for res, value in values[metric].items():
+            test_scores_records.append([int(key[0]), float(key[1]), res, value])
+    test_scores = pd.DataFrame.from_records(
+        test_scores_records, columns=["TD", "MSS", "Reservoir", metric]
+    )
+    simmed_scores_records = []
+    for key, values in simmed_scores.items():
+        for res, value in values[metric].items():
+            simmed_scores_records.append([int(key[0]), float(key[1]), res, value])
+    simmed_scores = pd.DataFrame.from_records(
+        simmed_scores_records, columns=["TD", "MSS", "Reservoir", metric]
+    )
+
+    # train_agg = train_scores.groupby(["TD", "MSS"])[[metric]].mean()
+    # test_agg = test_scores.groupby(["TD", "MSS"])[[metric]].mean()
+    # simmed_agg = simmed_scores.groupby(["TD", "MSS"])[[metric]].mean()
+
+    # train_agg["Data Set"] = "Train"
+    # test_agg["Data Set"] = "Test"
+    # simmed_agg["Data Set"] = "Simmed"
+    # df = pd.concat([train_agg, test_agg, simmed_agg])
+    if ds == "simul":
+        df = simmed_scores
+    elif ds == "test":
+        df = test_scores
+    else:
+        df = train_scores
+
+    fg = sns.catplot(
+        data=df,
+        hue="TD",
+        x="MSS",
+        y=metric,
+        kind="box",
+        palette="tab10",
+        whis=(5, 95),
+        showfliers=False,
+        legend=False
+        # ci=None,
+    )
+    fg.ax.legend(loc="best", ncol=4, title="Max Depth")
+    # fg.ax.set_xticklabels(fg.ax.get_xticklabels(), rotation=45, ha="right")
+    # if metric == "nRMSE":
+    #     fg.ax.set_yscale("log")
+    plt.show()
+
+
+def determine_assim_large_change_reservoirs(scores):
+    diff_pairs = [
+        ("semi-annually", "seasonally"),
+        ("seasonally", "monthly"),
+        ("monthly", "weekly"),
+        ("weekly", "daily"),
+    ]
+    output = {}
+    models = [("2", "0.20"), ("5", "0.01")]
+    for m in models:
+        for pair in diff_pairs:
+            key1 = (m[0], pair[0], m[1])
+            key2 = (m[0], pair[1], m[1])
+            diff = scores[key1] - scores[key2]
+            # diff_mean = diff.abs().mean()
+            outdf = scores[key2].copy()
+            outdf["diff"] = diff
+            outdf["pdiff"] = diff / scores[key1]
+            # outdf = outdf[outdf["diff"].abs().values > threshold]
+            output[key2] = outdf
+    return output
+
+
+def determine_assime_improvement(scores):
+    output = {}
+    models = [("2", "0.20"), ("5", "0.01")]
+    assims = ["semi-annually", "seasonally", "monthly", "weekly", "daily"]
+
+    for m in models:
+        for assim in assims:
+            key1 = (m[0], "never", m[1])
+            key2 = (m[0], assim, m[1])
+            outdf = scores[key2].copy()
+            metric = outdf.columns[0]
+            outdf["diff"] = scores[key1] - scores[key2]
+            outdf["pdiff"] = outdf["diff"] / scores[key1][metric]
+            output[key2] = outdf
+    return output
+
+
+def stripplot(
+    data,
+    x,
+    y,
+    hue=None,
+    order=None,
+    hue_order=None,
+    jitter=True,
+    dodge=True,
+    palette=None,
+    size=None,
+    ax=None,
+    colors=None,
+    **kwgs,
+):
+
+    df = data.copy()
+    df = df.rename(columns={x: "x", y: "y", hue: "hue", size: "size"})
+
+    order = order if order else df["x"].unique()
+    hue_order = hue_order if hue_order else df["hue"].unique()
+
+    xticks = list(range(df["x"].unique().size))
+    nhue = df["hue"].unique().size
+    width = 0.8 / nhue
+    if dodge:
+        adjs = linear_scale_values(range(nhue), -0.4 + width / 2, 0.4 - width / 2)
+    else:
+        adjs = [0.0 for i in range(nhue)]
+
+    if jitter is True:
+        jlim = 0.1
+    else:
+        jlim = float(jitter)
+    if dodge:
+        jlim /= nhue
+
+    jlim *= width
+    jitterer = partial(np.random.uniform, low=-jlim, high=+jlim)
+    njitter = df.shape[0] / nhue / len(order)
+    jitter = jitterer(size=int(njitter))
+
+    for i, hue in enumerate(hue_order):
+        x_adj = [x + adjs[i] for x in xticks]
+
+        pdf = df[df["hue"] == hue]
+        for j, var in enumerate(order):
+            vdf = pdf[pdf["x"] == var]
+            if colors:
+                color = vdf[colors]
+            else:
+                color = palette[i]
+            ax.scatter(x_adj[j] + jitter, vdf["y"], color=color, s=vdf["size"], **kwgs)
+    return ax
+
+
+def plot_data_assim_results(metric="NSE"):
+    import glob
+    import re
+
+    files = glob.glob(
+        "../results/tclr_model_testing/all/TD?_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+    )
+    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    matches = [re.search(td_mss_assim_pat, i) for i in files]
+    td_mss_assim = [i.groups() for i in matches]
+    results = {}
+    for key, file in zip(td_mss_assim, files):
+        with open(file, "rb") as f:
+            results[key] = pickle.load(f)
+    with open(
+        "../results/tclr_model_testing/all/TD2_MSS0.20_RT_MS_exhaustive_new_hoover/results.pickle",
+        "rb",
+    ) as f:
+        results[("2", "never", "0.20")] = pickle.load(f)
+    with open(
+        "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
+        "rb",
+    ) as f:
+        results[("5", "never", "0.01")] = pickle.load(f)
+
+    simmed_data = select_results(results, "simmed_data")
+
+    simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+
+    improvements = determine_assime_improvement(simmed_scores)
+    del simmed_scores[("2", "never", "0.20")]
+    del simmed_scores[("5", "never", "0.01")]
+    simmed_large_diffs = determine_assim_large_change_reservoirs(simmed_scores)
+
+    columns = ["TD", "Assim", "MSS", "Reservoir", metric]
+    simmed_scores_records = []
+    for key, values in simmed_scores.items():
+        for res, value in values[metric].items():
+            simmed_scores_records.append([int(key[0]), key[1], float(key[2]), res, value])
+    simmed_scores = pd.DataFrame.from_records(simmed_scores_records, columns=columns)
+
+    simmed_diff_records = []
+    for key, values in simmed_large_diffs.items():
+        for i, row in values.iterrows():
+            simmed_diff_records.append(
+                [
+                    int(key[0]),
+                    key[1],
+                    float(key[2]),
+                    i,
+                    row[metric],
+                    row["diff"],
+                    row["pdiff"],
+                ]
+            )
+    simmed_diffs = pd.DataFrame.from_records(
+        simmed_diff_records, columns=columns + ["diff", "pdiff"]
+    )
+
+    simmed_improve_records = []
+    for key, values in improvements.items():
+        for i, row in values.iterrows():
+            simmed_improve_records.append(
+                [
+                    int(key[0]),
+                    key[1],
+                    float(key[2]),
+                    i,
+                    row[metric],
+                    row["diff"],
+                    row["pdiff"],
+                ]
+            )
+    simmed_improves = pd.DataFrame.from_records(
+        simmed_improve_records, columns=columns + ["diff", "pdiff"]
+    )
+
+    simmed_scores = simmed_scores.set_index(["TD", "Assim", "MSS", "Reservoir"])
+    simmed_diffs = simmed_diffs.set_index(["TD", "Assim", "MSS", "Reservoir"])
+    simmed_improves = simmed_improves.set_index(["TD", "Assim", "MSS", "Reservoir"])
+
+    simmed_scores["pdiff_improve"] = simmed_improves["pdiff"]
+    simmed_scores["pdiff_improve"] = simmed_scores["pdiff_improve"].fillna(0.0)
+    simmed_scores["size"] = linear_scale_values(simmed_scores["pdiff_improve"], 20, 500)
+
+    simmed_scores["pdiff_diff"] = simmed_diffs["pdiff"]
+    simmed_scores["color"] = simmed_scores["pdiff_diff"].apply(
+        lambda x: "#00FF00" if x > 0.5 else "#808080"
+    )
+
+    simmed_scores = simmed_scores.reset_index()
+
+    # simmed_scores_for_strip = simmed_scores.merge(simmed_diffs, indicator=True, how="outer").query(
+    #     '_merge=="left_only"').drop("_merge", axis=1)
+
+    fg = sns.catplot(
+        data=simmed_scores,
+        hue="TD",
+        x="Assim",
+        y=metric,
+        kind="box",
+        order=["daily", "weekly", "monthly", "seasonally", "semi-annually"],
+        whis=(5, 95),
+        showfliers=False,
+        legend_out=False,
+    )
+    stripplot(
+        data=simmed_scores,
+        hue="TD",
+        x="Assim",
+        y=metric,
+        order=["daily", "weekly", "monthly", "seasonally", "semi-annually"],
+        ax=fg.ax,
+        dodge=True,
+        jitter=0.8,
+        # palette=["#808080", "#808080"],
+        colors="color",
+        edgecolor="k",
+        alpha=0.5,
+        linewidth=1,
+    )
+
+    fg.ax.set_xticklabels(["Daily", "Weekly", "Monthly", "Seasonally", "Semi-annually"])
+    fg.ax.set_xlabel("Assimilation Frequency")
+
+    fg.ax.set_xticks([], minor=True)
+    fg.despine(left=False, right=False, top=False, bottom=False)
+
+    handles, labels = fg.ax.get_legend_handles_labels()
+    handles = handles[:2]
+    labels = ["TD2-MSS0.20", "TD5-MSS0.01"]
+    fg.ax.legend(handles, labels, loc="best")
+
+    fg.ax.set_yscale("log")
+
+    plt.show()
+
+
+def plot_assim_score_ridgelines(metric="NSE"):
+    import glob
+    import re
+
+    files = glob.glob(
+        "../results/tclr_model_testing/all/TD?_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+    )
+    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    matches = [re.search(td_mss_assim_pat, i) for i in files]
+    td_mss_assim = [i.groups() for i in matches]
+    results = {}
+    for key, file in zip(td_mss_assim, files):
+        with open(file, "rb") as f:
+            results[key] = pickle.load(f)
+    train_data = select_results(results, "train_data")
+    test_data = select_results(results, "test_data")
+    simmed_data = select_results(results, "simmed_data")
+
+    train_scores = get_model_scores(train_data, metric=metric, grouper="site_name")
+    test_scores = get_model_scores(test_data, metric=metric, grouper="site_name")
+    simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+
+    columns = ["TD", "Assim", "MSS", "Reservoir", metric]
+    train_scores_records = []
+    for key, values in train_scores.items():
+        for res, value in values[metric].items():
+            train_scores_records.append([int(key[0]), key[1], float(key[2]), res, value])
+    train_scores = pd.DataFrame.from_records(train_scores_records, columns=columns)
+    test_scores_records = []
+    for key, values in test_scores.items():
+        for res, value in values[metric].items():
+            test_scores_records.append([int(key[0]), key[1], float(key[2]), res, value])
+    test_scores = pd.DataFrame.from_records(test_scores_records, columns=columns)
+    simmed_scores_records = []
+    for key, values in simmed_scores.items():
+        for res, value in values[metric].items():
+            simmed_scores_records.append([int(key[0]), key[1], float(key[2]), res, value])
+    simmed_scores = pd.DataFrame.from_records(simmed_scores_records, columns=columns)
+    fg = sns.FacetGrid(
+        simmed_scores,
+        row="Assim",
+        hue="TD",
+        sharey=False,  # ) aspect=15, height=0.5,)
+        row_order=["daily", "weekly", "monthly", "seasonally", "semi-annually"],
+    )
+    fg.fig.patch.set_alpha(0.0)
+    for ax in fg.axes.flatten():
+        ax.patch.set_alpha(0.0)
+        ax.grid(False)
+
+    fg.map(
+        sns.kdeplot,
+        metric,
+        bw_adjust=0.5,
+        clip_on=False,
+        fill=True,
+        alpha=1,
+        linewidth=1.5,
+    )
+    fg.map(sns.kdeplot, metric, clip_on=False, color="k", lw=2, bw_adjust=0.5)
+
+    fg.figure.subplots_adjust(hspace=-0.25)
+    fg.set_titles("")
+    fg.set(yticks=[], ylabel="")
+    row_order = ["daily", "weekly", "monthly", "seasonally", "semi-annually"]
+    for ax, label in zip(fg.axes.flatten(), row_order):
+        ax.set_ylabel(label.capitalize(), rotation=0)
+
+    fg.axes.flatten()[0].legend(loc="best")
+    fg.fig.align_ylabels()
+
+
+def plot_best_and_worst_reservoirs(metric="NSE"):
+    files = [
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
+        "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
+    ]
+    keys = [(4, 0.1), (5, 0.01)]
+    results = {}
+    for k, f in zip(keys, files):
+        with open(f, "rb") as f:
+            results[k] = pickle.load(f)
+
+    train_data = select_results(results, "train_data")
+    test_data = select_results(results, "test_data")
+    simmed_data = select_results(results, "simmed_data")
+
+    train_scores = get_model_scores(train_data, metric=metric, grouper="site_name")
+    test_scores = get_model_scores(test_data, metric=metric, grouper="site_name")
+    simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+
+    ascending = True
+    if metric == "nRMSE":
+        ascending = False
+
+    train_top_20 = {
+        key: df.sort_values(by=metric, ascending=ascending).tail(20)
+        for key, df in train_scores.items()
+    }
+    test_top_20 = {
+        key: df.sort_values(by=metric, ascending=ascending).tail(20)
+        for key, df in test_scores.items()
+    }
+    simmed_top_20 = {
+        key: df.sort_values(by=metric, ascending=ascending).tail(20)
+        for key, df in simmed_scores.items()
+    }
+    train_btm_20 = {
+        key: df.sort_values(by=metric, ascending=ascending).head(20)
+        for key, df in train_scores.items()
+    }
+    test_btm_20 = {
+        key: df.sort_values(by=metric, ascending=ascending).head(20)
+        for key, df in test_scores.items()
+    }
+    simmed_btm_20 = {
+        key: df.sort_values(by=metric, ascending=ascending).head(20)
+        for key, df in simmed_scores.items()
+    }
+    records = []
+
+    for key in keys:
+        for res, value in train_top_20[key][metric].items():
+            records.append((key, "Train", "Best 20", res, value))
+        for res, value in test_top_20[key][metric].items():
+            records.append((key, "Test", "Best 20", res, value))
+        for res, value in simmed_top_20[key][metric].items():
+            records.append((key, "Simmed", "Best 20", res, value))
+        for res, value in train_btm_20[key][metric].items():
+            records.append((key, "Train", "Worst 20", res, value))
+        for res, value in test_btm_20[key][metric].items():
+            records.append((key, "Test", "Worst 20", res, value))
+        for res, value in simmed_btm_20[key][metric].items():
+            records.append((key, "Simmed", "Worst 20", res, value))
+    df = pd.DataFrame.from_records(
+        records, columns=["Model", "Data Set", "group", "Reservoir", metric]
+    )
+
+    fg = sns.catplot(
+        data=df,
+        x="Data Set",
+        y=metric,
+        row="group",
+        hue="Model",
+        kind="violin",
+        # whis=(0.1, 0.9),
+        # showfliers=True,
+        sharey=False,
+        legend=False,
+    )
+
+    axes = fg.axes.flatten()
+    axes[0].set_title("20 Best Performing Reservoirs")
+    axes[1].set_title("20 Worst Performing Reservoirs")
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    labels = ["TD2-MSS0.20", "TD5-MSS0.01"]
+    axes[1].legend(handles, labels, loc="best")
+
+    axes[1].set_xlabel("")
+    plt.show()
+
+
+def plot_two_best_models(metric="NSE"):
+    files = [
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
+        "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
+    ]
+    keys = [(4, 0.1), (5, 0.01)]
+    key_map = {i: f"TD{i[0]}-MSS{i[1]:.2f}" for i in keys}
+    results = {}
+    for k, f in zip(keys, files):
+        with open(f, "rb") as f:
+            results[k] = pickle.load(f)
+
+    simmed_data = select_results(results, "simmed_data")
+
+    simmed_nrmse = get_model_scores(simmed_data, metric="nRMSE", grouper="site_name")
+    simmed_nse = get_model_scores(simmed_data, metric="NSE", grouper="site_name")
+
+    dfs = []
+    for key, label in key_map.items():
+        df1 = simmed_nrmse[key]
+        # kdf["metric"] = "nRMSE"
+        df1 = df1.set_index(
+            pd.MultiIndex.from_product(([label], df1.index), names=["model", "site_name"])
+        )
+
+        df2 = simmed_nse[key]
+        df2 = df2.set_index(
+            pd.MultiIndex.from_product(([label], df2.index), names=["model", "site_name"])
+        )
+        df1["NSE"] = df2["NSE"]
+        # kdf["model"] = label
+        # # kdf["metric"] = "NSE"
+        # # kdf = kdf.rename(columns={"NSE": "value"})
+        dfs.append(df1)
+    sdf = pd.concat(dfs).reset_index()
+    II()
+    sys.exit()
+    sdf = simmed_scores[keys[0]]
+    sdf[keys[1]] = simmed_scores[keys[1]]
+    sdf = sdf.rename(columns=key_map)
+    sdf = sdf.reset_index().melt(id_vars=["site_name"])
+
+    # fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(19, 10))
+    # plt.scatter(sdf[keys[0]], sdf[keys[1]])
+
+    # ax.set_xlabel(keys[0])
+    # ax.set_ylabel(keys[1])
+
+    fg = sns.catplot(data=sdf, x="value", y="variable", kind="box", whis=(5, 95))
+
+    plt.show()
+
+
+def get_top_btm_res_characteristic(metric="NSE", count=20):
+    from find_basin_groups import prep_seasonalities
+    from tclr_model import get_basin_meta_data, read_basin_data
+
+    files = [
+        "../results/tclr_model_testing/all/TD2_MSS0.20_RT_MS_exhaustive_new_hoover/results.pickle",
+        "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
+    ]
+    keys = [(2, 0.2), (5, 0.01)]
+    results = {}
+    for k, f in zip(keys, files):
+        with open(f, "rb") as f:
+            results[k] = pickle.load(f)
+
+    # train_data = select_results(results, "train_data")
+    # test_data = select_results(results, "test_data")
+    simmed_data = select_results(results, "simmed_data")
+
+    # train_scores = get_model_scores(train_data, metric=metric, grouper="site_name")
+    # test_scores =  get_model_scores(test_data, metric=metric, grouper="site_name")
+    simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+
+    df = read_basin_data("all")
+    meta = get_basin_meta_data("all")
+
+    drop_res = [
+        "Causey",
+        "Lost Creek",
+        "Echo",
+        "Smith & Morehouse Reservoir",
+        "Jordanelle",
+        "Deer Creek",
+        "Hyrum",
+        "Santa Rosa ",
+        "MCPHEE",
+    ]
+    drop_res = [i.upper() for i in drop_res]
+    meta = meta.drop(drop_res)
+    df = df[~df.index.get_level_values(0).isin(drop_res)]
+    mmeans = df.groupby(
+        [df.index.get_level_values(0), df.index.get_level_values(1).month]
+    ).mean()
+    seasonalities = prep_seasonalities(mmeans)
+
+    cv = (
+        df.groupby(df.index.get_level_values(0))["release"].std()
+        / df.groupby(df.index.get_level_values(0))["release"].mean()
+    )
+
+    top_ssn_res = seasonalities["SI_rel"].sort_values().tail(count).index
+    top_ssn_sto_res = seasonalities["SI_sto"].sort_values().tail(count).index
+    top_sto_res = meta["max_sto"].sort_values().tail(count).index
+    top_rel_res = (
+        df.groupby(df.index.get_level_values(0))["release"]
+        .mean()
+        .sort_values()
+        .tail(count)
+        .index
+    )
+    top_cv_res = cv.sort_values().tail(count).index
+    top_rts_res = meta["rts"].sort_values().tail(count).index
+
+    btm_ssn_res = seasonalities["SI_rel"].sort_values().head(count).index
+    btm_ssn_sto_res = seasonalities["SI_sto"].sort_values().head(count).index
+    btm_sto_res = meta["max_sto"].sort_values().head(count).index
+    btm_rel_res = (
+        df.groupby(df.index.get_level_values(0))["release"]
+        .mean()
+        .sort_values()
+        .head(count)
+        .index
+    )
+    btm_cv_res = cv.sort_values().head(count).index
+    btm_rts_res = meta["rts"].sort_values().head(count).index
+
+    top_ssn_perf = {key: df.loc[top_ssn_res] for key, df in simmed_scores.items()}
+    top_ssn_sto_perf = {key: df.loc[top_ssn_sto_res] for key, df in simmed_scores.items()}
+    top_sto_perf = {key: df.loc[top_sto_res] for key, df in simmed_scores.items()}
+    top_rel_perf = {key: df.loc[top_rel_res] for key, df in simmed_scores.items()}
+    top_rts_perf = {key: df.loc[top_rts_res] for key, df in simmed_scores.items()}
+    top_cv_perf = {key: df.loc[top_cv_res] for key, df in simmed_scores.items()}
+    btm_ssn_perf = {key: df.loc[btm_ssn_res] for key, df in simmed_scores.items()}
+    btm_ssn_sto_perf = {key: df.loc[btm_ssn_sto_res] for key, df in simmed_scores.items()}
+    btm_sto_perf = {key: df.loc[btm_sto_res] for key, df in simmed_scores.items()}
+    btm_rel_perf = {key: df.loc[btm_rel_res] for key, df in simmed_scores.items()}
+    btm_rts_perf = {key: df.loc[btm_rts_res] for key, df in simmed_scores.items()}
+    btm_cv_perf = {key: df.loc[btm_cv_res] for key, df in simmed_scores.items()}
+    records = []
+    for key in simmed_scores.keys():
+        for res, score in top_ssn_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Release Seasonality", res, score))
+        for res, score in top_ssn_sto_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Storage Seasonality", res, score))
+        for res, score in top_sto_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Max Storage", res, score))
+        for res, score in top_rel_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Mean Release", res, score))
+        for res, score in top_rts_perf[key][metric].items():
+            records.append((key, f"Top {count}", "Residence Time", res, score))
+        for res, score in top_cv_perf[key][metric].items():
+            records.append((key, f"Top {count}", r"Release $CV$", res, score))
+        for res, score in btm_ssn_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Release Seasonality", res, score))
+        for res, score in btm_ssn_sto_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Storage Seasonality", res, score))
+        for res, score in btm_sto_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Max Storage", res, score))
+        for res, score in btm_rel_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Mean Release", res, score))
+        for res, score in btm_rts_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", "Residence Time", res, score))
+        for res, score in btm_cv_perf[key][metric].items():
+            records.append((key, f"Bottom {count}", r"Release $CV$", res, score))
+    perf_df = pd.DataFrame.from_records(
+        records, columns=["Model", "group", "Characteristic", "Reservoir", metric]
+    )
+    return perf_df
+
+
+def plot_top_characteristic_res(metric="NSE", count=20):
+    char_df = get_top_btm_res_characteristic(metric, count)
+    fg = sns.catplot(
+        data=char_df,
+        row="Model",
+        x="Characteristic",
+        y=metric,
+        hue="group",
+        kind="strip",
+        # whis=(0.1, 0.9),
+        order=[
+            "Release Seasonality",
+            "Storage Seasonality",
+            "Max Storage",
+            "Mean Release",
+            r"Release $CV$",
+            "Residence Time",
+        ],
+        legend=False,
+    )
+    axes = fg.axes.flatten()
+    axes[0].set_title("TD 2 - MSS 0.20")
+    axes[1].set_title("TD 5 - MSS 0.01")
+    axes[1].legend(loc="best")
+    plt.show()
+
+
+def get_res_characteristic(metric=None):
+    from find_basin_groups import prep_seasonalities
+    from tclr_model import get_basin_meta_data, read_basin_data
+
+    files = [
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
+        "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
+    ]
+    keys = [(4, 0.1), (5, 0.01)]
+    results = {}
+    for k, f in zip(keys, files):
+        with open(f, "rb") as f:
+            results[k] = pickle.load(f)
+
+    # train_data = select_results(results, "train_data")
+    # test_data = select_results(results, "test_data")
+    simmed_data = select_results(results, "simmed_data")
+
+    # train_scores = get_model_scores(train_data, metric=metric, grouper="site_name")
+    # test_scores =  get_model_scores(test_data, metric=metric, grouper="site_name")
+    if metric:
+        simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+
+    df = read_basin_data("all")
+    meta = get_basin_meta_data("all")
+
+    drop_res = [
+        "Causey",
+        "Lost Creek",
+        "Echo",
+        "Smith & Morehouse Reservoir",
+        "Jordanelle",
+        "Deer Creek",
+        "Hyrum",
+        "Santa Rosa ",
+        "MCPHEE",
+    ]
+    drop_res = [i.upper() for i in drop_res]
+    meta = meta.drop(drop_res)
+    df = df[~df.index.get_level_values(0).isin(drop_res)]
+    mmeans = df.groupby(
+        [df.index.get_level_values(0), df.index.get_level_values(1).month]
+    ).mean()
+    seasonalities = prep_seasonalities(mmeans)
+
+    cv = (
+        df.groupby(df.index.get_level_values(0))["release"].std()
+        / df.groupby(df.index.get_level_values(0))["release"].mean()
+    )
+
+    char_df = pd.DataFrame(
+        index=seasonalities.index,
+        columns=[
+            "Release Seasonality",
+            "Storage Seasonality",
+            "Maximum Storage",
+            "Mean Release",
+            r"Release $CV$",
+            "Residence Time",
+        ],
+    )
+    char_df["Release Seasonality"] = seasonalities["SI_rel"]
+    char_df["Storage Seasonality"] = seasonalities["SI_sto"]
+    char_df["Maximum Storage"] = meta["max_sto"]
+    char_df["Mean Release"] = df.groupby(df.index.get_level_values(0))["release"].mean()
+    char_df[r"Release $CV$"] = cv
+    char_df["Residence Time"] = meta["rts"]
+    if metric:
+        for key, value in simmed_scores.items():
+            df_key = f"TD{key[0]}-MSS{key[1]:.2f}"
+            char_df[df_key] = value
+    return char_df
+
+
+def plot_top_characteristic_res_scatter(metric="NSE"):
+    char_df = get_res_characteristic(metric)
+    fig, axes = plt.subplots(3, 2, sharey=True, sharex=False)
+    axes = axes.flatten()
+    markers = [
+        "o",
+        "s",
+    ]
+    # colors = sns.color_palette("Tab2", 2)
+    for i, var in enumerate(CHAR_VARS):
+        axes[i].scatter(char_df[var], char_df["TD2-MSS0.20"], label="TD2-MSS0.20")
+        axes[i].scatter(char_df[var], char_df["TD5-MSS0.01"], label="TD5-MSS0.01")
+        axes[i].set_xlabel(var)
+        axes[i].set_ylabel(metric)
+
+    axes[0].legend(loc="best")
+    fig.align_ylabels()
+    plt.show()
+
+
+def plot_characteristic_res_line_plot(metric="NSE"):
+    char_df = get_res_characteristic(metric)
+    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(19, 10))
+    # axes = axes.flatten()
+    fig.patch.set_alpha(0.0)
+
+    zeros = np.zeros_like(char_df["TD2-MSS0.20"].values)
+    max_size = 500
+    min_size = 20
+
+    # size_df = char_df.copy()
+    # for column in CHAR_VARS:
+    #     size_df[column] = linear_scale_values(size_df[column], min_size, max_size)
+
+    # mdf = size_df.melt(id_vars=["TD2-MSS0.20", "TD5-MSS0.01"], var_name="Characteristic").melt(
+    #     id_vars=["Characteristic", "value"], var_name="Model", value_name=metric)
+
+    # sns.stripplot(
+    #     data=mdf,
+    #     y="Characteristic",
+    #     x=metric,
+    #     hue="Model",
+    #     size="value",
+    # )
+
+    colors = sns.color_palette("tab10", 2)
+    for i, var in enumerate(CHAR_VARS):
+        y = np.zeros_like(char_df["TD2-MSS0.20"]) + i
+        axes.scatter(
+            char_df["TD2-MSS0.20"],
+            y,
+            color=colors[0],
+            s=linear_scale_values(char_df[var], min_size, max_size),
+            label="TD2-MSS0.20",
+        )
+        axes.scatter(
+            char_df["TD5-MSS0.01"],
+            y,
+            color=colors[1],
+            s=linear_scale_values(char_df[var], min_size, max_size),
+            label="TD5-MSS0.01",
+        )
+        # axes.set_xlabel(var)
+        axes.set_xlabel(metric)
+
+    axes.set_yticks(range(len(CHAR_VARS)))
+    axes.set_yticklabels(CHAR_VARS)
+    handles, labels = axes.get_legend_handles_labels()
+    axes.legend(handles[:2], labels[:2], loc="best")
+    fig.align_ylabels()
+    plt.show()
+
+
+def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
+    char_df = get_res_characteristic(metric)
+    for var in CHAR_VARS:
+        char_df[var] = pd.qcut(char_df[var], nbins, labels=False) + 1
+
+    # m1_df = pd.DataFrame(index=range(1, nbins + 1), columns=CHAR_VARS)
+    # m2_df = pd.DataFrame(index=range(1, nbins + 1), columns=CHAR_VARS)
+    # II()
+
+    # for var in CHAR_VARS:
+    #     m1_df[var] = char_df.groupby(var)["TD4-MSS0.10"].mean()
+    #     m2_df[var] = char_df.groupby(var)["TD5-MSS0.01"].mean()
+
+    # m1_df["Model"] = "TD4-MSS0.10"
+    # m2_df["Model"] = "TD5-MSS0.01"
+    # m1_df = (
+    #     m1_df.reset_index()
+    #     .rename(columns={"index": "Bin"})
+    #     .melt(id_vars=["Model", "Bin"])
+    # )
+    # m2_df = (
+    #     m2_df.reset_index()
+    #     .rename(columns={"index": "Bin"})
+    #     .melt(id_vars=["Model", "Bin"])
+    # )
+
+    # df = pd.concat([m1_df, m2_df])
+    label_map = make_bin_label_map(nbins, start_index=1)
+    df = char_df.melt(
+        id_vars=["TD4-MSS0.10", "TD5-MSS0.01"], value_name="bin"
+    ).melt(
+        id_vars=["variable", "bin"], var_name="model", value_name=metric
+    )
+    df["bin"] = df["bin"].replace(label_map)
+
+    fg = sns.catplot(
+        data=df,
+        x="bin",
+        y=metric,
+        hue="model",
+        col="variable",
+        col_wrap=2,
+        kind="bar",
+        legend_out=False,
+        ci="sd",
+        palette="colorblind",
+    )
+    for ax in fg.axes:
+        ax.grid(False)
+        ax.patch.set_alpha(0.0)
+        ax.set_axis_on()
+        ax.spines["bottom"].set_color("black")
+        ax.spines["left"].set_color("black")
+        ax.tick_params(axis="both", color="black", labelcolor="black")
+
+    fg.set_titles("{col_name}")
+    fg.set_ylabels(metric, color="black")
+    fg.set_xlabels("Attribute Percentile", color="black")
+    handles, labels = fg.axes[0].get_legend_handles_labels()
+    fg.axes[0].legend(handles, labels, frameon=False)
+    plt.show()
+
+
+def plot_res_characteristic_map(metric="NSE"):
+    char_df = get_res_characteristic(metric)
+
+    # fig, axes = plt.subplots(3, 2, sharex=True, sharey=True)
+    # axes = axes.flatten()
+    fig = plt.figure()
+    gs = GS.GridSpec(3, 3, height_ratios=[1, 1, 1], width_ratios=[10, 10, 0.5])
+    fig.patch.set_alpha(0.0)
+    #
+    #  [0,0], [0,1], [0,2
+    #
+    #
+    #
+    #
+    axes = [fig.add_subplot(gs[0, 0])]
+    for pair in [(0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]:
+        axes.append(fig.add_subplot(gs[pair], sharex=axes[0], sharey=axes[0]))
+    axes = np.array(axes)
+    cbar_ax = fig.add_subplot(gs[:, 2])
+    res_locs = pd.read_csv("../geo_data/reservoirs.csv")
+    res_locs = res_locs.set_index("site_name")
+
+    drop_res = [
+        "Causey",
+        "Lost Creek",
+        "Echo",
+        "Smith & Morehouse Reservoir",
+        "Jordanelle",
+        "Deer Creek",
+        "Hyrum",
+        "Santa Rosa ",
+    ]
+    drop_res = [i.upper() for i in drop_res]
+    res_locs = res_locs.drop(drop_res)
+
+    # with open("../geo_data/extents.json", "r") as f:
+    #     coords = json.load(f)
+    color_map = sns.color_palette("Set2")
+    basins = [
+        ((GIS_DIR / "columbia_shp" / "Shape" / "WBDHU2").as_posix(), color_map[0]),
+        ((GIS_DIR / "missouri_shp" / "Shape" / "WBDHU2").as_posix(), color_map[1]),
+        #   (GIS_DIR/"lowercol_shp"/"Shape"/"WBDHU2").as_posix(),
+        #   (GIS_DIR/"uppercol_shp"/"Shape"/"WBDHU2").as_posix(),
+        ((GIS_DIR / "colorado_shp" / "Shape" / "WBDHU2").as_posix(), color_map[2]),
+        ((GIS_DIR / "tennessee_shp" / "Shape" / "WBDHU2").as_posix(), color_map[3]),
+    ]
+
+    # maps = [make_map(i, other_bound=basins) for i in axes]
+    units = ["", "", " [1000 acre-ft]", " [1000 acre-ft/day]", "", " [Days]"]
+    make_maps(axes, other_bound=basins)
+    model_key = "TD2-MSS0.20"
+    min_color = "#FFFFFF"
+    max_color = "#EF2727"
+    min_value = char_df[model_key].min()
+    max_value = char_df[model_key].max()
+    # * use custom colormap
+    # color_map = ColorInterpolator("#FFFFFF", "#EF2727", char_df[model_key].min(), char_df[model_key].max())
+    # color_map = ColorInterpolator(min_color, max_color, min_value, max_value)
+    # colors = [color_map(v) for v in char_df.loc[res_locs.index, model_key]]
+    # norm = Normalize(vmin=min_value, vmax=max_value)
+    norm = LogNorm(vmin=min_value, vmax=max_value)
+    cmap = "inferno"
+    if metric == "nRMSE":
+        # want bright colors to be high performing reserviors
+        color_map = get_cmap(cmap).reversed()
+    else:
+        color_map = get_cmap(cmap)
+    colors = [color_map(norm(i)) for i in char_df.loc[res_locs.index, model_key]]
+    for ax, var, unit in zip(axes, CHAR_VARS, units):
+        max_size = 400
+        min_size = 20
+        values = char_df.loc[res_locs.index, var]
+        size = np.array(linear_scale_values(values, min_size, max_size))
+        ax.scatter(
+            res_locs["long"],
+            res_locs["lat"],
+            facecolor=colors,
+            s=size,
+            edgecolor="k",
+            zorder=4,
+            linewidths=1,
+        )
+        legend_scores = np.linspace(values.min(), values.max(), 4)
+        legend_sizes = linear_scale_values(legend_scores, min_size, max_size)
+        legend_markers = [
+            plt.scatter([], [], s=i, edgecolors="k", c="#ef2727", alpha=1, linewidths=1)
+            for i in legend_sizes
+        ]
+        leg_kwargs = dict(
+            ncol=4,
+            frameon=True,
+            handlelength=1,
+            loc="lower right",
+            borderpad=1,
+            scatterpoints=1,
+            handletextpad=1,
+            labelspacing=1,
+            markerfirst=False,
+            title=var,
+            fontsize=6,
+        )
+        if var == CHAR_VARS[2]:
+            legend_labels = [f"{round(i, -2):.0f}" for i in legend_scores]
+        elif var == CHAR_VARS[3]:
+            legend_labels = [f"{round(i, -1):.0f}" for i in legend_scores]
+        elif var == CHAR_VARS[5]:
+            legend_labels = [f"{i:.0f}" for i in legend_scores]
+        else:
+            legend_labels = [f"{i:.2f}" for i in legend_scores]
+        ax.legend(
+            legend_markers,
+            legend_labels,
+            ncol=4,
+            loc="lower left",
+            title=f"{var}{unit}",
+            fontsize=8,
+            handlelength=1,
+            columnspacing=1,
+            title_fontsize=8,
+            handletextpad=1,
+            borderpad=1,
+            labelspacing=1,
+        )
+    # * use the comment out lines if creating custom colormap
+    # cmap = LinearSegmentedColormap.from_list("mcmap", [min_color, max_color])
+    # norm = Normalize(vmin=min_value, vmax=max_value)
+    cbar = plt.colorbar(ScalarMappable(norm=norm, cmap=color_map), cax=cbar_ax)
+    cbar.outline.set_edgecolor("k")
+    cbar.outline.set_linewidth(1)
+    cbar.ax.tick_params(labelsize=12)
+    cbar.set_label(metric, fontsize=14)
+    plt.show()
+
+
+def plot_res_characteristic_split_map():
+    char_df = get_res_characteristic()
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    rename = {
+        "upper_col": "colorado",
+        "lower_col": "colorado",
+        "pnw": "columbia",
+        "tva": "tennessee",
+    }
+    rbasins = rbasins.replace(rename)
+    rbasins = rbasins.str.capitalize()
+    char_df["basin"] = rbasins
+
+    res_locs = pd.read_csv("../geo_data/reservoirs.csv")
+    res_locs = res_locs.set_index("site_name")
+    char_df["x"] = res_locs["long"]
+    char_df["y"] = res_locs["lat"]
+
+    for var in CHAR_VARS:
+        char_df[var] = char_df[var].rank(pct=True)
+
+    drop_res = [
+        "Causey",
+        "Lost Creek",
+        "Echo",
+        "Smith & Morehouse Reservoir",
+        "Jordanelle",
+        "Deer Creek",
+        "Hyrum",
+        "Santa Rosa ",
+    ]
+    drop_res = [i.upper() for i in drop_res]
+    res_locs = res_locs.drop(drop_res)
+
+    with open("../geo_data/extents.json", "r") as f:
+        coords = json.load(f)
+    basin_color_map = sns.color_palette("Set2")
+    basin_info = {
+        "Columbia": {
+            "extents": coords["Columbia"],
+            "shp": (GIS_DIR / "columbia_shp" / "Shape" / "WBDHU2").as_posix(),
+            "color": basin_color_map[0],
+            "rivers": [
+                (
+                    GIS_DIR
+                    / "NHDPlus"
+                    / "trimmed_flowlines"
+                    / "NHDPlusPN_trimmed_flowlines_noz"
+                ).as_posix()
+            ],
+        },
+        "Missouri": {
+            "extents": coords["Missouri"],
+            "shp": (GIS_DIR / "missouri_shp" / "Shape" / "WBDHU2").as_posix(),
+            "color": basin_color_map[1],
+            "rivers": [
+                (
+                    GIS_DIR
+                    / "NHDPlus"
+                    / "trimmed_flowlines"
+                    / "NHDPlusMU_trimmed_flowlines_noz"
+                ).as_posix(),
+                (
+                    GIS_DIR
+                    / "NHDPlus"
+                    / "trimmed_flowlines"
+                    / "NHDPlusML_trimmed_flowlines_noz"
+                ).as_posix(),
+            ],
+        },
+        "Colorado": {
+            "extents": coords["Colorado"],
+            "shp": (GIS_DIR / "colorado_shp" / "Shape" / "WBDHU2").as_posix(),
+            "color": basin_color_map[2],
+            "rivers": [
+                (
+                    GIS_DIR
+                    / "NHDPlus"
+                    / "trimmed_flowlines"
+                    / "NHDPlusUC_trimmed_flowlines_noz"
+                ).as_posix(),
+                (
+                    GIS_DIR
+                    / "NHDPlus"
+                    / "trimmed_flowlines"
+                    / "NHDPlusLC_trimmed_flowlines_noz"
+                ).as_posix(),
+            ],
+        },
+        "Tennessee": {
+            "extents": coords["Tennessee"],
+            "shp": (GIS_DIR / "tennessee_shp" / "Shape" / "WBDHU2").as_posix(),
+            "color": basin_color_map[3],
+            "rivers": [
+                (
+                    GIS_DIR
+                    / "NHDPlus"
+                    / "trimmed_flowlines"
+                    / "NHDPlusTN_trimmed_flowlines_noz"
+                ).as_posix()
+            ],
+        },
+    }
+
+    Parallel(n_jobs=len(CHAR_VARS), verbose=11)(
+        delayed(char_split_map_for_parallel)(var, char_df, basin_info)
+        for var in CHAR_VARS
+    )
+
+
+def char_split_map_for_parallel(var, char_df, basin_info):
+    norm = Normalize(vmin=0, vmax=1)
+    # cmap = "inferno"
+    # color_map = get_cmap(cmap)
+    colors = ("#DAFF47", "#EDA200", "#D24E71", "#91008D", "#001889")
+    color_map = ListedColormap(colors, "qual_inferno")
+    fig = plt.figure(figsize=(19, 10))
+    gs = GS.GridSpec(2, 2, height_ratios=[1, 1], width_ratios=[1, 1])
+    fig.patch.set_alpha(0.0)
+    axes = [
+        fig.add_subplot(gs[0, 0]),
+        fig.add_subplot(gs[0, 1]),
+        fig.add_subplot(gs[1, 0]),
+        fig.add_subplot(gs[1, 1]),
+    ]
+
+    positions = [
+        Bbox(
+            [
+                [0.24340625350138054, 0.5379881391965984],
+                [0.4408909297545936, 0.9728096676737158],
+            ]
+        ),
+        Bbox(
+            [
+                [0.5086472454653168, 0.5379881391965984],
+                [0.8070555712787091, 0.9728096676737158],
+            ]
+        ),
+        Bbox(
+            [
+                [0.2452846166142043, 0.05158330535974043],
+                [0.43901256664176985, 0.48640483383685795],
+            ]
+        ),
+        Bbox(
+            [
+                [0.47861855895825467, 0.05158330535974043],
+                [0.8370842577857711, 0.48640483383685795],
+            ]
+        ),
+    ]
+    for ax, pos, (basin, binfo) in zip(axes, positions, basin_info.items()):
+        make_basin_map(ax, binfo)
+        ax.set_position(pos)
+        bdf = char_df[char_df["basin"] == basin]
+        ax.scatter(
+            bdf["x"],
+            bdf["y"],
+            edgecolor="k",
+            linewidths=0.5,
+            facecolor=[color_map(norm(i)) for i in bdf[var].values],
+            zorder=4,
+            s=250,
+        )
+
+    mng = plt.get_current_fig_manager()
+    # mng.window.showMaximized()
+    plt.savefig(
+        f"C:\\Users\\lcford2\\Dropbox\\PHD\\multibasin_model_figures\\new_paper_figures\\split_char_map_{var}_larger.png",
+        dpi=400,
+    )
+
+
+def plot_data_assim_scatter(metric="NSE"):
+    import glob
+    import re
+
+    files = glob.glob(
+        "../results/tclr_model_testing/all/TD?_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+    )
+    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    matches = [re.search(td_mss_assim_pat, i) for i in files]
+    td_mss_assim = [i.groups() for i in matches]
+    results = {}
+    for key, file in zip(td_mss_assim, files):
+        with open(file, "rb") as f:
+            results[key] = pickle.load(f)
+    simmed_data = select_results(results, "simmed_data")
+
+    simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+
+    fig, axes = plt.subplots(1, 2)
+    axes = axes.flatten()
+
+    ya = "daily"
+    xa = "weekly"
+    y1_key = ("5", ya, "0.01")
+    x1_key = ("5", xa, "0.01")
+    y2_key = ("2", ya, "0.20")
+    x2_key = ("2", xa, "0.20")
+    ax = axes[0]
+    ax.scatter(simmed_scores[x1_key], simmed_scores[y1_key], label="TD5-MSS0.01")
+    ax.scatter(simmed_scores[x2_key], simmed_scores[y2_key], label="TD2-MSS0.20")
+    ax.set_ylabel(f"{ya.capitalize()} Assim. Performance ({metric})")
+    ax.set_xlabel(f"{xa.capitalize()} Assim. Performance ({metric})")
+
+    ya = "monthly"
+    xa = "semi-annually"
+    y1_key = ("5", ya, "0.01")
+    x1_key = ("5", xa, "0.01")
+    y2_key = ("2", ya, "0.20")
+    x2_key = ("2", xa, "0.20")
+    ax = axes[1]
+    ax.scatter(simmed_scores[x1_key], simmed_scores[y1_key], label="TD5-MSS0.01")
+    ax.scatter(simmed_scores[x2_key], simmed_scores[y2_key], label="TD2-MSS0.20")
+    ax.set_ylabel(f"{ya.capitalize()} Assim. Performance ({metric})")
+    ax.set_xlabel(f"{xa.capitalize()} Assim. Performance ({metric})")
+
+    xmin = 100000
+    ymin = 100000
+    xmax = -100000
+    ymax = -100000
+    for ax in axes:
+        xlim = ax.get_xlim()
+        if xlim[0] < xmin:
+            xmin = xlim[0]
+        if xlim[1] > xmax:
+            xmax = xlim[1]
+        ylim = ax.get_ylim()
+        if ylim[0] < ymin:
+            ymin = ylim[0]
+        if ylim[1] > ymax:
+            ymax = ylim[1]
+
+    for ax in axes:
+        ax.set_xlim((xmin, xmax))
+        ax.set_ylim((ymin, ymax))
+        # ax.set_xscale("log")
+        # ax.set_yscale("log")
+
     plt.show()
 
 
 if __name__ == "__main__":
-    plt.style.use("seaborn")
+    args = sys.argv[1:]
+    if len(args) > 0:
+        metric = args[0]
+    else:
+        metric = "NSE"
+    plt.style.use("tableau-colorblind10")
     # plt.style.use(["science", "nature"])
-    sns.set_context("notebook", font_scale=1.4)
-    results = read_results()
-    # plot_storage_performance_boxplots(results)
-    # plot_third_performance_boxplots(results)
+    # sns.set_context("paper", font_scale=1.4)
+    # results = read_results()
     # plot_res_perf_map(results)
-    # plot_flood_analysis(results)
-    # plot_overall_ecdf(results)
     # plot_seasonal_performance(results)
     # plot_upper_lower_perf(results)
-    # plot_constinency_analysis(results)
     # plot_perf_vs_datalength(results)
 
-    #* FIGURE 1
+    # * FIGURE 1
     # plot_res_locs()
-    #* FIGURE 2
-    # plot_variable_correlations_new()
-    #* FIGURE 3
-    plot_performance_boxplots(results)
-    # plot_storage_performance_boxplots(results)
+    # * FIGURE 2
+    # plot_variable_correlations()
+    # * FIGURE 3
+    # plot_grid_search_results(ds="simul", metric=metric)
+    # * FIGURE 4
+    # * This is the optimal tree for TD4 MSS0.10
+    # * FIGURE 5 - NOT INCLUDING AT THE MOMENT
+    # plot_best_and_worst_reservoirs(metric)
+    # * FIGURE 5
+    plot_res_characteristic_bin_performance(metric, 5)
+
+    # plot_data_assim_results(metric)
+    # plot_top_characteristic_res(metric, 10)
+    # plot_top_characteristic_res_scatter(metric)
+    # plot_characteristic_res_line_plot(metric)
+    # plot_res_characteristic_map(metric)
+    # plot_res_characteristic_split_map()
+    # plot_data_assim_scatter(metric)

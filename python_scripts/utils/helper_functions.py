@@ -1,20 +1,46 @@
 import pathlib
 import pickle
 import sys
+from dataclasses import dataclass
+from datetime import datetime
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from datetime import datetime
-from utils.timing_function import time_function
 from IPython import embed as II
+from utils.timing_function import time_function
 
-tva_res = ['BlueRidge', 'Chikamauga', 'Guntersville', 'Hiwassee', 
-           'Nikajack', 'Norris', 'Ocoee1', 'Pickwick', 'Wheeler', 
-           'Wilson', 'Cherokee', 'WattsBar', 'Nottely', 'Chatuge',
-           'Apalachia', 'Douglas', 'Ocoee3', 'FtLoudoun', 'Kentucky',
-           'Fontana', 'Watauga', 'SHolston', 'Boone', 'FtPatrick', 
-           'MeltonH', 'TimsFord', 'Wilbur']
+tva_res = [
+    "BlueRidge",
+    "Chikamauga",
+    "Guntersville",
+    "Hiwassee",
+    "Nikajack",
+    "Norris",
+    "Ocoee1",
+    "Pickwick",
+    "Wheeler",
+    "Wilson",
+    "Cherokee",
+    "WattsBar",
+    "Nottely",
+    "Chatuge",
+    "Apalachia",
+    "Douglas",
+    "Ocoee3",
+    "FtLoudoun",
+    "Kentucky",
+    "Fontana",
+    "Watauga",
+    "SHolston",
+    "Boone",
+    "FtPatrick",
+    "MeltonH",
+    "TimsFord",
+    "Wilbur",
+]
 
-acf_res = ['Woodruff', 'Buford', 'George', 'West']
+acf_res = ["Woodruff", "Buford", "George", "West"]
 
 
 # @time_function
@@ -31,12 +57,12 @@ def scale_multi_level_df(df, timelevel="all"):
         idx = pd.IndexSlice
         for index in means.index:
             scaled_df.loc[idx[:, index], :] = (
-                scaled_df.loc[idx[:, index], :] - means.loc[index]) / std.loc[index]
+                scaled_df.loc[idx[:, index], :] - means.loc[index]
+            ) / std.loc[index]
     else:
         scaled_df = pd.DataFrame(df.values, index=df.index, columns=columns)
-        df = df.reset_index().rename(
-            columns={"level_0": "Date", "level_1": "Reservoir"})
-        
+        df = df.reset_index().rename(columns={"level_0": "Date", "level_1": "Reservoir"})
+
         df["TimeGroup"] = getattr(df["Date"].dt, timelevel)
         means = df.groupby(["TimeGroup", "Reservoir"]).mean()
         std = df.groupby(["TimeGroup", "Reservoir"]).std()
@@ -46,10 +72,11 @@ def scale_multi_level_df(df, timelevel="all"):
         for index in means.index:
             scaled_index = idx[
                 getattr(scaled_df.index.get_level_values(0), timelevel) == index[0],
-                index[1]
+                index[1],
             ]
-            scaled_df.loc[scaled_index, :] = (scaled_df.loc[scaled_index, :] -
-                                              means.loc[index]) / std.loc[index]
+            scaled_df.loc[scaled_index, :] = (
+                scaled_df.loc[scaled_index, :] - means.loc[index]
+            ) / std.loc[index]
 
     return scaled_df, means, std
 
@@ -59,9 +86,9 @@ def prep_single_res_data(df, unit_change):
     for key, conv in unit_change.items():
         df[key] = df[key] * conv
         new_key = "_".join(key.split("_")[:-1])
-        df = df.rename(columns={key:new_key})
+        df = df.rename(columns={key: new_key})
         keep_keys.append(new_key)
-   
+
     df = df[keep_keys]
     means = df.mean()
     std = df.std()
@@ -71,14 +98,16 @@ def prep_single_res_data(df, unit_change):
     normed = normed.loc[normed.index[1:]]
     return normed, means, std
 
+
 def find_max_date_range(file="date_res.csv"):
     # This function finds the longest date range in the data set
-    # that has the same information. 
+    # that has the same information.
     # It could be update in the future to find the longest date range
     # that has a specific set of information (such as certain reservoirs)
     # this could be done by filtering the date set then performing all of this
-    date_res = pd.read_csv(file, usecols=[0, 1], header=None, 
-                           index_col=0, names=["Date", "NRes"])
+    date_res = pd.read_csv(
+        file, usecols=[0, 1], header=None, index_col=0, names=["Date", "NRes"]
+    )
     date_res.index = pd.to_datetime(date_res.index)
     nres = date_res["NRes"].max()
     date_res["streak_start"] = date_res["NRes"].ne(date_res["NRes"].shift())
@@ -96,48 +125,60 @@ def read_tva_data(just_load=False):
     fractions = pd.read_pickle(pickles / "tva_fractions.pickle")
     for column in fractions.columns:
         df[column] = [fractions.loc[i, column] for i in df.index.get_level_values(1)]
-    
+
     start_date = datetime(1990, 10, 16)
     # trim data frame
     df = df[df.index.get_level_values(0) >= start_date]
 
     # get all variables to similar units for Mass Balance
-    df.loc[:,"Storage"] *= 86400 * 1000  # 1000 second-ft-day to ft3
+    df.loc[:, "Storage"] *= 86400 * 1000  # 1000 second-ft-day to ft3
     # df.loc[:,"Storage"] = df.loc[:,"Storage"] / 43560 / 1000 # ft3 to 1000 acre ft
     # df.loc[:,"Storage_pre"] = df.loc[:,"Storage_pre"] * \
-        # 86400 * 1000  # 1000 second-ft-day to ft3
-    df.loc[:,"Net Inflow"] *= 86400  # cfs to ft3/day
+    # 86400 * 1000  # 1000 second-ft-day to ft3
+    df.loc[:, "Net Inflow"] *= 86400  # cfs to ft3/day
     # df.loc[:,"Net Inflow"] = df.loc[:,"Net Inflow"] / 43560 / 1000 # ft3/day to 1000 acre-ft/day
-    df.loc[:,"Release"] *= 86400  # cfs to ft3/day
+    df.loc[:, "Release"] *= 86400  # cfs to ft3/day
     # df.loc[:,"Release"] = df.loc[:,"Release"] / 43560 / 1000  # ft3/day to 1000 acre-ft/day
     # df.loc[:,"Release_pre"] = df.loc[:,"Release_pre"] * 86400  # cfs to ft3/day
 
     # maybe make these values 1000 acre ft to help solver
-    df.loc[:,"Storage"] = df.loc[:,"Storage"] / 43560 / 1000
-    df.loc[:,"Release"] = df.loc[:,"Release"] / 43560 / 1000
-    df.loc[:,"Net Inflow"] = df.loc[:,"Net Inflow"] / 43560 / 1000
- 
+    df.loc[:, "Storage"] = df.loc[:, "Storage"] / 43560 / 1000
+    df.loc[:, "Release"] = df.loc[:, "Release"] / 43560 / 1000
+    df.loc[:, "Net Inflow"] = df.loc[:, "Net Inflow"] / 43560 / 1000
+
     df[["Storage_pre", "Release_pre"]] = df.groupby(df.index.get_level_values(1))[
-        ["Storage", "Release"]].shift(1)
+        ["Storage", "Release"]
+    ].shift(1)
 
     # create a time series of previous days storage for all reservoirs
     if not just_load:
         df[["Storage_7", "Release_7"]] = df.groupby(df.index.get_level_values(1))[
-            ["Storage", "Release"]].shift(7)
-        
-        tmp = df.groupby(df.index.get_level_values(1))[
-            ["Storage_pre", "Release_pre", "Net Inflow"]].rolling(7, min_periods=1).mean()
+            ["Storage", "Release"]
+        ].shift(7)
+
+        tmp = (
+            df.groupby(df.index.get_level_values(1))[
+                ["Storage_pre", "Release_pre", "Net Inflow"]
+            ]
+            .rolling(7, min_periods=1)
+            .mean()
+        )
         tmp.index = tmp.index.droplevel(0)
         tmp = tmp.sort_index()
         df[["Storage_roll7", "Release_roll7", "Inflow_roll7"]] = tmp
 
-        tmp = df.groupby(df.index.get_level_values(1))[
-            ["Storage_pre", "Release_pre", "Net Inflow"]].rolling(14, min_periods=1).mean()
+        tmp = (
+            df.groupby(df.index.get_level_values(1))[
+                ["Storage_pre", "Release_pre", "Net Inflow"]
+            ]
+            .rolling(14, min_periods=1)
+            .mean()
+        )
         tmp.index = tmp.index.droplevel(0)
         tmp = tmp.sort_index()
         df[["Storage_roll14", "Release_roll14", "Inflow_roll14"]] = tmp
 
-    #* Information about data record
+    # * Information about data record
     # There is missing data from 1982 to 1990-10-16
     # after then all of the data through 2015 is present.
     # if we just include data from 1991 till the end we still have
@@ -146,16 +187,15 @@ def read_tva_data(just_load=False):
     df = df.dropna()
     return df
 
+
 def read_all_res_data():
     pickles = pathlib.Path("..", "pickles")
     df = pd.read_pickle(pickles / "all_res_data.pickle")
     df = df.drop("Inflow", axis=1)
 
     # create a time series of previous days storage for all reservoirs
-    df["Storage_pre"] = df.groupby(df.index.get_level_values(1))[
-        "Storage"].shift(1)
-    df["Release_pre"] = df.groupby(df.index.get_level_values(1))[
-        "Release"].shift(1)
+    df["Storage_pre"] = df.groupby(df.index.get_level_values(1))["Storage"].shift(1)
+    df["Release_pre"] = df.groupby(df.index.get_level_values(1))["Release"].shift(1)
 
     df = df.dropna()
 
@@ -175,24 +215,112 @@ def read_all_res_data():
 
     # TVA Storage is a specific unit
     tva_indexer = df.index.get_level_values(1).isin(tva_res)
-    df.loc[tva_indexer,"Storage"] = df[tva_indexer]["Storage"] * 86400 * 1000  # 1000 second-ft-day to ft3
-    df.loc[tva_indexer,"Storage_pre"] = df[tva_indexer]["Storage_pre"] * 86400 * 1000  # 1000 second-ft-day to ft3
+    df.loc[tva_indexer, "Storage"] = (
+        df[tva_indexer]["Storage"] * 86400 * 1000
+    )  # 1000 second-ft-day to ft3
+    df.loc[tva_indexer, "Storage_pre"] = (
+        df[tva_indexer]["Storage_pre"] * 86400 * 1000
+    )  # 1000 second-ft-day to ft3
 
     # ACF Storage is a specific unit
     acf_indexer = df.index.get_level_values(1).isin(acf_res)
-    df.loc[acf_indexer,"Storage"] = df[acf_indexer]["Storage"]* 86400  # acre-ft to ft3
-    df.loc[acf_indexer,"Storage_pre"] = df[acf_indexer]["Storage_pre"]* 86400  # acre-ft to ft3
+    df.loc[acf_indexer, "Storage"] = df[acf_indexer]["Storage"] * 86400  # acre-ft to ft3
+    df.loc[acf_indexer, "Storage_pre"] = (
+        df[acf_indexer]["Storage_pre"] * 86400
+    )  # acre-ft to ft3
     return df
+
 
 def flatten_2d_list(lst):
     return [item for sublist in lst for item in sublist]
 
+
 def calc_bias(y_a, y_m):
     return np.mean(y_m) - np.mean(y_a)
 
+
 def swap_index_levels(df):
-    new_index = pd.MultiIndex.from_tuples(
-        (j,i) for i,j in df.index
-    )
+    new_index = pd.MultiIndex.from_tuples((j, i) for i, j in df.index)
     df.index = new_index
     return df
+
+
+def linear_scale_values(values, min_val=0.0, max_val=1.0):
+    max_raw = max(values)
+    min_raw = min(values)
+    ratio = (max_val - min_val) / (max_raw - min_raw)
+    return [i * ratio + min_val for i in values]
+
+
+def make_bin_label_map(nbins, start_index=1):
+    pct = 1 / nbins
+    label_map = {start_index: f"< {pct:.0%}"}
+    for i in range(start_index + 1, (nbins + start_index) - 1):
+        j = i - start_index
+        label_map[i] = f"{j*pct:.0%} - {(j+1)*pct:.0%}"
+    end = 1 - 1 / nbins
+    label_map[nbins + start_index - 1] = f"> {end:.0%}"
+    return label_map
+
+
+@dataclass
+class LinearEquation:
+    slope: float
+    intercept: float
+
+
+class ColorInterpolator:
+    def __init__(self, start_color, stop_color, start, stop):
+        self.start_value = start
+        self.stop_value = stop
+        if isinstance(start_color, str):
+            self.start_color = self.hex_to_rgb(start_color)
+        else:
+            self.start_color = start_color
+        if isinstance(stop_color, str):
+            self.stop_color = self.hex_to_rgb(stop_color)
+        else:
+            self.stop_color = stop_color
+        self.setup_interpolators()
+
+    def setup_interpolators(self):
+        self.interpolators = [
+            LinearEquation(
+                (stop_col - start_col) / (self.stop_value - self.start_value), start_col
+            )
+            for start_col, stop_col in zip(self.start_color, self.stop_color)
+        ]
+
+    def hex_to_rgb(self, hex_value):
+        hex_num = hex_value.strip("#")
+        r = int(hex_num[0:2], 16)
+        g = int(hex_num[2:4], 16)
+        b = int(hex_num[4:6], 16)
+        return (r, g, b)
+
+    def rgb_to_hex(self, rgb):
+        hex_num = hex.strip("#")
+        r = hex(rgb[0])[2:]
+        g = hex(rgb[1])[2:]
+        b = hex(rgb[2])[2:]
+        return f"#{r}{g}{b}"
+
+    def get_color(self, value, normalize=True, as_hex=False):
+        if normalize and as_hex:
+            raise ValueError("`normalize` and `as_hex` cannot both be `True`")
+        rgb = [
+            p.slope * (value - self.start_value) + p.intercept for p in self.interpolators
+        ]
+        if as_hex:
+            return self.rgb_to_hex(rgb)
+        else:
+            if normalize:
+                return [i / 255 for i in rgb]
+            else:
+                return rgb
+
+    def __call__(self, value, normalize=True, as_hex=False):
+        return self.get_color(value, normalize, as_hex)
+
+    def __repr__(self):
+        return f"ColorInterpolator({self.start_color}, {self.stop_color}, {self.start_value}, {self.stop_value})"

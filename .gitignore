@@ -53,3 +53,6 @@ python_scripts/slurm_out
 
 # ignore nohup output
 **/nohup.out
+
+# vs code log files
+.vscode/*.log

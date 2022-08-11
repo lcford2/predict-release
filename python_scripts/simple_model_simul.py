@@ -957,11 +957,9 @@ def combine_columns(df, columns, new_name, sep="-"):
     df[new_name] = df[columns[0]].str.cat(df[columns[1:]], sep=sep)
     return df
 
-
-LIB = load_library()
-SIMUL_FUNC = LIB.res_simul
-
 if __name__ == "__main__":
+    LIB = load_library()
+    SIMUL_FUNC = LIB.res_simul
     df = read_tva_data()
     # forecast_mixedLM_other_res(groups=["NaturalOnly", "RunOfRiver"])
     # scaled_MixedEffects(df, groups = ["NaturalOnly","RunOfRiver"])
