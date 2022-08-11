@@ -1758,27 +1758,11 @@ def plot_top_characteristic_res_scatter(metric="NSE"):
 def plot_characteristic_res_line_plot(metric="NSE"):
     char_df = get_res_characteristic(metric)
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(19, 10))
-    # axes = axes.flatten()
     fig.patch.set_alpha(0.0)
 
     zeros = np.zeros_like(char_df["TD2-MSS0.20"].values)
     max_size = 500
     min_size = 20
-
-    # size_df = char_df.copy()
-    # for column in CHAR_VARS:
-    #     size_df[column] = linear_scale_values(size_df[column], min_size, max_size)
-
-    # mdf = size_df.melt(id_vars=["TD2-MSS0.20", "TD5-MSS0.01"], var_name="Characteristic").melt(
-    #     id_vars=["Characteristic", "value"], var_name="Model", value_name=metric)
-
-    # sns.stripplot(
-    #     data=mdf,
-    #     y="Characteristic",
-    #     x=metric,
-    #     hue="Model",
-    #     size="value",
-    # )
 
     colors = sns.color_palette("tab10", 2)
     for i, var in enumerate(CHAR_VARS):
@@ -1855,6 +1839,29 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
     fg.set_xlabels("Attribute Percentile", color="black")
     handles, labels = fg.axes[0].get_legend_handles_labels()
     fg.axes[0].legend(handles, labels, frameon=False)
+    plt.show()
+
+
+def plot_res_characteristic_dist():
+    char_df = get_res_characteristic()
+    df = char_df.melt(var_name="Characteristic")
+
+    fg = sns.displot(
+        data=df,
+        x="value",
+        col="Characteristic",
+        col_wrap=2,
+        kind="hist",
+        # legend_out=False,
+        palette="colorblind",
+        facet_kws={"subplot_kws": {"sharex": False, "sharey": False}},
+    )
+
+    # fg.set_titles("{col_name}")
+    # fg.set_ylabels(metric, color="black")
+    # fg.set_xlabels("Attribute Percentile", color="black")
+    # handles, labels = fg.axes[0].get_legend_handles_labels()
+    # fg.axes[0].legend(handles, labels, frameon=False)
     plt.show()
 
 
