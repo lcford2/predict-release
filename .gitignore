@@ -50,3 +50,6 @@ results/**/model.pickle
 # hpc output
 python_scripts/slurm_out
 **/*remora*/*
+
+# ignore nohup output
+**/nohup.out
