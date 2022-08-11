@@ -51,5 +51,8 @@ results/**/model.pickle
 python_scripts/slurm_out
 **/*remora*/*
 
+# ignore nohup output
+**/nohup.out
+
 # vs code log files
 .vscode/*.log
