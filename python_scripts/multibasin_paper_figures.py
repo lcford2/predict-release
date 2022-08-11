@@ -1280,6 +1280,7 @@ def plot_data_assim_results(metric="NSE"):
         edgecolor="k",
         alpha=0.5,
         linewidth=1,
+        size="size",
     )
 
     fg.ax.set_xticklabels(["Daily", "Weekly", "Monthly", "Seasonally", "Semi-annually"])
@@ -1809,36 +1810,20 @@ def plot_characteristic_res_line_plot(metric="NSE"):
 
 def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
     char_df = get_res_characteristic(metric)
+    cuts = {}
     for var in CHAR_VARS:
-        char_df[var] = pd.qcut(char_df[var], nbins, labels=False) + 1
+        values, labels = pd.qcut(char_df[var], nbins, labels=False, retbins=True)
+        char_df[var] = values + 1
+        cuts[var] = labels
 
-    # m1_df = pd.DataFrame(index=range(1, nbins + 1), columns=CHAR_VARS)
-    # m2_df = pd.DataFrame(index=range(1, nbins + 1), columns=CHAR_VARS)
-    # II()
-
-    # for var in CHAR_VARS:
-    #     m1_df[var] = char_df.groupby(var)["TD4-MSS0.10"].mean()
-    #     m2_df[var] = char_df.groupby(var)["TD5-MSS0.01"].mean()
-
-    # m1_df["Model"] = "TD4-MSS0.10"
-    # m2_df["Model"] = "TD5-MSS0.01"
-    # m1_df = (
-    #     m1_df.reset_index()
-    #     .rename(columns={"index": "Bin"})
-    #     .melt(id_vars=["Model", "Bin"])
-    # )
-    # m2_df = (
-    #     m2_df.reset_index()
-    #     .rename(columns={"index": "Bin"})
-    #     .melt(id_vars=["Model", "Bin"])
-    # )
-
-    # df = pd.concat([m1_df, m2_df])
     label_map = make_bin_label_map(nbins, start_index=1)
     df = char_df.melt(
-        id_vars=["TD4-MSS0.10", "TD5-MSS0.01"], value_name="bin"
+        id_vars=["TD4-MSS0.10", "TD5-MSS0.01"], value_name="bin", ignore_index=False
     ).melt(
-        id_vars=["variable", "bin"], var_name="model", value_name=metric
+        id_vars=["variable", "bin"],
+        var_name="model",
+        value_name=metric,
+        ignore_index=False,
     )
     df["bin"] = df["bin"].replace(label_map)
 
@@ -1851,8 +1836,11 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         col_wrap=2,
         kind="bar",
         legend_out=False,
-        ci="sd",
+        errorbar="sd",
+        errwidth=1,
+        capsize=0.1,
         palette="colorblind",
+        order=[label_map[i] for i in range(1, nbins + 1)],
     )
     for ax in fg.axes:
         ax.grid(False)
@@ -2274,9 +2262,12 @@ if __name__ == "__main__":
     # * FIGURE 5 - NOT INCLUDING AT THE MOMENT
     # plot_best_and_worst_reservoirs(metric)
     # * FIGURE 5
-    plot_res_characteristic_bin_performance(metric, 5)
+    # plot_res_characteristic_bin_performance(metric, 5)
+    # * FIGURE 6
+    # * this is the attribute maps
+    # * FIGURE 7
+    plot_data_assim_results(metric)
 
-    # plot_data_assim_results(metric)
     # plot_top_characteristic_res(metric, 10)
     # plot_top_characteristic_res_scatter(metric)
     # plot_characteristic_res_line_plot(metric)
