@@ -93,6 +93,14 @@ def mean_absolute_scaled_error(yact, ymod):
     return error / lagerror
 
 
+def bias(yact, ymod):
+    return np.mean(ymod) - np.mean(yact)
+
+
+def pbias(yact, ymod):
+    return (np.mean(ymod) - np.mean(yact)) / np.mean(yact)
+
+
 def trmse(act, mod):
     tact = boxcox(act, 0.3)
     tmod = boxcox(mod, 0.3)
@@ -173,6 +181,15 @@ def get_ntrmse(df, grouper=None):
         )
 
 
+def get_pbias(df, grouper=None):
+    if grouper:
+        return pd.DataFrame(
+            {"PBIAS": df.groupby(grouper).apply(lambda x: pbias(x["actual"], x["model"]))}
+        )
+    else:
+        return pbias(["actual"], df["model"])
+
+
 def get_model_scores(model_dfs, metric="NSE", grouper=None):
     if metric == "NSE":
         return {i: get_r2score(j, grouper) for i, j in model_dfs.items()}
@@ -182,6 +199,8 @@ def get_model_scores(model_dfs, metric="NSE", grouper=None):
         return {i: get_mase(j, grouper) for i, j in model_dfs.items()}
     elif metric == "nRMSE":
         return {i: get_nrmse(j, grouper) for i, j in model_dfs.items()}
+    elif metric == "PBIAS":
+        return {i: get_pbias(j, grouper) for i, j in model_dfs.items()}
 
 
 def combine_dict_to_df(dct, colname):
