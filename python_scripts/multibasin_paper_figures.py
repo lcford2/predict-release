@@ -1839,9 +1839,9 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         col_wrap=2,
         kind="bar",
         legend_out=False,
-        errorbar="sd",
-        errwidth=1,
-        capsize=0.1,
+        errorbar=None,
+        # errwidth=1,
+        # capsize=0.1,
         palette="colorblind",
         order=[label_map[i] for i in range(1, nbins + 1)],
     )
@@ -1858,6 +1858,45 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
     fg.set_xlabels("Attribute Percentile", color="black")
     handles, labels = fg.axes[0].get_legend_handles_labels()
     fg.axes[0].legend(handles, labels, frameon=False)
+    plt.show()
+
+
+def plot_res_characteristic_scatter_performance(metric="NSE"):
+    char_df = get_res_characteristic(metric)
+
+    df = char_df.melt(id_vars=["TD4-MSS0.10", "TD5-MSS0.01"], ignore_index=False).melt(
+        id_vars=["variable", "value"],
+        var_name="model",
+        value_name=metric,
+        ignore_index=False,
+    )
+
+    fg = sns.relplot(
+        data=df,
+        x="value",
+        y=metric,
+        hue="model",
+        col="variable",
+        col_wrap=2,
+        kind="scatter",
+        palette="colorblind",
+    )
+    for ax in fg.axes:
+        ax.grid(False)
+        ax.patch.set_alpha(0.0)
+        ax.set_axis_on()
+        ax.spines["bottom"].set_color("black")
+        ax.spines["left"].set_color("black")
+        ax.tick_params(axis="both", color="black", labelcolor="black")
+
+    fg.set_titles("{col_name}")
+    fg.set_ylabels(metric, color="black")
+    fg.set_xlabels("Attribute Percentile", color="black")
+    handles, labels = fg.axes[0].get_legend_handles_labels()
+    fg.axes[0].legend(handles, labels, frameon=False)
+    figManager = plt.get_current_fig_manager()
+    figManager.window.showMaximized()
+    # II()
     plt.show()
 
 
@@ -2289,10 +2328,11 @@ if __name__ == "__main__":
     # plot_best_and_worst_reservoirs(metric)
     # * FIGURE 5
     # plot_res_characteristic_bin_performance(metric, 5)
+    plot_res_characteristic_scatter_performance(metric)
     # * FIGURE 6
     # * this is the attribute maps
     # * FIGURE 7
-    plot_data_assim_results(metric)
+    # plot_data_assim_results(metric)
 
     # plot_top_characteristic_res(metric, 10)
     # plot_top_characteristic_res_scatter(metric)
@@ -2300,3 +2340,6 @@ if __name__ == "__main__":
     # plot_res_characteristic_map(metric)
     # plot_res_characteristic_split_map()
     # plot_data_assim_scatter(metric)
+    # plot_reservoir_metric(metric, "test")
+    # plot_assim_metric_scatter()
+    # plot_basin_performance(metric)
