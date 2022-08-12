@@ -2301,6 +2301,143 @@ def plot_data_assim_scatter(metric="NSE"):
     plt.show()
 
 
+def plot_reservoir_metric(metric, ds="simul"):
+    files = glob.glob(
+        "../results/tclr_model_testing/all/TD?_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+    )
+    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    matches = [re.search(td_mss_assim_pat, i) for i in files]
+    td_mss_assim = [i.groups() for i in matches]
+    results = {}
+    for key, file in zip(td_mss_assim, files):
+        with open(file, "rb") as f:
+            results[key] = pickle.load(f)
+    simmed_data = select_results(results, "simmed_data")
+
+    simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+
+    # train_agg = train_scores.groupby(["TD", "MSS"])[[metric]].mean()
+    # test_agg = test_scores.groupby(["TD", "MSS"])[[metric]].mean()
+    # simmed_agg = simmed_scores.groupby(["TD", "MSS"])[[metric]].mean()
+
+    # train_agg["Data Set"] = "Train"
+    # test_agg["Data Set"] = "Test"
+    # simmed_agg["Data Set"] = "Simmed"
+    # df = pd.concat([train_agg, test_agg, simmed_agg])
+    if ds == "simul":
+        df = simmed_scores
+    elif ds == "test":
+        df = test_scores
+    else:
+        df = train_scores
+
+    df["model"] = ["M1" if i == 5 else "M2" for i in df["TD"]]
+    df = df.sort_values(by="model")
+
+    fg = sns.catplot(
+        data=df,
+        hue="model",
+        x="Reservoir",
+        y=metric,
+        kind="bar",
+        palette="tab10",
+        # whis=(5, 95),
+        # showfliers=False,
+        legend=False
+        # ci=None,
+    )
+    # fg.ax.legend(loc="best", ncol=4, title="Max Depth")
+    # fg.ax.set_xticklabels(fg.ax.get_xticklabels(), rotation=45, ha="right")
+    # if metric == "nRMSE":
+    #     fg.ax.set_yscale("log")
+    plt.show()
+
+
+def plot_assim_metric_scatter():
+    import glob
+    import re
+
+    file_templates = [
+        "../results/tclr_model_testing/all/TD4_*_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
+        "../results/tclr_model_testing/all/TD5_*_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
+    ]
+    keys = [(4, 0.1), (5, 0.01)]
+    results = {}
+    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    for ft in file_templates:
+        files = glob.glob(ft)
+        matches = [re.search(td_mss_assim_pat, i) for i in files]
+        td_mss_assim = [i.groups() for i in matches]
+        for file, tma in zip(files, td_mss_assim):
+            with open(file, "rb") as f:
+                results[tma] = pickle.load(f)
+
+    simmed_data = select_results(results, "simmed_data")
+
+    simmed_pbias = get_model_scores(simmed_data, metric="PBIAS", grouper="site_name")
+    simmed_nrmse = get_model_scores(simmed_data, metric="nRMSE", grouper="site_name")
+
+    columns = ["TD", "Assim", "MSS", "Reservoir"]
+
+    simmed_pbias_records = []
+    for key, values in simmed_pbias.items():
+        for res, value in values["PBIAS"].items():
+            simmed_pbias_records.append([int(key[0]), key[1], float(key[2]), res, value])
+    simmed_pbias = pd.DataFrame.from_records(
+        simmed_pbias_records, columns=columns + ["pbias"]
+    )
+    simmed_nrmse_records = []
+    for key, values in simmed_nrmse.items():
+        for res, value in values["nRMSE"].items():
+            simmed_nrmse_records.append([int(key[0]), key[1], float(key[2]), res, value])
+    simmed_nrmse = pd.DataFrame.from_records(
+        simmed_nrmse_records, columns=columns + ["nrmse"]
+    )
+
+    df = pd.merge(simmed_pbias, simmed_nrmse)
+    df["model"] = ["M1" if i == 5 else "M2" for i in df["TD"]]
+
+    sns.jointplot(
+        data=df,
+        x="pbias",
+        y="nrmse",
+        hue="Assim",
+        hue_order=["daily", "weekly", "monthly", "seasonally", "semi-annually"],
+        # joint_kws=dict(style="model"),
+        kind="scatter",
+    )
+    plt.show()
+
+
+def plot_basin_performance(metric="nRMSE"):
+    char_df = get_res_characteristic(metric)
+    res_basin_map = pd.read_pickle("../pickles/res_basin_map.pickle")
+
+    rename = {
+        "upper_col": "colorado",
+        "lower_col": "colorado",
+        "pnw": "columbia",
+        "tva": "tennessee",
+    }
+    res_basin_map = res_basin_map.replace(rename)
+    res_basin_map = res_basin_map.str.capitalize()
+
+    char_df["basin"] = res_basin_map
+    II()
+    df = char_df[["TD4-MSS0.10", "TD5-MSS0.01", "basin"]]
+    df = df.melt(id_vars=["basin"], var_name="model", value_name=metric)
+
+    sns.catplot(
+        data=df,
+        x="basin",
+        y=metric,
+        hue="model",
+        palette="colorblind",
+        kind="box",
+    )
+    plt.show()
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) > 0:
