@@ -1,4 +1,6 @@
 digraph tree {
+layout=dot
+rankdir=LR;
 bgcolor="transparent"
 node [shape=rectangle, style="filled, rounded", color="black", fontname=helvetica] ;
 edge [fontname=helvetica] ;
