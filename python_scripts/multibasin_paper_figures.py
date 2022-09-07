@@ -1091,7 +1091,7 @@ def determine_assim_large_change_reservoirs(scores):
         ("weekly", "daily"),
     ]
     output = {}
-    models = [("2", "0.20"), ("5", "0.01")]
+    models = [("4", "0.10"), ("5", "0.01")]
     for m in models:
         for pair in diff_pairs:
             key1 = (m[0], pair[0], m[1])
@@ -1106,9 +1106,9 @@ def determine_assim_large_change_reservoirs(scores):
     return output
 
 
-def determine_assime_improvement(scores):
+def determine_assim_improvement(scores):
     output = {}
-    models = [("2", "0.20"), ("5", "0.01")]
+    models = [("4", "0.10"), ("5", "0.01")]
     assims = ["semi-annually", "seasonally", "monthly", "weekly", "daily"]
 
     for m in models:
@@ -1118,7 +1118,7 @@ def determine_assime_improvement(scores):
             outdf = scores[key2].copy()
             metric = outdf.columns[0]
             outdf["diff"] = scores[key1] - scores[key2]
-            outdf["pdiff"] = outdf["diff"] / scores[key1][metric]
+            outdf["pdiff"] = outdf["diff"] / scores[key1][metric] * 100
             output[key2] = outdf
     return output
 
@@ -1184,7 +1184,9 @@ def plot_data_assim_results(metric="NSE"):
     import re
 
     files = glob.glob(
-        "../results/tclr_model_testing/all/TD?_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+        "../results/tclr_model_testing/all/TD4_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+    ) + glob.glob(
+        "../results/tclr_model_testing/all/TD5_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
     )
     td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
     matches = [re.search(td_mss_assim_pat, i) for i in files]
@@ -1194,10 +1196,10 @@ def plot_data_assim_results(metric="NSE"):
         with open(file, "rb") as f:
             results[key] = pickle.load(f)
     with open(
-        "../results/tclr_model_testing/all/TD2_MSS0.20_RT_MS_exhaustive_new_hoover/results.pickle",
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
         "rb",
     ) as f:
-        results[("2", "never", "0.20")] = pickle.load(f)
+        results[("4", "never", "0.10")] = pickle.load(f)
     with open(
         "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
         "rb",
@@ -1208,9 +1210,9 @@ def plot_data_assim_results(metric="NSE"):
 
     simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
 
-    improvements = determine_assime_improvement(simmed_scores)
-    del simmed_scores[("2", "never", "0.20")]
-    del simmed_scores[("5", "never", "0.01")]
+    improvements = determine_assim_improvement(simmed_scores)
+    # del simmed_scores[("4", "never", "0.10")]
+    # del simmed_scores[("5", "never", "0.01")]
     simmed_large_diffs = determine_assim_large_change_reservoirs(simmed_scores)
 
     columns = ["TD", "Assim", "MSS", "Reservoir", metric]
@@ -1262,7 +1264,12 @@ def plot_data_assim_results(metric="NSE"):
 
     simmed_scores["pdiff_improve"] = simmed_improves["pdiff"]
     simmed_scores["pdiff_improve"] = simmed_scores["pdiff_improve"].fillna(0.0)
-    simmed_scores["size"] = linear_scale_values(simmed_scores["pdiff_improve"], 20, 500)
+
+    min_size = 20
+    max_size = 100
+    simmed_scores["size"] = linear_scale_values(
+        simmed_scores["pdiff_improve"], min_size, max_size
+    )
 
     simmed_scores["pdiff_diff"] = simmed_diffs["pdiff"]
     simmed_scores["color"] = simmed_scores["pdiff_diff"].apply(
@@ -1274,35 +1281,40 @@ def plot_data_assim_results(metric="NSE"):
     # simmed_scores_for_strip = simmed_scores.merge(simmed_diffs, indicator=True, how="outer").query(
     #     '_merge=="left_only"').drop("_merge", axis=1)
 
+    II()
+    sys.exit()
     fg = sns.catplot(
         data=simmed_scores,
         hue="TD",
         x="Assim",
         y=metric,
         kind="box",
-        order=["daily", "weekly", "monthly", "seasonally", "semi-annually"],
+        order=["daily", "weekly", "monthly", "seasonally", "semi-annually", "never"],
         whis=(5, 95),
         showfliers=False,
         legend_out=False,
+        palette="colorblind",
     )
-    stripplot(
-        data=simmed_scores,
-        hue="TD",
-        x="Assim",
-        y=metric,
-        order=["daily", "weekly", "monthly", "seasonally", "semi-annually"],
-        ax=fg.ax,
-        dodge=True,
-        jitter=0.8,
-        # palette=["#808080", "#808080"],
-        colors="color",
-        edgecolor="k",
-        alpha=0.5,
-        linewidth=1,
-        size="size",
-    )
+    # stripplot(
+    #     data=simmed_scores,
+    #     hue="TD",
+    #     x="Assim",
+    #     y=metric,
+    #     order=["daily", "weekly", "monthly", "seasonally", "semi-annually"],
+    #     ax=fg.ax,
+    #     dodge=True,
+    #     jitter=0.8,
+    #     # palette=["#808080", "#808080"],
+    #     colors="color",
+    #     edgecolor="k",
+    #     alpha=0.5,
+    #     linewidth=1,
+    #     size="size",
+    # )
 
-    fg.ax.set_xticklabels(["Daily", "Weekly", "Monthly", "Seasonally", "Semi-annually"])
+    fg.ax.set_xticklabels(
+        ["Daily", "Weekly", "Monthly", "Seasonally", "Semi-annually", "Never"]
+    )
     fg.ax.set_xlabel("Assimilation Frequency")
 
     fg.ax.set_xticks([], minor=True)
@@ -1310,11 +1322,47 @@ def plot_data_assim_results(metric="NSE"):
 
     handles, labels = fg.ax.get_legend_handles_labels()
     handles = handles[:2]
-    labels = ["TD2-MSS0.20", "TD5-MSS0.01"]
+    labels = ["TD4-MSS0.10", "TD5-MSS0.01"]
     fg.ax.legend(handles, labels, loc="best")
+    sns.despine(ax=fg.ax)
+    # fg.ax.set_ylabel(f"Percent Improvement in RMSE")
 
-    fg.ax.set_yscale("log")
+    # fg.ax.set_yscale("log")
+    # fg.ax.set_yticks([0.1, 1.0])
+    # fg.ax.set_yticklabels(["0.1", "1.0"])
 
+    # size_leg_values = np.linspace(
+    #     simmed_scores["pdiff_improve"].min(), simmed_scores["pdiff_improve"].max(), 4
+    # )
+    # size_leg_sizes = linear_scale_values(size_leg_values, min_size, max_size)
+    # size_leg_markers = [
+    #     plt.scatter(
+    #         [0],
+    #         [0],
+    #         s=i,
+    #         edgecolors="k",
+    #         c="#808080",
+    #         alpha=0.5,
+    #         linewidths=1,
+    #     )
+    #     for i in size_leg_sizes
+    # ]
+
+    # size_leg_labels = [f"{i:.0%}" for i in size_leg_values]
+    # fg.ax.legend(
+    #     size_leg_markers,
+    #     size_leg_labels,
+    #     ncol=4,
+    #     loc="lower left",
+    #     # title="",
+    #     fontsize=8,
+    #     handlelength=1,
+    #     columnspacing=1,
+    #     title_fontsize=8,
+    #     handletextpad=1,
+    #     borderpad=1,
+    #     labelspacing=1,
+    # )
     plt.show()
 
 
@@ -2438,6 +2486,171 @@ def plot_basin_performance(metric="nRMSE"):
     plt.show()
 
 
+def plot_assim_lines():
+    import glob
+    import re
+
+    files = glob.glob(
+        "../results/tclr_model_testing/all/TD4_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+    ) + glob.glob(
+        "../results/tclr_model_testing/all/TD5_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+    )
+    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    matches = [re.search(td_mss_assim_pat, i) for i in files]
+    td_mss_assim = [i.groups() for i in matches]
+    results = {}
+    for key, file in zip(td_mss_assim, files):
+        with open(file, "rb") as f:
+            results[key] = pickle.load(f)
+    with open(
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
+        "rb",
+    ) as f:
+        results[("4", "never", "0.10")] = pickle.load(f)
+    with open(
+        "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
+        "rb",
+    ) as f:
+        results[("5", "never", "0.01")] = pickle.load(f)
+
+    simmed_data = select_results(results, "simmed_data")
+
+    keys = list(simmed_data.keys())
+
+    resers = simmed_data[keys[0]].index.get_level_values(0).unique()
+
+    for res in resers:
+        df = pd.DataFrame()
+        for assim in [
+            "daily",
+            "weekly",
+            "monthly",
+            "seasonally",
+            "semi-annually",
+            "never",
+        ]:
+            mdf = simmed_data[("4", assim, "0.10")]
+            mdf = mdf.loc[pd.IndexSlice[res, :]]
+            if df.empty:
+                df["actual"] = mdf["actual"]
+                df[assim] = mdf["model"]
+            else:
+                df[assim] = mdf["model"]
+        # df = df.reset_index().melt(
+        #     id_vars=["datetime"], var_name="assim", value_name="release"
+        # )
+        # fig, ax = plt.subplots(1, 1, figsize=(38, 20))
+        # ax = sns.lineplot(
+        #     data=df,
+        #     x="datetime",
+        #     y="release",
+        #     estimator=None,
+        #     errorbar=None,
+        #     hue="assim",
+        #     ax=ax,
+        #     palette="tab10",
+        #     alpha=0.8,
+        # )
+        # ax.set_title(res)
+        fig, axes = plt.subplots(3, 2, sharex=True, sharey=True, figsize=(38, 20))
+        axes = axes.flatten()
+        for ax, assim in zip(
+            axes, ["never", "semi-annually", "seasonally", "monthly", "weekly", "daily"]
+        ):
+            ax.plot(df.index, df["actual"], label="Actual")
+            ax.plot(df.index, df[assim], label=assim.title())
+            ax.set_title(assim.title())
+            ax.legend(loc="best")
+        fig.suptitle(res)
+
+        plt.tight_layout()
+        plt.savefig(f"../figures/release_timeseries_split/{res}.png")
+        plt.close()
+
+
+def plot_data_assim_scatter():
+    import glob
+    import re
+
+    files = glob.glob(
+        "../results/tclr_model_testing/all/TD4_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+    ) + glob.glob(
+        "../results/tclr_model_testing/all/TD5_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+    )
+    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    matches = [re.search(td_mss_assim_pat, i) for i in files]
+    td_mss_assim = [i.groups() for i in matches]
+    td_mss_assim = [i for i in td_mss_assim if "yearly" not in i]
+    results = {}
+    for key, file in zip(td_mss_assim, files):
+        with open(file, "rb") as f:
+            results[key] = pickle.load(f)
+    with open(
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
+        "rb",
+    ) as f:
+        results[("4", "never", "0.10")] = pickle.load(f)
+    with open(
+        "../results/tclr_model_testing/all/TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
+        "rb",
+    ) as f:
+        results[("5", "never", "0.01")] = pickle.load(f)
+
+    simmed_data = select_results(results, "simmed_data")
+
+    simmed_nse = get_model_scores(simmed_data, metric="NSE", grouper="site_name")
+    simmed_nrmse = get_model_scores(simmed_data, metric="nRMSE", grouper="site_name")
+
+    columns = ["TD", "Assim", "MSS", "Reservoir", "Metric", "Value"]
+    simmed_scores_records = []
+    for key, values in simmed_nse.items():
+        for res, value in values["NSE"].items():
+            simmed_scores_records.append(
+                [int(key[0]), key[1], float(key[2]), res, "NSE", value]
+            )
+    for key, values in simmed_nrmse.items():
+        for res, value in values["nRMSE"].items():
+            simmed_scores_records.append(
+                [int(key[0]), key[1], float(key[2]), res, "nRMSE", value]
+            )
+
+    simmed_scores = pd.DataFrame.from_records(simmed_scores_records, columns=columns)
+    simmed_scores = simmed_scores.pivot(
+        index=["TD", "Assim", "MSS", "Reservoir"], columns=["Metric"]
+    )
+    simmed_scores.columns = simmed_scores.columns.droplevel(0)
+    simmed_scores = simmed_scores.reset_index()
+    simmed_scores = simmed_scores[simmed_scores["TD"] == 4]
+
+    assim_codes = {
+        "never": 0,
+        "semi-annually": 1,
+        "seasonally": 2,
+        "monthly": 3,
+        "weekly": 4,
+        "daily": 5,
+    }
+    simmed_scores["Assim"] = simmed_scores["Assim"].replace(assim_codes)
+    # simmed_scores = simmed_scores[simmed_scores["Assim"].isin(["never", "daily"])]
+    II()
+    sys.exit()
+
+    ax = sns.scatterplot(
+        data=simmed_scores,
+        # style="TD",
+        hue="Assim",
+        y="NSE",
+        x="nRMSE",
+        hue_order=["never", "semi-annually", "seasonally", "monthly", "weekly", "daily"],
+        alpha=0.6,
+        palette="viridis",
+    )
+    # ax.set_xscale("log")
+    plt.show()
+    # II()
+    # sys.exit()
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) > 0:
@@ -2446,7 +2659,7 @@ if __name__ == "__main__":
         metric = "NSE"
     plt.style.use("tableau-colorblind10")
     # plt.style.use(["science", "nature"])
-    # sns.set_context("paper", font_scale=1.4)
+    sns.set_context("talk", font_scale=1.1)
     # results = read_results()
     # plot_res_perf_map(results)
     # plot_seasonal_performance(results)
@@ -2465,11 +2678,12 @@ if __name__ == "__main__":
     # plot_best_and_worst_reservoirs(metric)
     # * FIGURE 5
     # plot_res_characteristic_bin_performance(metric, 5)
-    plot_res_characteristic_scatter_performance(metric)
+    # plot_res_characteristic_scatter_performance(metric)
     # * FIGURE 6
     # * this is the attribute maps
     # * FIGURE 7
-    # plot_data_assim_results(metric)
+    plot_data_assim_results(metric)
+    # plot_data_assim_scatter()
 
     # plot_top_characteristic_res(metric, 10)
     # plot_top_characteristic_res_scatter(metric)
@@ -2480,3 +2694,4 @@ if __name__ == "__main__":
     # plot_reservoir_metric(metric, "test")
     # plot_assim_metric_scatter()
     # plot_basin_performance(metric)
+    # plot_assim_lines()
