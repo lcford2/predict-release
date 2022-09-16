@@ -4,21 +4,24 @@ import os
 import pathlib
 import pickle
 import socket
+import sys
+import re
+import glob
 from functools import partial
 
 from joblib import Parallel, delayed
+from time import perf_counter as timer
 
 hostname = socket.gethostname()
 if hostname == "CCEE-DT-094":
-    os.environ[
-        "PROJ_LIB"
-    ] = r"C:\\Users\\lcford2\\AppData\\Local\\Continuum\\anaconda3\\envs\\sry-env\\Library\\share"
+    os.environ["PROJ_LIB"] = (
+        "C:\\Users\\lcford2\\AppData\\Local\\Continuum\\"
+        "anaconda3\\envs\\sry-env\\Library\\share"
+    )
 elif hostname == "inspiron-laptop":
     os.environ[
         "PROJ_LIB"
     ] = r"C:\\Users\\lcford\\miniconda3\\envs\\sry-env\\Library\\share"
-
-import sys
 
 import geopandas as gpd
 import matplotlib.gridspec as GS
@@ -667,7 +670,7 @@ def make_basin_map(ax, basin_info):
         spine.set_edgecolor("black")
 
 
-def plot_res_locs():
+def plot_res_locs(colors=None):
     res_locs = pd.read_csv("../geo_data/reservoirs.csv")
     res_locs = res_locs.set_index("site_name")
 
@@ -696,41 +699,43 @@ def plot_res_locs():
         ((GIS_DIR / "tennessee_shp" / "Shape" / "WBDHU2").as_posix(), color_map[3]),
     ]
 
-    fig, ax = plt.subplots(1, 1)
+    fig = plt.figure()
+    ax = fig.add_subplot()
     m = make_map(ax, other_bound=basins)
     x, y = m(res_locs.long, res_locs.lat)
-    max_size = 600
-    min_size = 50
-    size_var = "max_sto"
-    max_value = res_locs[size_var].max()
-    min_value = res_locs[size_var].min()
+    # max_size = 600
+    # min_size = 50
+    # size_var = "max_sto"
+    # max_value = res_locs[size_var].max()
+    # min_value = res_locs[size_var].min()
 
-    ratio = (max_size - min_size) / (max_value - min_value)
-    sizes = [min_size + i * ratio for i in res_locs[size_var]]
-    markers = ax.scatter(x, y, marker="v", edgecolor="k", s=sizes, zorder=4)
+    # ratio = (max_size - min_size) / (max_value - min_value)
+    # sizes = [min_size + i * ratio for i in res_locs[size_var]]
+    # markers = ax.scatter(x, y, marker="v", edgecolor="k", s=sizes, zorder=4)
+    markers = ax.scatter(x, y, marker="v", edgecolor="k", s=150, zorder=4)
     marker_color = markers.get_facecolor()
 
     river_line = mlines.Line2D([], [], color="b", alpha=1, linewidth=0.5)
     river_basins = [mpatch.Patch(facecolor=color_map[i], alpha=0.5) for i in range(4)]
-    size_legend_sizes = np.linspace(min_size, max_size, 4)
-    # size_legend_labels = [(i-min_size) / ratio for i in size_legend_sizes]
-    size_legend_labels = np.linspace(min_value, max_value, 4)
+    # size_legend_sizes = np.linspace(min_size, max_size, 4)
+    # # size_legend_labels = [(i-min_size) / ratio for i in size_legend_sizes]
+    # size_legend_labels = np.linspace(min_value, max_value, 4)
 
-    size_markers = [
-        plt.scatter([], [], s=i, edgecolors="k", c=marker_color, marker="v")
-        for i in size_legend_sizes
-    ]
+    # size_markers = [
+    #     plt.scatter([], [], s=i, edgecolors="k", c=marker_color, marker="v")
+    #     for i in size_legend_sizes
+    # ]
 
-    size_legend = plt.legend(
-        size_markers,
-        [
-            f"{round(size_legend_labels[0]*1000, -2):.0f}",
-            *[f"{round(i / 1000, 0):,.0f} million" for i in size_legend_labels[1:]],
-        ],
-        title="Maximum Storage [acre-feet]",
-        loc="lower left",
-        ncol=4,
-    )
+    # size_legend = plt.legend(
+    #     size_markers,
+    #     [
+    #         f"{round(size_legend_labels[0]*1000, -2):.0f}",
+    #         *[f"{round(i / 1000, 0):,.0f} million" for i in size_legend_labels[1:]],
+    #     ],
+    #     title="Maximum Storage [acre-feet]",
+    #     loc="lower left",
+    #     ncol=4,
+    # )
     hydro_legend = plt.legend(
         [river_line, *river_basins],
         [
@@ -742,7 +747,7 @@ def plot_res_locs():
         ],
         loc="lower right",
     )
-    ax.add_artist(size_legend)
+    # ax.add_artist(size_legend)
     ax.add_artist(hydro_legend)
 
     plt.show()
@@ -974,12 +979,7 @@ def plot_upper_lower_perf(results):
 
     scores = scores.reset_index()
 
-    ax = sns.barplot(
-        data=scores,
-        y="NSE",
-        x="Depth",
-        hue="label",
-    )
+    ax = sns.barplot(data=scores, y="NSE", x="Depth", hue="label",)
     ax.set_xlabel("")
     ax.legend(loc="best")
     plt.show()
@@ -2210,18 +2210,25 @@ def plot_res_characteristic_split_map():
     }
 
     Parallel(n_jobs=len(CHAR_VARS), verbose=11)(
-        delayed(char_split_map_for_parallel)(var, char_df, basin_info)
+        delayed(char_split_map_single_var)(var, char_df, basin_info, True, False)
         for var in CHAR_VARS
     )
 
 
-def char_split_map_for_parallel(var, char_df, basin_info):
-    norm = Normalize(vmin=0, vmax=1)
+def char_split_map_single_var(
+    var, char_df, basin_info, save=False, add_legend=False, legend_labels=None
+):
+    vmin = char_df[var].min()
+    vmax = char_df[var].max()
+    norm = Normalize(vmin=vmin, vmax=vmax)
     # cmap = "inferno"
     # color_map = get_cmap(cmap)
     colors = ("#DAFF47", "#EDA200", "#D24E71", "#91008D", "#001889")
     color_map = ListedColormap(colors, "qual_inferno")
     fig = plt.figure(figsize=(19, 10))
+    # if add_legend:
+    #     gs = GS.GridSpec(2, 3, height_ratios=[1, 1], width_ratios=[1, 1, 0.4])
+    # else:
     gs = GS.GridSpec(2, 2, height_ratios=[1, 1], width_ratios=[1, 1])
     fig.patch.set_alpha(0.0)
     axes = [
@@ -2257,6 +2264,7 @@ def char_split_map_for_parallel(var, char_df, basin_info):
             ]
         ),
     ]
+
     for ax, pos, (basin, binfo) in zip(axes, positions, basin_info.items()):
         make_basin_map(ax, binfo)
         ax.set_position(pos)
@@ -2271,12 +2279,24 @@ def char_split_map_for_parallel(var, char_df, basin_info):
             s=250,
         )
 
-    mng = plt.get_current_fig_manager()
+    if add_legend:
+        # leg_ax = fig.add_subplot(gs[:, 2])
+        leg_fig = plt.figure()
+        leg_ax = leg_fig.add_subplot()
+        leg_ax.set_axis_off()
+        handles = [
+            mpatch.Patch(facecolor=c, edgecolor="k", linewidth=0.5) for c in colors
+        ]
+        leg_ax.legend(handles, legend_labels, loc="center", frameon=False)
+
+    # mng = plt.get_current_fig_manager()
     # mng.window.showMaximized()
-    plt.savefig(
-        f"C:\\Users\\lcford2\\Dropbox\\PHD\\multibasin_model_figures\\new_paper_figures\\split_char_map_{var}_larger.png",
-        dpi=400,
-    )
+    if save:
+        plt.savefig(
+            f"C:\\Users\\lcford2\\Dropbox\\PHD\\multibasin_model_figures\\new_paper_figures\\split_char_map_{var}_larger.png",
+            dpi=400,
+        )
+    return fig, axes
 
 
 def plot_data_assim_scatter(metric="NSE"):
@@ -2476,12 +2496,7 @@ def plot_basin_performance(metric="nRMSE"):
     df = df.melt(id_vars=["basin"], var_name="model", value_name=metric)
 
     sns.catplot(
-        data=df,
-        x="basin",
-        y=metric,
-        hue="model",
-        palette="colorblind",
-        kind="box",
+        data=df, x="basin", y=metric, hue="model", palette="colorblind", kind="box",
     )
     plt.show()
 
@@ -2651,6 +2666,510 @@ def plot_data_assim_scatter():
     # sys.exit()
 
 
+def get_unique_trees():
+    with open(
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
+        "rb",
+    ) as f:
+        results = pickle.load(f)
+
+    groups = results["groups"]
+    train_data = results["train_data"]
+    train_data["Group"] = groups
+
+    df = train_data.reset_index()
+
+    value_counts = df.groupby(["site_name", df["datetime"].dt.month])[
+        "Group"
+    ].value_counts()  # [no-member]
+    value_counts.name = "Count"
+    value_counts = value_counts.reset_index().set_index(
+        ["site_name", "datetime", "Group"]
+    )
+
+    group_error = df.groupby(["site_name", df["datetime"].dt.month, "Group"]).apply(
+        lambda x: mean_squared_error(x["actual"], x["model"], squared=False)
+    )
+    value_counts["error"] = group_error
+    value_counts = value_counts.reset_index()
+
+    single_group_res = []
+    resers = value_counts["site_name"].unique()
+
+    for res in resers:
+        rgroups = value_counts[value_counts["site_name"] == res]["Group"]
+        rgroups = rgroups.unique()
+        if len(rgroups) == 1:
+            single_group_res.append((res, rgroups[0]))
+    drop_res = [i[0] for i in single_group_res]
+
+    value_counts = value_counts[~value_counts["site_name"].isin(drop_res)]
+
+    plot_res = value_counts["site_name"].unique()
+    name_replacements = get_name_replacements()
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+
+    group_names = {
+        7: "High Inflow Storage Maintenance (7)",
+        3: "Low Steady Release (3)",
+        4: "Storage Build-Up (4)",
+        5: "Storage and Release Maintenance (5)",
+        6: "Release Trend Persistence (6)",
+    }
+
+    style_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    for res in plot_res:
+        basin = rbasins[res]
+        print_basin = " ".join(basin.split("_")).title()
+        print_res = name_replacements.get(res, res).title()
+
+        rdf = value_counts[value_counts["site_name"] == res]
+        counts = rdf.pivot(index=["datetime"], columns=["Group"], values=["Count"])
+        counts = counts.divide(counts.sum(axis=1).values, axis=0) * 100
+        counts.columns = counts.columns.droplevel(0)
+
+        error = rdf.pivot(index=["datetime"], columns=["Group"], values=["error"])
+        error = error.divide(error.sum(axis=1).values, axis=0) * 100
+        error.columns = error.columns.droplevel(0)
+
+        fig = plt.figure(figsize=(19, 10))
+        ax = fig.add_subplot()
+
+        # rdf.plot.bar(stacked=True, ax=ax)
+        width = 0.45
+        x = range(1, 13)
+        xleft = [i - (width / 2 + 0.01) for i in x]
+        xright = [i + (width / 2 + 0.01) for i in x]
+        bottom_count = 0
+        bottom_error = 0
+        for i, group in enumerate(error.columns):
+            if i == 0:
+                ax.bar(
+                    xleft,
+                    counts[group],
+                    label=group_names[group],
+                    width=width,
+                    color=style_colors[i],
+                )
+                ax.bar(xright, error[group], width=width, color=style_colors[i], hatch="//")
+                bottom_count = counts[group]
+                bottom_error = error[group]
+            else:
+                ax.bar(
+                    xleft,
+                    counts[group],
+                    bottom=bottom_count,
+                    label=group_names[group],
+                    width=width,
+                    color=style_colors[i],
+                )
+                ax.bar(
+                    xright,
+                    error[group],
+                    bottom=bottom_error,
+                    width=width,
+                    color=style_colors[i],
+                    hatch="//"
+                )
+                bottom_count += counts[group]
+                bottom_error += error[group]
+        ax.set_xticks(x)
+        ax.set_xticklabels(calendar.month_abbr[1:])
+        ax.set_ylim(ax.get_ylim()[0], 115)
+        ax.set_ylabel("Group Percent")
+        ax.set_xlabel("Month")
+        ax.set_title(f"{print_basin} - {print_res}")
+        ax.legend(loc="upper left", title=None, prop={"size": 16})
+
+        print(f"Saving figure for {print_res}")
+        plt.subplots_adjust(
+            top=0.942, bottom=0.141, left=0.066, right=0.985, hspace=0.2, wspace=0.2
+        )
+        plt.savefig(f"../figures/monthly_tree_breakdown_error/{rbasins[res]}_{res}.png")
+        # plt.show()
+        plt.close()
+        # cont = input("Continue? [Y/n] ")
+        # if cont.lower() == "n":
+        #     break
+
+
+def get_operating_groups():
+    files = glob.glob(
+        "../results/tclr_model_testing/all/TD4_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
+    )
+
+    td_mss_assim_pat = re.compile(r"TD(\d)_(.*)_MSS(\d\.\d\d)")
+    matches = [re.search(td_mss_assim_pat, i) for i in files]
+    td_mss_assim = [i.groups() for i in matches]
+    td_mss_assim = [i for i in td_mss_assim if "yearly" not in i]
+
+    results = {}
+    for key, file in zip(td_mss_assim, files):
+        with open(file, "rb") as f:
+            results[key] = pickle.load(f)
+    with open(
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
+        "rb",
+    ) as f:
+        results[("4", "never", "0.10")] = pickle.load(f)
+
+    groups = select_results(results, "groups")
+    columns = ["Res", "Date", "TD", "Assim", "MSS", "Group"]
+    records = []
+    for key, value in groups.items():
+        td, assim, mss = key
+        for (res, dt), group in value.items():
+            records.append([res, dt, td, assim, mss, group])
+    df = pd.DataFrame.from_records(records, columns=columns)
+    value_counts = df.groupby(["Res", df["Date"].dt.month, "Assim"])[
+        "Group"
+    ].value_counts()  # [no-member]
+    value_counts.name = "Count"
+    value_counts = value_counts.reset_index()
+    value_counts = value_counts[value_counts["Assim"] == "never"]
+    value_counts = value_counts.drop("Assim", axis=1)
+
+    op_codes = [[1], [2], [3, 5, 7], [4, 5, 7], [4, 6, 7]]
+    op_names = {
+        0: "Small ROR",
+        1: "Large ROR",
+        2: "Small St. Dam",
+        3: "Medium St. Dam",
+        4: "Large St. Dam",
+    }
+    op_mods = value_counts.groupby("Res")["Group"].unique()
+    op_mods = op_mods.apply(np.sort).apply(list)
+
+    # there are three reservoirs that only end up in two groups
+    # but could theoretically end up in three
+    # AGR, SILVER JACK, and WCR all are [5, 7] but have
+    # max storages that less than 630.9, which means they could
+    # be in group 3 as well.
+    # * I am replacing them here but this only works for this
+    # specific instance
+
+    op_mods = op_mods.apply(lambda x: "".join(map(str, x)))
+    op_mods = op_mods.replace({"57": "357"})
+    op_mods = op_mods.apply(lambda x: list(map(int, list(x))))
+
+    op_mod_ids = pd.DataFrame(op_mods.apply(op_codes.index))
+    op_mod_ids["Group Name"] = op_mod_ids["Group"].apply(op_names.get)
+
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    rename = {
+        "upper_col": "colorado",
+        "lower_col": "colorado",
+        "pnw": "columbia",
+        "tva": "tennessee",
+    }
+    rbasins = rbasins.replace(rename)
+    rbasins = rbasins.str.capitalize()
+    op_mod_ids["basin"] = rbasins
+
+    res_locs = pd.read_csv("../geo_data/reservoirs.csv")
+    res_locs = res_locs.set_index("site_name")
+    op_mod_ids["x"] = res_locs["long"]
+    op_mod_ids["y"] = res_locs["lat"]
+
+    with open("../geo_data/extents.json", "r") as f:
+        coords = json.load(f)
+    basin_color_map = sns.color_palette("Set2")
+    basin_info = {
+        "Columbia": {
+            "extents": coords["Columbia"],
+            "shp": (GIS_DIR / "columbia_shp" / "Shape" / "WBDHU2").as_posix(),
+            "color": basin_color_map[0],
+            "rivers": [
+                (
+                    GIS_DIR
+                    / "NHDPlus"
+                    / "trimmed_flowlines"
+                    / "NHDPlusPN_trimmed_flowlines_noz"
+                ).as_posix()
+            ],
+        },
+        "Missouri": {
+            "extents": coords["Missouri"],
+            "shp": (GIS_DIR / "missouri_shp" / "Shape" / "WBDHU2").as_posix(),
+            "color": basin_color_map[1],
+            "rivers": [
+                (
+                    GIS_DIR
+                    / "NHDPlus"
+                    / "trimmed_flowlines"
+                    / "NHDPlusMU_trimmed_flowlines_noz"
+                ).as_posix(),
+                (
+                    GIS_DIR
+                    / "NHDPlus"
+                    / "trimmed_flowlines"
+                    / "NHDPlusML_trimmed_flowlines_noz"
+                ).as_posix(),
+            ],
+        },
+        "Colorado": {
+            "extents": coords["Colorado"],
+            "shp": (GIS_DIR / "colorado_shp" / "Shape" / "WBDHU2").as_posix(),
+            "color": basin_color_map[2],
+            "rivers": [
+                (
+                    GIS_DIR
+                    / "NHDPlus"
+                    / "trimmed_flowlines"
+                    / "NHDPlusUC_trimmed_flowlines_noz"
+                ).as_posix(),
+                (
+                    GIS_DIR
+                    / "NHDPlus"
+                    / "trimmed_flowlines"
+                    / "NHDPlusLC_trimmed_flowlines_noz"
+                ).as_posix(),
+            ],
+        },
+        "Tennessee": {
+            "extents": coords["Tennessee"],
+            "shp": (GIS_DIR / "tennessee_shp" / "Shape" / "WBDHU2").as_posix(),
+            "color": basin_color_map[3],
+            "rivers": [
+                (
+                    GIS_DIR
+                    / "NHDPlus"
+                    / "trimmed_flowlines"
+                    / "NHDPlusTN_trimmed_flowlines_noz"
+                ).as_posix()
+            ],
+        },
+    }
+    fig, axes = char_split_map_single_var(
+        "Group",
+        op_mod_ids,
+        basin_info,
+        add_legend=True,
+        legend_labels=list(op_names.values()),
+    )
+    plt.show()
+
+
+def get_unique_paths():
+    df = pd.read_pickle(
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/train_paths.pickle"
+    )
+    df = df.apply(lambda x: "->".join(str(i) for i in x))
+    uniq_paths = list(df.unique())
+    uniq_paths.sort(key=len)
+
+    path_ids = df.apply(uniq_paths.index)
+    path_ids = path_ids.reset_index()
+
+    path_counts = path_ids.groupby(
+        [path_ids["site_name"], path_ids["datetime"].dt.month]
+    )["path"].value_counts()
+    path_counts.name = "count"
+    path_counts = path_counts.reset_index()
+
+    single_group_res = []
+    resers = path_counts["site_name"].unique()
+    for res in resers:
+        rgroups = path_counts[path_counts["site_name"] == res]["count"]
+        rgroups = rgroups.unique()
+        if len(rgroups) == 1:
+            single_group_res.append((res, rgroups[0]))
+    drop_res = [i[0] for i in single_group_res]
+
+    path_counts = path_counts[~path_counts["site_name"].isin(drop_res)]
+
+    plot_res = path_counts["site_name"].unique()
+    name_replacements = get_name_replacements()
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+
+    figManager = plt.get_current_fig_manager()
+    for res in plot_res:
+        basin = rbasins[res]
+        print_basin = " ".join(basin.split("_")).title()
+        print_res = name_replacements.get(res, res).title()
+
+        rdf = path_counts[path_counts["site_name"] == res]
+        rdf = rdf.pivot(index=["datetime"], columns=["path"], values=["count"])
+        rdf = rdf.divide(rdf.sum(axis=1).values, axis=0) * 100
+        rdf.columns = rdf.columns.droplevel(0)
+
+        fig, ax = plt.subplots(1, 1, figsize=(19, 10))
+
+        rdf.plot.bar(stacked=True, ax=ax)
+        ax.set_ylabel("Path Percent")
+        ax.set_xlabel("Month")
+        ax.set_title(f"{print_basin} - {print_res}")
+        ax.legend(loc="upper left", title=None)
+
+        print(f"Saving figure for {print_res}")
+        figManager.window.showMaximized()
+        plt.tight_layout()
+        plt.savefig(f"../figures/monthly_tree_breakdown_paths/{rbasins[res]}_{res}.png")
+        plt.close()
+
+        # plt.show()
+
+
+def plot_interannual_group_variability():
+    with open(
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
+        "rb",
+    ) as f:
+        results = pickle.load(f)
+
+    groups = results["groups"]
+    groups = groups.reset_index().rename(columns={0: "group"})
+
+    # remove reservoirs that do not have any group variability
+    gvar = groups.groupby("site_name")["group"].var()
+    var_res = gvar[gvar > 0].index
+
+    groups = groups.loc[groups["site_name"].isin(var_res), :]
+
+    groups["year"] = groups["datetime"].dt.year
+    groups["month"] = groups["datetime"].dt.month
+
+    # name groups 3, 4, 5, 6, 7
+    group_names = {
+        7: "High Inflow Storage Maintenance (7)",
+        3: "Low Steady Release (3)",
+        4: "Storage Build-Up (4)",
+        5: "Storage and Release Maintenance (5)",
+        6: "Release Trend Persistence (6)",
+    }
+
+    # counts = groups.groupby(["site_name", "year", "month"])["group"].value_counts()
+    counts = groups.groupby(["site_name", "year"])["group"].value_counts()
+    counts.name = "count"
+
+    # plot_res = counts.index.get_level_values("site_name").unique()
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    renames = get_name_replacements()
+    basin_name_map = {
+        "lower_col": "Lower Colorado",
+        "upper_col": "Upper Colorado",
+        "missouri": "Missouri",
+        "pnw": "Columbia",
+        "tva": "Tennessee",
+    }
+
+    idx = pd.IndexSlice
+    for res in var_res:
+        df = counts.loc[idx[res, :, :, :]]
+        basin = rbasins[res]
+        print_basin = basin_name_map[basin]
+        pname = renames.get(res, res).title()
+
+        df = (
+            df.reset_index()
+            .sort_values(by=["year", "group"])
+            .set_index(["year", "group"])["count"]
+        )
+        df = df.unstack()
+        # get the percentage of each group in each year
+        df = df.divide(df.sum(axis=1), axis=0) * 100
+        # drop the first and last year as they are incomplete
+        df = df.drop(df.index.min())
+        df = df.drop(df.index.max())
+        df = df.rename(columns=group_names)
+        fig = plt.figure(figsize=(19, 10))
+        ax = fig.add_subplot()
+        df.plot.bar(stacked=True, ax=ax)
+        ax.set_title(f"{pname} - {print_basin}")
+        ax.legend(loc="upper left", title="", prop={"size": 14})
+        ax.set_ylim(ax.get_ylim()[0], 115)
+        ax.set_ylabel("Group Percentage")
+        ax.set_xlabel("Year")
+        plt.subplots_adjust(
+            top=0.942, bottom=0.141, left=0.066, right=0.985, hspace=0.2, wspace=0.2
+        )
+        plt.savefig(
+            f"../figures/interannual_group_variability/{basin}_{res}.png", dpi=400
+        )
+
+        plt.close()
+
+
+def plot_interannual_seasonal_group_variability():
+    sns.set_context("paper")
+    with open(
+        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
+        "rb",
+    ) as f:
+        results = pickle.load(f)
+
+    groups = results["groups"]
+    groups = groups.reset_index().rename(columns={0: "group"})
+
+    # remove reservoirs that do not have any group variability
+    gvar = groups.groupby("site_name")["group"].var()
+    var_res = gvar[gvar > 0].index
+
+    groups = groups[groups["site_name"].isin(var_res)]
+
+    groups["year"] = groups["datetime"].dt.year
+    groups["month"] = groups["datetime"].dt.month
+
+    # name groups 3, 4, 5, 6, 7
+    group_names = {
+        7: "High Inflow Storage Maintenance (7)",
+        3: "Low Steady Release (3)",
+        4: "Storage Build-Up (4)",
+        5: "Storage and Release Maintenance (5)",
+        6: "Release Trend Persistence (6)",
+    }
+
+    counts = groups.groupby(["site_name", "year", "month"])["group"].value_counts()
+    # counts = groups.groupby(["site_name", "year"])["group"].value_counts()
+    counts.name = "count"
+
+    plot_res = counts.index.get_level_values("site_name").unique()
+
+    idx = pd.IndexSlice
+    # for res in plot_res:
+    res = "Hoover"
+
+    df = counts.loc[idx[res, :, :, :]]
+    index_names = df.index.names
+    df = df.reset_index().sort_values(by=index_names).set_index(index_names)["count"]
+    df = df.unstack()
+
+    # get the percentage of each group in each year
+    df = df.divide(df.sum(axis=1), axis=0) * 100
+
+    # drop the first and last year as they are incomplete
+    min_year = df.index.get_level_values("year").min()
+    max_year = df.index.get_level_values("year").max()
+    df = df[~df.index.get_level_values("year").isin([min_year, max_year])]
+    df = df.rename(columns=group_names)
+    II()
+    sys.exit()
+    # years = df.index.get_level_values("year").unique().sort_values()
+    # # years = years[:3]
+    # nyears = len(years)
+    # fig, axes = plt.subplots(1, nyears, sharey=True)
+
+    # xmin = 0.05
+    # xmax = 0.95
+    # ymin = 0.05
+    # ymax = 0.95
+    # xwidth = (xmax - xmin) / nyears
+    # for i, (year, ax) in enumerate(zip(years, axes)):
+    #     xstart = xwidth * i + xmin
+    #     xstop = xwidth * (i+1) + xmin
+    #     bbox = Bbox.from_extents(xstart, ymin, xstop, ymax)
+    #     ax.set_position(bbox)
+    #     pdf = df.loc[idx[year, :]]
+    #     # pdf.plot.barh(stacked=True, ax=ax)
+    #     pdf.T.plot(ax=ax)
+    #     ax.set_xticks([0])
+    #     ax.set_xticklabels([year], rotation=90)
+    #     handles, labels = ax.get_legend_handles_labels()
+    #     ax.get_legend().remove()
+
+    # plt.show()
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) > 0:
@@ -2682,7 +3201,7 @@ if __name__ == "__main__":
     # * FIGURE 6
     # * this is the attribute maps
     # * FIGURE 7
-    plot_data_assim_results(metric)
+    # plot_data_assim_results(metric)
     # plot_data_assim_scatter()
 
     # plot_top_characteristic_res(metric, 10)
@@ -2695,3 +3214,9 @@ if __name__ == "__main__":
     # plot_assim_metric_scatter()
     # plot_basin_performance(metric)
     # plot_assim_lines()
+
+    get_unique_trees()
+    # get_unique_paths()
+    # get_operating_groups()
+    # plot_interannual_group_variability()
+    # plot_interannual_seasonal_group_variability()
