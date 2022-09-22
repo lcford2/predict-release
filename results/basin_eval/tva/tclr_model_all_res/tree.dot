@@ -1,0 +1,175 @@
+digraph tree {
+node [shape=rectangle, style="filled, rounded", color="black", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+	"0" [label="mse = 0.213
+samples = 100.0%
+inflow > -0.019", fillcolor="#fefbf9"]
+	"1" [label="mse = 0.136
+samples = 62.6%
+inflow_roll7 > 0.339", fillcolor="#fefdfc"]
+	"6" [label="mse = 0.317
+samples = 37.4%
+release_pre > -0.387", fillcolor="#fdf8f4"]
+	"2" [label="mse = 0.129
+samples = 60.7%
+sto_diff > -0.009", fillcolor="#fefdfc"]
+	"5" [label="mse = 0.291
+samples = 1.9%
+        sto_diff: 0.078
+storage_x_inflow: 0.039
+     release_pre: 0.408
+   release_roll7: 0.097
+          inflow: 0.863
+    inflow_roll7: 0.015
+             Jan: 0.014
+            Feb: -0.070
+            Mar: -0.093
+            Apr: -0.180
+            May: -0.122
+             Jun: 0.020
+             Jul: 0.032
+             Aug: 0.072
+             Sep: 0.172
+             Oct: 0.138
+             Nov: 0.115
+             Dec: 0.114", fillcolor="#fdf8f5"]
+	"10" [label="mse = 0.279
+samples = 31.0%
+inflow > 6.515", fillcolor="#fdf9f5"]
+	"7" [label="mse = 0.397
+samples = 6.4%
+sto_diff > 0.131", fillcolor="#fdf5f0"]
+	"4" [label="mse = 0.087
+samples = 28.2%
+        sto_diff: 0.079
+storage_x_inflow: -0.004
+     release_pre: 0.364
+   release_roll7: 0.383
+          inflow: 0.580
+   inflow_roll7: -0.321
+             Jan: 0.008
+            Feb: -0.019
+            Mar: -0.045
+            Apr: -0.056
+            May: -0.013
+             Jun: 0.059
+             Jul: 0.077
+             Aug: 0.073
+             Sep: 0.049
+             Oct: 0.055
+             Nov: 0.032
+             Dec: 0.031", fillcolor="#ffffff"]
+	"3" [label="mse = 0.164
+samples = 32.5%
+        sto_diff: 0.181
+storage_x_inflow: -0.049
+     release_pre: 0.434
+   release_roll7: 0.363
+          inflow: 0.615
+   inflow_roll7: -0.404
+            Jan: -0.095
+            Feb: -0.110
+            Mar: -0.108
+            Apr: -0.073
+            May: -0.058
+            Jun: -0.051
+            Jul: -0.013
+             Aug: 0.035
+            Sep: -0.001
+             Oct: 0.005
+            Nov: -0.024
+            Dec: -0.057", fillcolor="#fefcfb"]
+	"11" [label="mse = 0.252
+samples = 30.9%
+        sto_diff: 0.175
+storage_x_inflow: 0.073
+     release_pre: 0.577
+   release_roll7: 0.077
+          inflow: 0.228
+    inflow_roll7: 0.037
+             Jan: 0.035
+            Feb: -0.003
+            Mar: -0.053
+            Apr: -0.090
+            May: -0.020
+             Jun: 0.012
+             Jul: 0.009
+             Aug: 0.026
+             Sep: 0.052
+             Oct: 0.043
+             Nov: 0.056
+             Dec: 0.099", fillcolor="#fdf9f7"]
+	"12" [label="mse = 4.264
+samples = 0.1%
+       sto_diff: -0.036
+storage_x_inflow: 0.318
+     release_pre: 1.093
+  release_roll7: -0.597
+         inflow: -0.314
+   inflow_roll7: -0.253
+             Jan: 2.340
+             Feb: 2.077
+             Mar: 2.816
+             Apr: 1.538
+             May: 2.429
+             Jun: 0.145
+             Jul: 0.908
+             Aug: 0.545
+             Sep: 1.980
+             Oct: 5.695
+             Nov: 1.556
+             Dec: 2.778", fillcolor="#e58139"]
+	"8" [label="mse = 0.327
+samples = 4.6%
+       sto_diff: -0.423
+storage_x_inflow: 0.112
+     release_pre: 0.557
+   release_roll7: 0.307
+         inflow: -0.090
+   inflow_roll7: -0.033
+             Jan: 0.270
+             Feb: 0.132
+             Mar: 0.040
+            Apr: -0.009
+             May: 0.060
+             Jun: 0.191
+             Jul: 0.226
+             Aug: 0.357
+             Sep: 0.273
+             Oct: 0.443
+             Nov: 0.279
+             Dec: 0.276", fillcolor="#fdf7f3"]
+	"9" [label="mse = 0.486
+samples = 1.8%
+        sto_diff: 0.544
+storage_x_inflow: 0.311
+     release_pre: 0.537
+   release_roll7: 0.440
+         inflow: -0.211
+   inflow_roll7: -0.082
+             Jan: 0.565
+             Feb: 0.303
+             Mar: 0.185
+             Apr: 0.078
+             May: 0.089
+             Jun: 0.311
+             Jul: 0.511
+             Aug: 0.403
+             Sep: 0.426
+             Oct: 0.412
+             Nov: 0.444
+             Dec: 0.553", fillcolor="#fcf2ec"]
+
+	"0" -> "1"
+	"0" -> "6"
+	"1" -> "2"
+	"1" -> "5"
+	"6" -> "7"
+	"6" -> "10"
+	"2" -> "3"
+	"2" -> "4"
+	"10" -> "11"
+	"10" -> "12"
+	"7" -> "8"
+	"7" -> "9"
+}

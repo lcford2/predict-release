@@ -1,0 +1,33 @@
+digraph Tree {
+node [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+0 [label=<Release_pre &le; 8.681<br/>mse = 36.679<br/>samples = 100.0%<br/>value = 4.396>, fillcolor="#fcf2eb"] ;
+1 [label=<Release_roll7 &le; 3.324<br/>mse = 8.325<br/>samples = 83.2%<br/>value = 2.364>, fillcolor="#fefaf6"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label=<Release_pre &le; 1.798<br/>mse = 1.91<br/>samples = 61.8%<br/>value = 1.232>, fillcolor="#fffefd"] ;
+1 -> 2 ;
+3 [label=<mse = 1.01<br/>samples = 47.9%<br/>value = 0.848>, fillcolor="#ffffff"] ;
+2 -> 3 ;
+4 [label=<mse = 2.741<br/>samples = 13.9%<br/>value = 2.563>, fillcolor="#fef9f5"] ;
+2 -> 4 ;
+5 [label=<Release_roll7 &le; 6.378<br/>mse = 12.489<br/>samples = 21.4%<br/>value = 5.623>, fillcolor="#fbeee4"] ;
+1 -> 5 ;
+6 [label=<mse = 6.195<br/>samples = 13.5%<br/>value = 4.694>, fillcolor="#fcf1e9"] ;
+5 -> 6 ;
+7 [label=<mse = 19.218<br/>samples = 8.0%<br/>value = 7.199>, fillcolor="#fae8db"] ;
+5 -> 7 ;
+8 [label=<Release_pre &le; 21.957<br/>mse = 55.352<br/>samples = 16.8%<br/>value = 14.464>, fillcolor="#f5ceb2"] ;
+0 -> 8 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+9 [label=<Release_pre &le; 14.454<br/>mse = 24.299<br/>samples = 14.5%<br/>value = 12.558>, fillcolor="#f6d5bd"] ;
+8 -> 9 ;
+10 [label=<mse = 15.603<br/>samples = 9.3%<br/>value = 10.759>, fillcolor="#f8dbc7"] ;
+9 -> 10 ;
+11 [label=<mse = 23.785<br/>samples = 5.2%<br/>value = 15.755>, fillcolor="#f4caab"] ;
+9 -> 11 ;
+12 [label=<Release_pre &le; 31.768<br/>mse = 82.518<br/>samples = 2.3%<br/>value = 26.613>, fillcolor="#eca36e"] ;
+8 -> 12 ;
+13 [label=<mse = 51.333<br/>samples = 1.7%<br/>value = 23.72>, fillcolor="#eead7e"] ;
+12 -> 13 ;
+14 [label=<mse = 68.548<br/>samples = 0.5%<br/>value = 35.99>, fillcolor="#e58139"] ;
+12 -> 14 ;
+}

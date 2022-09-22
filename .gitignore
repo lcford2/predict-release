@@ -1,3 +1,58 @@
+# ignore basic shell scripts and notebook data
 */**/*.sh
-data_from_dol/hess_formatted_data
+*/**/.ipynb_checkpoints
+*/**/.ipynb_checkpoints/*
 **/__pycache__/**
+
+# ignore large data files
+data_from_dol/hess_formatted_data
+upper_colorado_data/hydrodata_data/upper_col_data.pickle
+missouri_data/acoe_data/pdf_data
+missouri_data/acoe_data/pdf_data/*
+missouri_data/acoe_data/pdf_to_csv
+missouri_data/acoe_data/pdf_to_csv/*
+missouri_data/acoe_data/pdf_to_csv_fixed
+missouri_data/acoe_data/pdf_to_csv_fixed/*
+results/agu_2021_runs/simple_model_spatial_validation_all_res_lvoneout/results.pickle
+
+# ignore binaries and libraries
+python_scripts/graps/bin/*
+python_scripts/graps/json-fortran
+python_scripts/graps/json-fortran/*
+c_res_simul/lib/*
+c_res_simul/obj/*
+c_res_simul/queue/libqueue.so
+c_res_simul/queue/queue.o
+
+# hpc specific files
+bwvenv/
+bwvenv/*
+sry-env/
+sry-env/*
+python_scripts/sim_param_fit.*
+
+# various config files
+python_scripts/sry_python.code-workspace
+plotly_config.json
+
+# do not ignore these files
+!missouri_data/*.sh
+!lower_col_data/get_raw_data_files.sh
+!python_scripts/run_tclr_model.sh
+
+# ignore qsub output
+python_scripts/qsub_output
+
+# large result files
+results/basin_eval/all
+results/**/model.pickle
+
+# hpc output
+python_scripts/slurm_out
+**/*remora*/*
+
+# ignore nohup output
+**/nohup.out
+
+# vs code log files
+.vscode/*.log

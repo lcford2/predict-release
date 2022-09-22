@@ -1,0 +1,131 @@
+#+TITLE: Missouri River Basin Master Manual Notes
+#+DATE: 08/31/22
+
+* Fort Peck
+** Primary water functions:
+- capture mountain and plains snowmelt and localized rainfall from drainage area above Fort Peck Dam
+- Release that water to meet systems authorized purposes while reduceing flood damages in the reach between Fort Peck and Garrison Dam
+** River Ice considerations
+- When ice is or may occuring between Fort Peck and the mouth of the Yellowstone River (just above Garrison Dam) mean daily releases are limited to a maximum of 10,000 CFS unless flood control is required. (60% of maximum release recorded, 67% of max turbine release)
+* Garrison Dam
+** Primary water functions:
+- Capture water from drainage area between Fort Peck and Garrison
+- Mitigate flood damages below Garrison to Oahe, in particular the Bismarck area
+** River Ice Considerations
+- Normally not scheduled over 20,000 cfs in december to prevent a 13 foot stage at Bismarck
+- Can release up to 27,000 cfs a month after initial freeze
+- Powerplant winter capacity is 35,000 cfs so these are obvious reductions and due to aggradation at Oahe which reduces channel capacity
+* Oahe Dam
+** Primary water functions:
+- Daily release vary a lot to meet hydroelectric demand
+- Long term release are designed to backup navigation release from Fort Randall and Gavins Point
+- As big bend has relatively low storage, releases from Oahe are usually passed through Big Bend without much modulation
+** River Ice Considerations
+- Normal powerplant peaking maintains 7 mile reach between Oahe and Lake Sharpe in an ice-free condition during nearly all circumstances
+- No winter ice restrictions
+* Fort Randall
+** Primary water functions:
+- Provide a location to store water for increased winter energy by drawing down in the fall and a winter refilling that is unique to Fort Randall
+** River Ice Considerations
+- No real ice restrictions
+- Still limited to 15,000 CFS due to ice below Gavins Point and Gavins Point limited storage capacity
+- 15,000 also represents full winter power service
+* Gavins Point
+** Primary water functions:
+- Re-regulating dam to level out the release fluctuations from the upper system dams
+- Very little flood control (500,000 acre feet of storage)
+- 2 foot operating band
+- Releases here must be backed up with release changes from upstream reservoirs
+** River Ice Considerations
+- Downstream regions are prone to ice build up and ice related flooding
+- As there is long travel time along the downstream reach, there is limited ability to modify releases to prevent ice buildup
+- Open water stages at 30,000 CFS are essentially the same as previous 20,000 CFS due to degradation of missouri river
+* System Operation Techniques
+- Check amount of system storage on March 15th to determine if a navigation season will be provided that year and what level of service to provide
+- Downstream target flows at four designated locations are used to guide system releases
+- System storage is checked again on July 1st to determine service level for rest of Nav season and the ending date for the nav season
+- System storage is checked again on September 15th to determine winter system releases
+- If the system water supply is above normal or the major flood control actions are underway the above schedule can change
+  - Basically, the service level can be changed as often as required based on system storage and water supply in order to minimize flood risk and damages
+- In high runoff years, the navigation season is extended 10 days to facilitate evacuation of flood control storage
+- Nav. Service level is defined as "Full" or "Minimum"
+  - Full is provided in near-normal runoff years to make room for flood control storage and to serve navigation to the full authorized 9-foot downstream channel
+  - Minimum service is for drought times to provide 8 foot downstream channel while preserving water in case of extended drought.
+- There are seasonal decisions to optimize the benefits of fish spawning, endagered species nesting, and releases to prevent river ice formation
+* System Regulation Zones
+** Exclusive Flood Control Zone
+- Only purpose that requires empty space in the reservoirs
+- This space is used only to store extreme or unpredicatable flood flows
+- Evacuated as rapidly as downstream conditions permit (IMPORTANT)
+- Flood control objective is completed using storage at each of the projects and level of release at Gavins Point
+- Total EFC storage is 4.7 MAF (73.4 MAF to 68.7 MAF) (6 % of storage)
+  - Fort Peck, Garrison, Oahe, and Fort Randall make up 98% of this storage
+** Annual Flood Control and Multiple Use Zone
+- Upper normal operating zone
+- 11.6 MAF (68.7 to 57.1 MAF) (16 percent)
+- Evacuated to 57.1 MAF by March 1st to provide storage for next flood season
+- Water impounded in this zone to achieve annual flood control objectives and other purposes
+- Water released from this zone to maximize release based objectives
+- Releases from here are usually in the summer and fall due to river ice formation in the winter and potential for flooding limit release from december through march
+** Carryover Multiple Use Zone
+- Lower normal operating zone
+- 39 MAF (57.1 to 18.1 MAF) (53%)
+- Referred to as bank account as it provides assistance to the basin during critical dry periods
+- Water in this zone at Fort Peck, Garrison, and Oahe will maintain downstream flows through a succession of well-below-normal runoff years
+- Used to meet project purposes in the event that storage in the annual flood control zone is exhausted
+- This zone at fort randall is evacuated each fall to provide space for upstream winter power releases and is completely refilled during the winter months
+** Permanent Pool Zone
+- Bottom inactive zone
+- minimum power head and future sediment storage capacity
+- Minimum pool for recreation, fish and wildlife, and water access
+- Usually no drawdown from this pool except for unusual conditions
+- Lowest 25% of system storage
+* System Service Level
+- The service level approximates the water volume necessary to achieve a normal 8-month navigation season with average downstream tributary flow conditions
+- Full service is defined as 35,000 CFS
+- Minimum service is 29,000 CFS
+- Four target locations below Gavins Point to achieve regulation objectives.
+  - Sioux City, 4000 below service level
+  - Omaha, 4000 below service level
+  - Nebraska City, 2000 more than service level
+  - Kansas City, 6000 more than service level
+- Water Targest for Service Level definition
+| Date       | Service Level (cfs) | System Storage Level (MAF) |
+| March 15th | 35,000 cfs (full)   | >= 54.5                    |
+| March 15th | 29,000 cfs (min)    | 31 to 49                   |
+| March 15th | No service          | <= 31.0                    |
+| July 1st   | 35,000 (full)       | >= 57                      |
+| July 1st   | 29,000 (min)        | <= 50.5                    |
+ - If storage is less than 31 MAF there is likely a national drought emergency
+ - If no navigation season will occur twice consecutively, approval from the Secretary of the Army is required
+- Navigation Season length
+| Date       | System Storage (MAF) | Closure Data at mouth of Missouri River |
+| March 15th | <= 31.0              | No Season                               |
+| July 1st   | >= 51.5              | December 1st (8 month)                  |
+| July 1st   | 41.0 to 46.8         | November 1st (7 month)                  |
+| July 1st   | <= 36.5              | October 1st (6 month)                   |
+* System Regulation for Flood Control
+** Objectives
+- Prevent flows originating above or within system from contributing to damaging flows in the downstream reaches of the Missouri River
+- Integrated operation for this goal
+** Methods
+- During any major flood event, all available storage within the System will be used as much as possible for flood control
+- Release deviations in the winter from Fort Peck and Garrison may occur due to downstram flow conditions and river ice
+** Flood Control Evacuation Priority
+1. Surcharge Storage from all the System reservoirs
+2. Exclusive Flood Control Storage Zones in three lower reservoirs (Big Bend, Fort Randall, Gavins Point)
+3. Exclusive Flood Control Storage Zones in the three upper larger reservoirs (Fort Peck, Garrison, Oahe)
+4. Annual Flood Control and Multiple Use Zone in Gavins Point and in Fort Randall above elevation 1360.0 feet msl. Evacuation of Fort Randall storage below elevation 1360.0 msl is greatly influenced by power loads and the required power generation at Oahe and Big Bend
+5. Annual Flood Control and Multiple Use Zones in the three upper projects (Fort Peck, Garrison, Oahe). Evacuation of at least the upper portions of the Annual Flood Control and Multiple Use zones in the tree upper reservoirs should be conducted in sucha manner as to maintain a balance of available allocated space within all three of the large reservoirs
+6. Evacuation of the Annual Flood Control and Multiple Use Zone storage space to assure complete evacuation of this space prior to the beginning of the next flood runoff season while maximizing the beneficial conservation use of the stored water.
+* Scheduling of System Releases
+- During the winter, multipurpose release are restricted due to the possibility of ice formationand loss of channel capacity
+- During open-water season, flows are based on maintaining specified target flows at downstream control points
+- During the winter, release reductions may last a week or two (important for us with rolling release variables)
+- It may also be pertinent to increase release in the winter to prevent ice buildup or to return the river to normal conditions quickly.
+- Maximum Changes in Daily Releases
+| Project      | Normal Increase cfs | Normal Decrease cfs | FC Increase cfs | FC Decrease cfs |
+| Fort Peck    | 6,000               | 3,000               | 9,000           | 12,000          |
+| Garrison     | 6,000               | 3,000               | 9,000           | 12,000          |
+| Fort Randall | 10,000              | 6,000               | 12,000          | 17,000          |
+| Gavins Point | 8,000               | 4,000               | 10,000          | 15,000          |

@@ -27,7 +27,6 @@ edge [fontname=helvetica] ;
 12 [label=<Release_pre &le; 2.782<br/>mse = 1.407<br/>samples = 5.4%<br/>value = 2.172>, fillcolor="#eb9f68"] ;
 8 -> 12 ;
 13 [label=<mse = 0.826<br/>samples = 3.9%<br/>value = 1.812>, fillcolor="#edaa79"] ;
-12 -> 13 ;
-14 [label=<mse = 1.692<br/>samples = 1.5%<br/>value = 3.124>, fillcolor="#e58139"] ;
+12 -> 13 ;4 [label=<mse = 1.692<br/>samples = 1.5%<br/>value = 3.124>, fillcolor="#e58139"] ;
 12 -> 14 ;
 }

@@ -1,0 +1,101 @@
+#+TITLE: Notes for Sankar Meeting
+#+DATE: 11-22-2021
+
+
+* Group Parameters:
+** General Notes:
+*** Previous release is most important variable for each group
+*** The parameter sets add up to be essentially equal to 1 for each group
+*** Current storage and rolling storage seem to be very related here as they where for high residence time reservoirs in TVA
+** Fish and Wildlife Pond:
+*** Inflow and rolling inflow are similar but opposite signs
+**** So if current inflow is greater than the past weeks mean inflow, release today will be pushed upward.
+*** Similar statements can be made for current storage and rolling storage
+**** Here, release is pushed upward when past weeks mean storage is greater than current storage.
+**** This is typically indicative of reservoir drawdown.
+**** The difference is small (2/1000ths) so probably not that big of a deal.
+** Flood Control:
+*** Previous release and rolling release dominate this parameter set
+*** Storage and Inflow interaction is important and positive
+**** When storage and inflow are both high or low, release is also pushed in that direction.
+**** This makes sense for a flood control reservoir.
+** Hydroelectric:
+*** Similar deal to flood control but less reliance on storage inflow interaction.
+*** Opposite signs for inflow terms indicating a similar pattern as the fish and wildlife ponds
+*** This is the group all Lower Colorado Reservoirs are identified as in the NID
+** Irrigation:
+*** One of the largest differences between inflow terms here
+**** Rolling is negative and current is positive, so the pattern is similar to that seen in fish and wildlife ponds, but it is more exagerated.
+**** Meaning release is more impacted by the difference in current inflow and past week
+**** The negative term is also larger than the postive term here which indicates that given constant inflow over a week, release will be pulled downwards
+*** Large dependency on previous release here as well.
+*** There is a fairly large dependence on the storage inflow interaction here as well and the fact that it is positive is interesting.
+**** I would assume irrigation reservoirs to have high release when storage is high and inflow is low and vice versa to mitigate water availability fluctuations
+** Water Supply:
+*** Again previous release is most important but rolling release has no real impact.
+*** Inflow term signs are flipped again here with the positive being the larger magnitude.
+*** No dependence on storage, which is interesting.
+* Tree Setup:
+** Use regression tree to define groups
+*** Two setups:
+1. Where the dependent variable (release) is standardized
+   1. This one basically is useless because the we are trying to fit the mean and the mean is zero.
+   2. All the splits end up being the same value so there is no error reduction, thus no information gained by splitting.
+   3. Therefore, we are going to ignore this
+2. Where the dependent variable (release) is not standardized
+** X variables are all meta data:
+*** Primary purpose (as dummies)
+*** Multipurpose (1 if num purposes > 1 else 0)
+*** Residence time
+*** Maximum storage (1000 acre-feet)
+*** Mean daily inflow (1000 acre-feet / day) [long term]
+**** This one actually is not included in the results we will discuss
+**** Basically, long term daily mean inflow should be nearly the same as long term daily mean release
+**** Therefore, providing this information results in the tree splitting to trim of really high values instead of giving good groups
+** Fit with max depths of 3 to 6
+** Effectively, we are fitting to the mean daily release of each reservoir in this case.
+*** I think there are probably better/other metrics that should be considered such as variance, skew, autocorrelation, seasonality,
+* Non-standardized results:
+** Depth 3:
+*** First split is on max storage (indicating that storage can help us determine the mean release of a reservoir)
+*** Check for flood control in smaller reservoirs and then if it is not a flood control, split again on residence time
+**** So big storage, non-flood control reservoirs with high residence times have large daily mean releases (makes sense)
+** Depth 4:
+*** This is about as deep as I feel is reasonable because we are getting to a point where we split to alot of single reservoirs.
+*** Max storage and residence time are again the most important splitting variables
+*** There are two primary purpose splits, one on flood control and another on irrigation.
+*** It looks like when the purposes are used to split, there is a single reservoir in that group that can be separated by splitting there
+**** Both purposes splits give a final group that only contains one reservor that is of the group the split was based on.
+** Depth 5:
+*** Here we end up with 13 groups that only contain one reservoir, which is really not ideal.
+*** What we do learn is that whether a reservoir is multipurpose or not finally starts to matter here
+*** Max storage and residence time still dominate the splits though.
+** Depth 6:
+*** Very similar issues here from the previous just excacerbated.
+*** The three new splits are all max storage based and they effectively give use single res groups.
+** Summary:
+*** In summary, it looks like maximum storage and residence time help us split groups if all we care about is mean release.
+*** I think it would be beneficial to perform a sort of k-means clustering where variables like release mean, variance, and skewness are considered along with residence time and max storage to see if there are any clusters that can be defined by these variables.
+**** Maybe instead of using mean and variance, I use the coefficient of variation (standard deviation divided by mean) to get a metric that is in similar space for every reservoir.
+* Standardized Results:
+** Depth 3:
+*** First split in all of these is for water supply (Primary Purpose). This is only for one reservoir though so that split makes sense.
+*** After that the maximum storage is the most important variables considered.
+*** However, we still end up with a group that contains 70% of all reservoirs
+** Depth 4:
+*** The first bit here is exactly the same as the previous tree
+*** The additional 4 splits are all on maximum storage
+*** Largest group here is 47%
+** Depth 5:
+*** Same deal here where most of the tree is the exact same as the previous one
+*** An important difference is in the 3rd level where the bottom max storage split is now based on hydroelectric
+*** The additional 3 splits are max storage and hydroelectric based
+*** Largest group here is 28%
+** Depth 6:
+*** Swap out a 4th level purpose split for another max storage split
+*** First time Multipurpose (binary) and residence time have made their way into the stdzed trees
+*** Largest group is 20.5%
+** Summary:
+*** Maximum storage accounts for most of the splits in every tree.
+*** Have to consider a fairly deep tree before residence time or multipurpose become important enough to split on
+*** Basically what this says is that you can pretty reliabily use the maximum storage of a reservoir to determine the mean release

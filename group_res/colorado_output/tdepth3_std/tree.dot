@@ -1,0 +1,22 @@
+digraph Tree {
+node [shape=box, style="filled, rounded", color="black", fontname="helvetica"] ;
+edge [fontname="helvetica"] ;
+rankdir=LR ;
+0 [label="Water Supply <= 0.5\nsquared_error = 1.0\nsamples = 100.0%\nvalue = -0.0", fillcolor="#f2c29f"] ;
+1 [label="max_sto <= 17.517\nsquared_error = 1.006\nsamples = 98.4%\nvalue = 0.005", fillcolor="#f2c19d"] ;
+0 -> 1 [labeldistance=2.5, labelangle=-45, headlabel="True"] ;
+2 [label="max_sto <= 11.049\nsquared_error = 1.175\nsamples = 5.1%\nvalue = 0.139", fillcolor="#eda877"] ;
+1 -> 2 ;
+3 [label="squared_error = 1.035\nsamples = 2.9%\nvalue = -0.026", fillcolor="#f3c7a6"] ;
+2 -> 3 ;
+4 [label="squared_error = 1.276\nsamples = 2.2%\nvalue = 0.351", fillcolor="#e58139"] ;
+2 -> 4 ;
+5 [label="inflow <= 0.1\nsquared_error = 0.995\nsamples = 93.3%\nvalue = -0.002", fillcolor="#f2c2a0"] ;
+1 -> 5 ;
+6 [label="squared_error = 0.851\nsamples = 14.2%\nvalue = -0.051", fillcolor="#f4cbae"] ;
+5 -> 6 ;
+7 [label="squared_error = 1.021\nsamples = 79.1%\nvalue = 0.007", fillcolor="#f2c19d"] ;
+5 -> 7 ;
+8 [label="squared_error = 0.523\nsamples = 1.6%\nvalue = -0.331", fillcolor="#ffffff"] ;
+0 -> 8 [labeldistance=2.5, labelangle=45, headlabel="False"] ;
+}

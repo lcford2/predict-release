@@ -1,0 +1,2830 @@
+{
+    "11 MILE WASTEWAY - DIVERSION FROM WEST MAIN CANAL": [
+        [
+            "4928",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "21 MILE WASTEWAY - DIVERSION FROM WEST MAIN CANAL": [
+        [
+            "4930",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "242 LATERAL NEAR SOUTHERN INTERNATIONAL BOUNDARY": [
+        [
+            "4932",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "ALAMO RESERVOIR": [
+        [
+            "2188",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "2189",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "2190",
+            "RESERVOIR WS ELEVATION  EOP PRIMARY READING IN FEET"
+        ]
+    ],
+    "ALL AMERICAN CANAL - COACHELLA @ 1117": [
+        [
+            "3407",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ALL AMERICAN CANAL - IID @ 1117": [
+        [
+            "3408",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "ALL AMERICAN CANAL BELOW PILOT KNOB WW": [
+        [
+            "3357",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "ALL-AMERICAN CANAL NEAR IMPERIAL DAM": [
+        [
+            "2192",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "ARAZ DRAIN NO. 8B NEAR WINTERHAVEN": [
+        [
+            "3358",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "ARIZONA TOTALS": [
+        [
+            "2950",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "AZ REACH DAVIS DAM TO PARKER DAM": [
+        [
+            "4804",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "AZ REACH GLEN TO GRAND CANYON": [
+        [
+            "4801",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "AZ REACH GRAND CANYON TO HOOVER DAM": [
+        [
+            "4802",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "AZ REACH HOOVER DAM TO DAVIS DAM": [
+        [
+            "4803",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "AZ REACH IMPERIAL DAM TO NIB": [
+        [
+            "4806",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "AZ REACH PARKER DAM TO IMPERIAL DAM": [
+        [
+            "4805",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "BASIC MANAGEMENT INC.": [
+        [
+            "3290",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "BEAL LAKE - MSCP": [
+        [
+            "20250",
+            "AVERAGE DIFFERENCE IN HEADWATER AND TAILWATER ELEVATIONS IN FEET"
+        ],
+        [
+            "20248",
+            "AVERAGE WATER TEMPERATURE IN RESERVOIR IN F"
+        ],
+        [
+            "20246",
+            "AVERAGE TAILRACE WATER TEMPERATURE IN F"
+        ],
+        [
+            "20249",
+            "AVERAGE WATER TEMPERATURE IN RESERVOIR  SECONDARY READING IN F"
+        ],
+        [
+            "20242",
+            "RESERVOIR WS ELEVATION  EOP PRIMARY READING IN FEET"
+        ],
+        [
+            "20244",
+            "AVERAGE TAILRACE ELEVATION IN FEET"
+        ]
+    ],
+    "BEAL LAKE WEST": [
+        [
+            "21074",
+            "AVERAGE WATER TEMPERATURE IN RESERVOIR IN F"
+        ],
+        [
+            "21072",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "BIG BEND WATER DISTRICT": [
+        [
+            "3021",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "BILL WILLIAMS RIVER AT LAKE HAVASU": [
+        [
+            "2504",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "2503",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BILL WILLIAMS RIVER BELOW ALAMO DAM": [
+        [
+            "2759",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BLYTHE WEATHER STATION": [
+        [
+            "20791",
+            "AVERAGE DEWPOINT TEMPERATURE IN F"
+        ],
+        [
+            "18982",
+            "AVERAGE WIND SPEED IN MI/HOUR"
+        ],
+        [
+            "18984",
+            "AVERAGE WIND DIRECTION IN DEG"
+        ],
+        [
+            "18990",
+            "AVERAGE RELATIVE HUMIDITY IN DECIMAL"
+        ],
+        [
+            "18988",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ]
+    ],
+    "BROCK RESERVOIR INLET CANAL (USGS)": [
+        [
+            "23159",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BROCK RESERVOIR OUTLET CANAL (USGS)": [
+        [
+            "23158",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "BRUCE CHURCH WASTEWAY NEAR YUMA": [
+        [
+            "3420",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "BULLHEAD CITY": [
+        [
+            "2902",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "CA REACH DAVIS DAM TO PARKER DAM": [
+        [
+            "4810",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "CA REACH IMPERIAL DAM TO NIB": [
+        [
+            "4812",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "CA REACH PARKER DAM TO IMPERIAL DAM": [
+        [
+            "4811",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "CALIFORNIA TOTALS": [
+        [
+            "2999",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "CAMILLE  ALEC JR.": [
+        [
+            "3220",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "CAP CANAL EXPORT": [
+        [
+            "3410",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "3413",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "CAP MAIN CANAL  (CAP SOURCE)": [
+        [
+            "2065",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "2069",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "CAP MAIN CANAL (USGS SOURCE)": [
+        [
+            "3359",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "CENTRAL ARIZONA PROJECT": [
+        [
+            "3172",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "CITY OF BOULDER CITY AT HOOVER DAM": [
+        [
+            "3297",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "CITY OF HENDERSON - SADDLE ISLAND": [
+        [
+            "3293",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "CITY OF YUMA": [
+        [
+            "2929",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ],
+        [
+            "21527",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "CITY OF YUMA INFLOW TO SEWAGE TREATMENT PLANT": [
+        [
+            "4837",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "COACHELLA VALLEY WATER DISTRICT": [
+        [
+            "2996",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ],
+        [
+            "10066",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "COCOPAH INDIAN RESERVATION": [
+        [
+            "2944",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "COLORADO RIVER ABOVE DIAMOND CREEK NEAR PEACH SPRING  AZ": [
+        [
+            "14237",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER ABOVE IMPERIAL DAM": [
+        [
+            "4550",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER AT CIBOLA GAGE": [
+        [
+            "8872",
+            "AVERAGE WATER TEMPERATURE IN RIVER IN F"
+        ],
+        [
+            "2013",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2049",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "COLORADO RIVER AT LEES FERRY": [
+        [
+            "2492",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "2491",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER AT NORTHERN INTERNATIONAL BOUNDARY": [
+        [
+            "2807",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "3365",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER AT PARKER GAGE": [
+        [
+            "21187",
+            "AVERAGE WATER TEMPERATURE IN RIVER IN F"
+        ],
+        [
+            "2055",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "2119",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER AT RIVER SECTION 41": [
+        [
+            "4916",
+            "AVERAGE WATER TEMPERATURE IN RIVER IN F"
+        ],
+        [
+            "2337",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER AT TAYLOR FERRY": [
+        [
+            "8871",
+            "AVERAGE WATER TEMPERATURE IN RIVER IN F"
+        ],
+        [
+            "2020",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2057",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "COLORADO RIVER AT WATER WHEEL": [
+        [
+            "8873",
+            "AVERAGE WATER TEMPERATURE IN RIVER IN F"
+        ],
+        [
+            "2021",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2058",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "COLORADO RIVER BELOW BIG BEND": [
+        [
+            "8870",
+            "AVERAGE WATER TEMPERATURE IN RIVER IN F"
+        ],
+        [
+            "2336",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2359",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "COLORADO RIVER BELOW CIBOLA VALLEY AZ": [
+        [
+            "19320",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER BELOW DAVIS DAM": [
+        [
+            "13972",
+            "AVERAGE WATER TEMPERATURE IN RIVER IN F"
+        ],
+        [
+            "2060",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "4918",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER BELOW HOOVER DAM (USBR)": [
+        [
+            "2340",
+            "AVERAGE TAILRACE WATER TEMPERATURE IN F"
+        ]
+    ],
+    "COLORADO RIVER BELOW HOOVER DAM (USGS)": [
+        [
+            "14445",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "4632",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER BELOW IMPERIAL DAM": [
+        [
+            "2490",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER BELOW INTERSTATE BRIDGE": [
+        [
+            "20182",
+            "AVERAGE WATER TEMPERATURE IN RIVER IN F"
+        ],
+        [
+            "20179",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20181",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "COLORADO RIVER BELOW LAGUNA DAM": [
+        [
+            "4845",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER BELOW MCINTYRE PARK": [
+        [
+            "20192",
+            "AVERAGE WATER TEMPERATURE IN RIVER IN F"
+        ],
+        [
+            "20189",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20191",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "COLORADO RIVER BELOW NEEDLES BRIDGE": [
+        [
+            "8874",
+            "AVERAGE WATER TEMPERATURE IN RIVER IN F"
+        ],
+        [
+            "7777",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "7776",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "COLORADO RIVER BELOW OXBOW BRIDGE": [
+        [
+            "20187",
+            "AVERAGE WATER TEMPERATURE IN RIVER IN F"
+        ],
+        [
+            "20184",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20186",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "COLORADO RIVER BELOW PALO VERDE DAM": [
+        [
+            "2056",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "2019",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER BELOW PALO VERDE DAM (USGS)": [
+        [
+            "8025",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "23517",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER BELOW PARKER DAM": [
+        [
+            "2106",
+            "TAILRACE ELEVATION  EOP READING IN FEET"
+        ],
+        [
+            "4829",
+            "AVERAGE TAILRACE WATER TEMPERATURE IN F"
+        ],
+        [
+            "2149",
+            "AVERAGE TAILRACE ELEVATION IN FEET"
+        ]
+    ],
+    "COLORADO RIVER BELOW PARKER DAM (USGS)": [
+        [
+            "4920",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER BELOW YUMA MAIN CANAL WASTEWAY - YUMA GAGE - USGS": [
+        [
+            "4847",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COLORADO RIVER INDIAN RESERVATION  ARIZONA": [
+        [
+            "2918",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "COLORADO RIVER NEAR GRAND CANYON  AZ": [
+        [
+            "2494",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "1346",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "1346",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "COOPER LATERAL WASTEWAY": [
+        [
+            "4936",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "CRIR - GARDNER WASTEWAY": [
+        [
+            "2760",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "CRIR - LOWER MAIN DRAIN": [
+        [
+            "3360",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "CRIR - LOWER MAIN DRAIN BELOW TYSON WASTEWAY": [
+        [
+            "14639",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "CRIR - PALO VERDE DRAIN NEAR PARKER": [
+        [
+            "3361",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "CRIR - POSTON WASTEWAY NEAR POSTON  AZ.": [
+        [
+            "3362",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "CRIR - POSTON WASTEWAY SPILL GATES": [
+        [
+            "3421",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "CRIR - TOATAL RETURN": [
+        [
+            "2210",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "CRIR - UPPER MAIN DRAIN": [
+        [
+            "3363",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "CRIR CANAL AT HEAGATE ROCK DAM": [
+        [
+            "3364",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "CRIR MAIN CANAL": [
+        [
+            "2209",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "CRIR RETURN GARDNER WASTEWAY": [
+        [
+            "2051",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "2015",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "CRIR RETURN LOWER MAIN DRAIN": [
+        [
+            "2053",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "2017",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "CRIR RETURN POSTON WASTEWAY": [
+        [
+            "2218",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "CRIR RETURN UPPER MAIN DRAIN": [
+        [
+            "2219",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "DAVIS DAM POWERPLANT": [
+        [
+            "14216",
+            "TOTAL ENERGY IN MWH"
+        ],
+        [
+            "2164",
+            "AVERAGE DIFFERENCE IN HEADWATER AND TAILWATER ELEVATIONS IN FEET"
+        ],
+        [
+            "2071",
+            "AVERAGE NET ENERGY LEAVING PLANT EXCLUDING STATION USES & LOSSES IN MWH"
+        ]
+    ],
+    "DAVIS DAM UNIT 1": [
+        [
+            "14163",
+            "TOTAL ENERGY IN MWH"
+        ],
+        [
+            "13966",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2481",
+            "AVERAGE POWER GENERATED DURING PERIOD IN MW"
+        ],
+        [
+            "2004",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "DAVIS DAM UNIT 2": [
+        [
+            "14164",
+            "TOTAL ENERGY IN MWH"
+        ],
+        [
+            "13967",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2482",
+            "AVERAGE POWER GENERATED DURING PERIOD IN MW"
+        ],
+        [
+            "2005",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "DAVIS DAM UNIT 3": [
+        [
+            "14165",
+            "TOTAL ENERGY IN MWH"
+        ],
+        [
+            "13968",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2483",
+            "AVERAGE POWER GENERATED DURING PERIOD IN MW"
+        ],
+        [
+            "2006",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "DAVIS DAM UNIT 4": [
+        [
+            "14166",
+            "TOTAL ENERGY IN MWH"
+        ],
+        [
+            "13969",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2484",
+            "AVERAGE POWER GENERATED DURING PERIOD IN MW"
+        ],
+        [
+            "2007",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "DAVIS DAM UNIT 5": [
+        [
+            "14167",
+            "TOTAL ENERGY IN MWH"
+        ],
+        [
+            "13970",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2485",
+            "AVERAGE POWER GENERATED DURING PERIOD IN MW"
+        ],
+        [
+            "2008",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "DESERT LAWN MEMORIAL": [
+        [
+            "3223",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "DIVERSION CHANNEL AT SIB TO US BYPASS DRAIN": [
+        [
+            "4938",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "DIVERSION FROM THE MODE INTO YDP": [
+        [
+            "19226",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "19225",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "DIVERSION FROM YUMA MAIN CANAL BETWEEN SDPP AND YMCWW": [
+        [
+            "3387",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "DIVERSION FROM YUMA MAIN CANAL FOR YUMA MUNICIPAL WATER": [
+        [
+            "4849",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "EAST MAIN CANAL WASTEWAY": [
+        [
+            "4940",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "FIREBREAK CANAL AT HAVASU NWR NEAR NEEDLES  CA.": [
+        [
+            "21311",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "FORT MOJAVE INDIAN RESERVATION (AZ)": [
+        [
+            "3160",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "FORT MOJAVE INDIAN RESERVATION (CA)": [
+        [
+            "2970",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "FORT MOJAVE INDIAN RESERVATION (NV TOTAL)": [
+        [
+            "3316",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "FORT MOJAVE TRIBE (NV)": [
+        [
+            "2835",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "4843",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "FORT MOJAVE TRIBE-BARRACKMAN": [
+        [
+            "21220",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "8005",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "8090",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "FORT MOJAVE TRIBE-CALIFORNIA 1": [
+        [
+            "5030",
+            "AVERAGE WATER TEMPERATURE IN CANAL IN F"
+        ],
+        [
+            "2842",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "4844",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "FORT MOJAVE TRIBE-CALIFORNIA 2 (NORTH)": [
+        [
+            "21890",
+            "AVERAGE FLOW VELOCITY IN FT/S"
+        ],
+        [
+            "8084",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "5013",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "FORT MOJAVE TRIBE-CALIFORNIA 2 (SOUTH)": [
+        [
+            "21349",
+            "AVERAGE FLOW VELOCITY IN FT/S"
+        ],
+        [
+            "8085",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "5014",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "FORT MOJAVE TRIBE-CALIFORNIA 2 (WEST)": [
+        [
+            "21891",
+            "AVERAGE FLOW VELOCITY IN FT/S"
+        ],
+        [
+            "8086",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "5012",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "FORT MOJAVE TRIBE-CIMMARON": [
+        [
+            "10081",
+            "AVERAGE WATER TEMPERATURE IN CANAL IN F"
+        ],
+        [
+            "10090",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "FORT MOJAVE TRIBE-NORTH CASINO": [
+        [
+            "7998",
+            "AVERAGE WATER TEMPERATURE IN CANAL IN F"
+        ],
+        [
+            "8089",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "7991",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "FORT MOJAVE TRIBE-NORTH CASINO (NORTH EVENT CENTER)": [
+        [
+            "20917",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "20633",
+            "AVERAGE FLOW VELOCITY IN FT/S"
+        ]
+    ],
+    "FORT MOJAVE TRIBE-REFUGE (FORT MOJAVE TRIBE)": [
+        [
+            "8082",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "7778",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "FORT MOJAVE TRIBE-REFUGE (VANDERSLICE FARMS)": [
+        [
+            "8083",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "7779",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "FORT MOJAVE TRIBE-SOUTH CASINO": [
+        [
+            "21218",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "7989",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "8088",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "FORT MOJAVE TRIBE-WILLOW": [
+        [
+            "8008",
+            "AVERAGE WATER TEMPERATURE IN CANAL IN F"
+        ],
+        [
+            "8091",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "8007",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "GILA GRAVITY MAIN CANAL AT IMPERIAL DAM": [
+        [
+            "2194",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "GILA GRAVITY MAIN CANAL AT YUMA MESAPUMPING PLANT": [
+        [
+            "4827",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "GILA MONSTER FARMS": [
+        [
+            "2832",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ],
+        [
+            "10070",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "GILA MONSTER FARMS TURNOUT NO. 1 NEAR YUMA": [
+        [
+            "4630",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "GILA MONSTER FARMS TURNOUT NO. 2 NEAR YUMA": [
+        [
+            "7745",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "7744",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "GILA RIVER @ 64 EAST - DATELAND": [
+        [
+            "2050",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "2014",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GILA RIVER AT DOME": [
+        [
+            "2061",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "2023",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "GILA RIVER AT PAINTED ROCK": [
+        [
+            "2496",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "2495",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "HAVASU NATIONAL WILDLIFE REFUGE": [
+        [
+            "2913",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "HEADGATE ROCK - CRIR CANAL": [
+        [
+            "2498",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "1982",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "HEADGATE ROCK DAM / LAKE MOOVALYA": [
+        [
+            "8890",
+            "AVERAGE TAILRACE ELEVATION IN FEET"
+        ],
+        [
+            "2102",
+            "RESERVOIR WS ELEVATION  EOP PRIMARY READING IN FEET"
+        ]
+    ],
+    "HOOVER DAM POWERPLANT": [
+        [
+            "2154",
+            "AVERAGE DIFFERENCE IN HEADWATER AND TAILWATER ELEVATIONS IN FEET"
+        ],
+        [
+            "2070",
+            "TOTAL ENERGY IN MWH"
+        ],
+        [
+            "2282",
+            "ENERGY ACCUMULATED FOR GENERATION  MEGAWATT HOURS IN MWH"
+        ]
+    ],
+    "HOOVER DAM UNIT A1": [
+        [
+            "1984",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT A2": [
+        [
+            "1985",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT A3": [
+        [
+            "1986",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT A4": [
+        [
+            "1987",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT A5": [
+        [
+            "1988",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT A6": [
+        [
+            "1989",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT A7": [
+        [
+            "1990",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT A8": [
+        [
+            "1991",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT N1": [
+        [
+            "1992",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT N2": [
+        [
+            "1993",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT N3": [
+        [
+            "1994",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT N4": [
+        [
+            "1995",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT N5": [
+        [
+            "1996",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT N6": [
+        [
+            "1997",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT N7": [
+        [
+            "1998",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER DAM UNIT N8": [
+        [
+            "1999",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "HOOVER UNIT A0": [
+        [
+            "21307",
+            "TOTAL ENERGY IN MWH"
+        ]
+    ],
+    "HOOVER UNIT N0": [
+        [
+            "21308",
+            "TOTAL ENERGY IN MWH"
+        ]
+    ],
+    "IMPERIAL IRRIGATION DISTRICT": [
+        [
+            "2993",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ],
+        [
+            "10065",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "IMPERIAL RESERVOIR": [
+        [
+            "2201",
+            "RESERVOIR WS ELEVATION  EOP PRIMARY READING IN FEET"
+        ],
+        [
+            "2195",
+            "AVERAGE INFLOW IN CFS"
+        ]
+    ],
+    "LAGUNA DAM RESERVOIR": [
+        [
+            "10058",
+            "RESERVOIR WS ELEVATION  EOP PRIMARY READING IN FEET"
+        ]
+    ],
+    "LAKE HAVASU": [
+        [
+            "2147",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "2214",
+            "VOLUME OF POWER RELEASES IN ACRE-FEET"
+        ],
+        [
+            "8869",
+            "AVERAGE WATER TEMPERATURE IN RESERVOIR IN F"
+        ],
+        [
+            "8896",
+            "AVERAGE RESERVOIR ELEVATION IN FEET"
+        ],
+        [
+            "2292",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ],
+        [
+            "2101",
+            "RESERVOIR WS ELEVATION  EOP PRIMARY READING IN FEET"
+        ],
+        [
+            "2116",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ],
+        [
+            "2097",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "2146",
+            "AVERAGE POWER RELEASE IN CFS"
+        ]
+    ],
+    "LAKE HAVASU CITY - IRRIGATION AND DRAINAGE": [
+        [
+            "3169",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "LAKE MEAD": [
+        [
+            "1794",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1874",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "1794",
+            "AVERAGE INFLOW IN CFS"
+        ],
+        [
+            "1863",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "2319",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "2084",
+            "RESERVOIR BANK STORAGE  END OF PER READING USED AS VALUE FOR PER IN ACRE-FEET"
+        ],
+        [
+            "1776",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "2306",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ],
+        [
+            "2212",
+            "VOLUME OF POWER RELEASES IN ACRE-FEET"
+        ],
+        [
+            "2158",
+            "AVERAGE TAILRACE ELEVATION IN FEET"
+        ],
+        [
+            "2157",
+            "RESERVOIR AREA  END OF PERIOD READING REPRESENTING VALUE FOR PRD IN ACRE"
+        ],
+        [
+            "1930",
+            "RESERVOIR WS ELEVATION  EOP PRIMARY READING IN FEET"
+        ],
+        [
+            "1863",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "1874",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "2114",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ]
+    ],
+    "LAKE MEAD (USGS)": [
+        [
+            "19280",
+            "AVERAGE RELATIVE HUMIDITY IN DECIMAL"
+        ],
+        [
+            "19282",
+            "AVERAGE WIND SPEED IN MI/HOUR"
+        ],
+        [
+            "19283",
+            "AVERAGE NET RADIATION IN LANGLEYS"
+        ],
+        [
+            "19279",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ],
+        [
+            "19281",
+            "AVERAGE WIND DIRECTION IN DEG"
+        ],
+        [
+            "19319",
+            "VOLUME OF EVAPORATION IN ACRE-FEET"
+        ],
+        [
+            "19277",
+            "CALCULATED RESERVOIR EVAPORATION IN IN"
+        ]
+    ],
+    "LAKE MEAD NATIONAL RECREATION AREA  AZ. LAKE MEAD /TEMPLE BAR": [
+        [
+            "3139",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "LAKE MEAD NATIONAL RECREATION AREA  AZ. LAKE MOHAVE": [
+        [
+            "3138",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "LAKE MEAD NATIONAL RECREATION AREA  NV.  LAKE MEAD": [
+        [
+            "3287",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "LAKE MEAD NATIONAL RECREATION AREA  NV. LAKE MOHAVE / COTTONWOOD": [
+        [
+            "3306",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "LAKE MOHAVE": [
+        [
+            "2167",
+            "AVERAGE SPILLWAY RELEASE IN CFS"
+        ],
+        [
+            "2213",
+            "VOLUME OF POWER RELEASES IN ACRE-FEET"
+        ],
+        [
+            "13971",
+            "AVERAGE WATER TEMPERATURE IN RESERVOIR IN F"
+        ],
+        [
+            "13974",
+            "AVERAGE RESERVOIR ELEVATION IN FEET"
+        ],
+        [
+            "2294",
+            "AVERAGE SIDE INFLOW IN CFS"
+        ],
+        [
+            "2169",
+            "AVERAGE TAILRACE ELEVATION IN FEET"
+        ],
+        [
+            "2100",
+            "RESERVOIR WS ELEVATION  EOP PRIMARY READING IN FEET"
+        ],
+        [
+            "2096",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "2166",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "2115",
+            "VOLUME OF TOTAL RELEASE (SUM OF THE VOLUMES OF ALL RESERVOIR RELEASE METHODS OVER INTERVAL) IN ACRE-FEET"
+        ]
+    ],
+    "LAS VEGAS WASH (BOULDER CITY)": [
+        [
+            "2768",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "LAS VEGAS WASH (PABCO RD - HENDERSON)": [
+        [
+            "3427",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "LAS VEGAS WASH AT 3 KIDS WASH BELOW HENDERSON": [
+        [
+            "4797",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "LEVEE CANAL WASTEWAY NEAR YUMA": [
+        [
+            "3366",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "LIMITROPHE SECTION": [
+        [
+            "23396",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LIMITROPHE SECTION AND SIB": [
+        [
+            "8881",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "8880",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LITTLE COLORADO RIVER ABV MOUTH NR DESERT VIEW  AZ": [
+        [
+            "14220",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "14221",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "LITTLE COLORADO RIVER NEAR CAMERON  AZ": [
+        [
+            "4625",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "4625",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "LOWER ARIZONA PENSTOCK": [
+        [
+            "21886",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2000",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "LOWER COLORADO RIVER DAMS PROJECT (DAVIS DAM)": [
+        [
+            "3141",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "LOWER NEVADA PENSTOCK": [
+        [
+            "21887",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2001",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "MAIN DRAIN AT BOUNDARY PUMPING PLANT NEAR SIB": [
+        [
+            "4934",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "MAJOR WATER USERS DIVERTING DOWNSTREAM OF PARKER DAM (12 TOTAL)": [
+        [
+            "10075",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "MARINE CORPS AIR STATION (YUMA)": [
+        [
+            "3205",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "MCAS DIVERSION OF B CANAL NEAR YUMA": [
+        [
+            "4687",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "METROPOLITAN WATER DISTRICT": [
+        [
+            "2972",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "MEXICAN BYPASS PURSUANT TO MINUTE 242": [
+        [
+            "3030",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "MEXICO IN EXCESS OF TREATY": [
+        [
+            "23318",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "3029",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "MEXICO IN SATISFACTION OF TREATY": [
+        [
+            "3028",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "MEXICO ORDER": [
+        [
+            "4907",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "MEXICO TREATY WATER": [
+        [
+            "2067",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "2295",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MEXICO TREATY WATER ALLOCATION IN MEAD (MINUTE 318 ICMA)": [
+        [
+            "20848",
+            "TOTAL AVERAGE FLOW IN CFS-DAY"
+        ],
+        [
+            "20847",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "20846",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MITTRY LAKE DIVERSION AT IMPERIAL DAM  AZ": [
+        [
+            "3367",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "MODE 3 WASTEWAY FROM US BYPASS DRAIN BELOW MORELOS DAM": [
+        [
+            "4617",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "MOHAVE VALLEY IRRIGATION DISTRICT": [
+        [
+            "3154",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "MUDDY RIVER AT LEWIS AVENUE AT OVERTON  NV": [
+        [
+            "14223",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "14222",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "MWD CANAL (MWD SOURCE)": [
+        [
+            "2064",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "2068",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "MWD CANAL (USGS SOURCE)": [
+        [
+            "3404",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "MWD CANAL EXPORT": [
+        [
+            "3411",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "3412",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "NEVADA DEPARTMENT OF FISH AND GAME": [
+        [
+            "3015",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "NEVADA TOTALS": [
+        [
+            "3027",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "NORTH GILA DRAIN NO. 1 NEAR YUMA": [
+        [
+            "3368",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "NORTH GILA MAIN CANAL T.O. # 2": [
+        [
+            "3369",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "NORTH GILA MAIN CANAL T.O. #1": [
+        [
+            "3372",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "NORTH GILA MAIN CANAL WASTEWAY": [
+        [
+            "3373",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "NORTH GILA VALLEY IRRIGATION DISTRICT (AZ TOTAL)": [
+        [
+            "2932",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ],
+        [
+            "10069",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "NV REACH DAVIS DAM TO PARKER DAM": [
+        [
+            "4809",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "NV REACH GRAND CANYON TO HOOVER DAM": [
+        [
+            "4807",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "NV REACH HOOVER DAM TO DAVIS DAM": [
+        [
+            "4808",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "PACIFIC COAST BUILDING PRODUCTS INC.": [
+        [
+            "3300",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "PAINTED ROCK RESERVOIR": [
+        [
+            "2197",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "2198",
+            "RESERVOIR WS ELEVATION  EOP PRIMARY READING IN FEET"
+        ],
+        [
+            "2196",
+            "AVERAGE INFLOW IN CFS"
+        ]
+    ],
+    "PALO VERDE CANAL": [
+        [
+            "2204",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "2203",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PALO VERDE CANAL NEAR BLYTHE": [
+        [
+            "1983",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PALO VERDE IRRIGATION DISTRICT (CA TOTAL)": [
+        [
+            "2982",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "PALO VERDE MAIN CANAL": [
+        [
+            "4276",
+            "AVERAGE WATER TEMPERATURE IN CANAL IN F"
+        ],
+        [
+            "4274",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PALO VERDE OUTFALL DRAIN": [
+        [
+            "4262",
+            "AVERAGE WATER TEMPERATURE IN CANAL IN F"
+        ],
+        [
+            "3417",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PARKER DAM POWERPLANT": [
+        [
+            "14217",
+            "TOTAL ENERGY IN MWH"
+        ],
+        [
+            "2144",
+            "AVERAGE DIFFERENCE IN HEADWATER AND TAILWATER ELEVATIONS IN FEET"
+        ],
+        [
+            "2072",
+            "AVERAGE NET ENERGY LEAVING PLANT EXCLUDING STATION USES & LOSSES IN MWH"
+        ]
+    ],
+    "PARKER DAM UNIT 1": [
+        [
+            "14168",
+            "TOTAL ENERGY IN MWH"
+        ],
+        [
+            "8900",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "4178",
+            "AVERAGE POWER GENERATED DURING PERIOD IN MW"
+        ],
+        [
+            "2009",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "PARKER DAM UNIT 2": [
+        [
+            "14169",
+            "TOTAL ENERGY IN MWH"
+        ],
+        [
+            "8901",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "4179",
+            "AVERAGE POWER GENERATED DURING PERIOD IN MW"
+        ],
+        [
+            "2010",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "PARKER DAM UNIT 3": [
+        [
+            "14170",
+            "TOTAL ENERGY IN MWH"
+        ],
+        [
+            "8902",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "4180",
+            "AVERAGE POWER GENERATED DURING PERIOD IN MW"
+        ],
+        [
+            "2011",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "PARKER DAM UNIT 4": [
+        [
+            "14171",
+            "TOTAL ENERGY IN MWH"
+        ],
+        [
+            "8903",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "4181",
+            "AVERAGE POWER GENERATED DURING PERIOD IN MW"
+        ],
+        [
+            "2012",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "PILOT KNOB POWERPLANT AND WASTEWAY": [
+        [
+            "2502",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PONTIAC CANAL NEAR YUMA": [
+        [
+            "3374",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PRE-PUBLISHED USBR COLORADO RIVER AT MARTINEZ LAKE": [
+        [
+            "21859",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PRE-PUBLISHED USBR COLORADO RIVER AT PICACHO PARK": [
+        [
+            "21858",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR CAP CANAL": [
+        [
+            "7982",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER AT BIG BEND": [
+        [
+            "7780",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "7940",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER AT CIBOLA": [
+        [
+            "7945",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "7781",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER AT MARTINEZ LAKE": [
+        [
+            "7976",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "7975",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER AT PARKER GAGE": [
+        [
+            "7782",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "7941",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER AT PICACHO PARK": [
+        [
+            "21860",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "21861",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER AT RS41": [
+        [
+            "7969",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "7970",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER AT TAYLOR FERRY": [
+        [
+            "7783",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "7944",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER AT WATER WHEEL": [
+        [
+            "7942",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "7784",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER BELOW HOOVER DAM": [
+        [
+            "19340",
+            "AVERAGE TAILRACE WATER TEMPERATURE IN F"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER BELOW INTERSTATE BRIDGE": [
+        [
+            "20799",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20801",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER BELOW MCINTYRE PARK": [
+        [
+            "20803",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20805",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER BELOW NEEDLES BRIDGE": [
+        [
+            "7966",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "7965",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER BELOW OXBOW BRIDGE": [
+        [
+            "20807",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "20809",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER BELOW PALO VERDE DAM": [
+        [
+            "7943",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "7785",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR COLORADO RIVER BELOW PARKER DAM": [
+        [
+            "19343",
+            "AVERAGE TAILRACE WATER TEMPERATURE IN F"
+        ]
+    ],
+    "PUBLISHED USBR FMT BARRACKMAN": [
+        [
+            "7950",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "7949",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR FMT CA1": [
+        [
+            "7959",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "7960",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR FMT CA2 NORTH CANAL": [
+        [
+            "7961",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "7962",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR FMT CA2 SOUTH CANAL": [
+        [
+            "7964",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "7963",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR FMT CIMARON": [
+        [
+            "7953",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "7954",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR FMT NEVADA SITE": [
+        [
+            "7978",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR FMT NORTH CASINO": [
+        [
+            "7957",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "7958",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR FMT NORTH CASINO - NEC PIPE": [
+        [
+            "20893",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR FMT SOUTH CASINO": [
+        [
+            "7956",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "7955",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR FMT WILLOW": [
+        [
+            "7951",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "7952",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR FMTC2 WEST PIPE": [
+        [
+            "7979",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR FMTRS MOJAVE PIPE": [
+        [
+            "7981",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR FWS FARM DITCH": [
+        [
+            "7977",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR FWS SOUTH DIKE": [
+        [
+            "7948",
+            "AVERAGE RESERVOIR ELEVATION IN FEET"
+        ],
+        [
+            "7946",
+            "AVERAGE RETURN FLOW IN CFS"
+        ],
+        [
+            "7947",
+            "AVERAGE TAILRACE ELEVATION IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR FWS TOPOCK INLET CANAL": [
+        [
+            "7968",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "7967",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR LAKE HAVASU": [
+        [
+            "20899",
+            "AVERAGE RESERVOIR ELEVATION IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR LAKE MOHAVE": [
+        [
+            "20898",
+            "AVERAGE RESERVOIR ELEVATION IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR MWD CANAL": [
+        [
+            "7983",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR PALO VERDE CANAL": [
+        [
+            "7971",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "7972",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ]
+    ],
+    "PUBLISHED USBR PALO VERDE OUTFALL DRAIN": [
+        [
+            "7974",
+            "AVERAGE GAGE HEIGHT IN FEET"
+        ],
+        [
+            "7973",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PUBLISHED USBR VANDERSLICE PIPE": [
+        [
+            "7980",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "PUMPING FROM LAKE MEAD": [
+        [
+            "2151",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "PVID C-28 LOWER SPILL": [
+        [
+            "3375",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PVID C-28 UPPER SPILL": [
+        [
+            "3376",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PVID C-CANAL SPILL": [
+        [
+            "3377",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PVID D-10-11-2 SPILL": [
+        [
+            "3378",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PVID D-10-11-5 SPILL": [
+        [
+            "3379",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PVID D-23 SPILL": [
+        [
+            "3380",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PVID D-23-1 SPILL": [
+        [
+            "3381",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PVID F-CANAL SPILL": [
+        [
+            "3382",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PVID OLIVE LAKE DRAIN": [
+        [
+            "3383",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PVID OUTFALL DRAIN": [
+        [
+            "3384",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PVID RETURN FLOWS ABOVE TAYLOR FERRY": [
+        [
+            "2220",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "PVID RETURN FLOWS BELOW TAYLOR FERRY": [
+        [
+            "2221",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "RESERVATION DRAIN NO. 11 NEAR WINTERHAVEN": [
+        [
+            "3398",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "RESERVATION DRAIN NO. 2 NEAR BARD": [
+        [
+            "3399",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "RESERVATION DRAIN NO. 3 NEAR BARD": [
+        [
+            "3400",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "RESERVATION DRAIN NO. 4 NEAR YUMA": [
+        [
+            "3401",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "RESERVATION DRAIN NO. 6 NEAR BARD": [
+        [
+            "3402",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "RESERVATION DRAIN NO. 7 NEAR BARD": [
+        [
+            "3403",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "RESERVATION MAIN CANAL NEAR YUMA": [
+        [
+            "3397",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "SALTON SEA MITIGATION TRANSFER": [
+        [
+            "9785",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "SANCHEZ MEJORADO CANAL (CALCULATED)": [
+        [
+            "4944",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "4946",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SENATOR WASH RESERVOIR": [
+        [
+            "14078",
+            "VOLUME OF POWER RELEASES IN ACRE-FEET"
+        ],
+        [
+            "14071",
+            "CHANGE IN RESERVOIR STORAGE FOR PERIOD IN ACRE-FEET"
+        ],
+        [
+            "14076",
+            "AVERAGE POWER RELEASE IN CFS"
+        ],
+        [
+            "2205",
+            "AVERAGE PUMPED FLOW TO RESERVOIR STORAGE IN CFS"
+        ],
+        [
+            "2208",
+            "AVERAGE TOTAL RELEASE (SUM OF ALL AVERAGE RESERVOIR RELEASE METHODS) IN CFS"
+        ],
+        [
+            "2207",
+            "RESERVOIR WS ELEVATION  EOP PRIMARY READING IN FEET"
+        ]
+    ],
+    "SNWA DIVERSION": [
+        [
+            "3284",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ],
+        [
+            "3406",
+            "AVERAGE DIVERSION IN CFS"
+        ],
+        [
+            "3003",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ]
+    ],
+    "SOUTH GILA MAIN CANAL ( YID 1083+50 )": [
+        [
+            "3396",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "SOUTH GILA PUMP CHANNEL NO. 1": [
+        [
+            "3395",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "SOUTH GILA PUMP CHANNEL NO. 2": [
+        [
+            "3394",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "SOUTH GILA PUMP CHANNEL NO. 3": [
+        [
+            "3393",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "SOUTH GILA PUMP CHANNEL NO. 4": [
+        [
+            "3392",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "SOUTH GILA TERMINAL CANAL WASTEWAY": [
+        [
+            "3451",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "SOUTHERLY INTERNATIONAL BOUNDARY": [
+        [
+            "20842",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "23397",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "SOUTHERN NEVADA WATER AUTHORITY (SCE)": [
+        [
+            "3309",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "SOUTHERN PACIFIC COMPANY": [
+        [
+            "3208",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "TIJUANA": [
+        [
+            "4552",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "4553",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "TITSINK CANAL NEAR YUMA": [
+        [
+            "3391",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "TOPOCK MARSH INLET NEAR NEEDLES": [
+        [
+            "2506",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "TOPOCK MARSH OUTLET NEAR NEEDLES": [
+        [
+            "3390",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "TOWN OF PARKER": [
+        [
+            "2914",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "U.S. FISH AND WILDLIFE SERVICE TOPOCK REFUGE-FARM DITCH": [
+        [
+            "8093",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "4781",
+            "AVERAGE WATER TEMPERATURE IN CANAL IN F"
+        ],
+        [
+            "4788",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "U.S. FISH AND WILDLIFE SERVICE TOPOCK REFUGE-INLET CANAL": [
+        [
+            "8092",
+            "VOLUME OF DIVERSION IN ACRE-FEET"
+        ],
+        [
+            "4637",
+            "AVERAGE WATER TEMPERATURE IN CANAL IN F"
+        ],
+        [
+            "4633",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "U.S. FISH AND WILDLIFE SERVICE TOPOCK REFUGE-SOUTH DIKE": [
+        [
+            "8065",
+            "AVERAGE WATER TEMPERATURE IN RESERVOIR IN F"
+        ],
+        [
+            "8066",
+            "AVERAGE TAILRACE WATER TEMPERATURE IN F"
+        ],
+        [
+            "4842",
+            "AVERAGE TAILRACE ELEVATION IN FEET"
+        ],
+        [
+            "8016",
+            "AVERAGE DIFFERENCE IN HEADWATER AND TAILWATER ELEVATIONS IN FEET"
+        ],
+        [
+            "4841",
+            "AVERAGE RESERVOIR ELEVATION IN FEET"
+        ],
+        [
+            "4839",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "UNIT B CANAL": [
+        [
+            "4834",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "UNIT B IRRIGATION AND DRAINAGE DISTRICT": [
+        [
+            "2942",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ],
+        [
+            "10073",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "UNIVERSITY OF ARIZONA": [
+        [
+            "3214",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "UPPER ARIZONA PENSTOCK": [
+        [
+            "21888",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2002",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "UPPER NEVADA PENSTOCK": [
+        [
+            "21889",
+            "AVERAGE FLOW IN CFS"
+        ],
+        [
+            "2003",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ]
+    ],
+    "US BYPASS DRAIN AT SOUTHERN INTERNATIONAL BOUNDARY": [
+        [
+            "2871",
+            "VOLUME OF FLOW IN ACRE-FEET"
+        ],
+        [
+            "4818",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "VIRGIN RIVER ABOVE LAKE MEAD NEAR OVERTON  NV": [
+        [
+            "10076",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "VIRGIN RIVER AT LITTLEFIELD": [
+        [
+            "4626",
+            "AVERAGE FLOW IN CFS"
+        ]
+    ],
+    "WEATHER STATION IN BOULDER CITY  NV": [
+        [
+            "2327",
+            "AVERAGE AIR TEMPERATURE IN F"
+        ],
+        [
+            "2332",
+            "AVERAGE WIND SPEED IN MI/HOUR"
+        ]
+    ],
+    "WELLTON MOHAWK CANAL NEAR YUMA": [
+        [
+            "2765",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "WELLTON MOHAWK MAIN OUTLET DRAIN @ STATION 0": [
+        [
+            "3389",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "WELLTON MOWHAWK IRRIGATION AND DRAINAGE DISTRICT": [
+        [
+            "2927",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ],
+        [
+            "10071",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "WEST MAIN CANAL WASTEWAY": [
+        [
+            "4942",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "YAQUI CANAL NEAR YUMA": [
+        [
+            "3385",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YCWUA - DIVERSION AT IMPERIAL DAM": [
+        [
+            "10068",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YPSILANTI CANAL NEAR WINTERHAVEN": [
+        [
+            "3419",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA COUNTY WATER USERS ASSOCIATION": [
+        [
+            "2939",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "YUMA IRRIGATION DISTRICT": [
+        [
+            "2934",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ],
+        [
+            "10072",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA IRRIGATION DISTRICT 817+75   15.4 LATERAL": [
+        [
+            "4832",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA IRRIGATION DISTRICT 877+17  16.4 NORTH LATERAL": [
+        [
+            "5017",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA IRRIGATION DISTRICT 877+25 16.4 SOUTH LATERAL": [
+        [
+            "5018",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA IRRIGATION DISTRICT 915+67  17.4 LATERAL": [
+        [
+            "5020",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA IRRIGATION DISTRICT 959+69 18.2 LATERAL": [
+        [
+            "5019",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA IRRIGATION DISTRICT 973+83 18.4 LATERAL": [
+        [
+            "5021",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA IRRIGATION DISTRICT 988+27 18.7 LATERAL": [
+        [
+            "5022",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA MAIN CANAL ABOVE WASTEWAY NEAR WINTERHAVEN": [
+        [
+            "23394",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA MAIN CANAL AT SIPHON DROP POWERPLANT": [
+        [
+            "2501",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA MAIN CANAL BELOW COLORADO RIVER SIPHON": [
+        [
+            "3386",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA MAIN CANAL WASTEWAY (CALIFORNIA WASTEWAY)": [
+        [
+            "3370",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "YUMA MESA FRUIT GROWERS ASSN.": [
+        [
+            "3211",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "YUMA MESA IRRIGATION AND DRAINAGE DISTRICT": [
+        [
+            "2937",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ],
+        [
+            "10074",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA MESA OUTLET DRAIN NEAR YUMA": [
+        [
+            "3371",
+            "AVERAGE RETURN FLOW IN CFS"
+        ]
+    ],
+    "YUMA PROJECT RESERVATION DIVISION": [
+        [
+            "3274",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "YUMA PROJECT RESERVATION DIVISION - BARD UNIT (SYSTEM1)": [
+        [
+            "10067",
+            "AVERAGE DIVERSION IN CFS"
+        ]
+    ],
+    "YUMA PROVING GROUND": [
+        [
+            "2925",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ],
+    "YUMA UNION HIGH SCHOOL": [
+        [
+            "3217",
+            "VOLUME OF DEPLETION IN ACRE-FEET"
+        ]
+    ]
+}

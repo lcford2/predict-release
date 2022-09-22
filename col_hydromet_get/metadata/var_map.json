@@ -1,0 +1,94 @@
+{
+    "area": {
+        "id": "89",
+        "unit": "acre"
+    },
+    "ave SJC inflow volume": {
+        "id": "1501",
+        "unit": "acre-feet"
+    },
+    "ave water temperature": {
+        "id": "121",
+        "unit": "F"
+    },
+    "bank storage": {
+        "id": "15",
+        "unit": "acre-feet"
+    },
+    "bypass release": {
+        "id": "1197",
+        "unit": "cfs"
+    },
+    "bypass release volume": {
+        "id": "1198",
+        "unit": "acre-feet"
+    },
+    "delta storage": {
+        "id": "47",
+        "unit": "acre-feet"
+    },
+    "evaporation": {
+        "id": "25",
+        "unit": "acre-feet"
+    },
+    "inflow": {
+        "id": "29",
+        "unit": "cfs"
+    },
+    "inflow volume": {
+        "id": "30",
+        "unit": "acre-feet"
+    },
+    "mod unregulated inflow": {
+        "id": "123",
+        "unit": "cfs"
+    },
+    "mod unregulated inflow volume": {
+        "id": "124",
+        "unit": "acre-feet"
+    },
+    "pool elevation": {
+        "id": "49",
+        "unit": "feet"
+    },
+    "power release": {
+        "id": "39",
+        "unit": "cfs"
+    },
+    "power release volume": {
+        "id": "40",
+        "unit": "acre-feet"
+    },
+    "release volume": {
+        "id": "43",
+        "unit": "acre-feet"
+    },
+    "side inflow": {
+        "id": "31",
+        "unit": "cfs"
+    },
+    "side inflow volume": {
+        "id": "32",
+        "unit": "acre-feet"
+    },
+    "spillway release": {
+        "id": "46",
+        "unit": "cfs"
+    },
+    "storage": {
+        "id": "17",
+        "unit": "acre-feet"
+    },
+    "total release": {
+        "id": "42",
+        "unit": "cfs"
+    },
+    "unregulated inflow": {
+        "id": "33",
+        "unit": "cfs"
+    },
+    "unregulated inflow volume": {
+        "id": "34",
+        "unit": "acre-feet"
+    }
+}

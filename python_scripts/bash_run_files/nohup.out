@@ -1,0 +1,226 @@
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2200: ConvergenceWarning: Retrying MixedLM optimization with lbfgs
+  warnings.warn(
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:1634: UserWarning: Random effects covariance is singular
+  warnings.warn(msg)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2261: ConvergenceWarning: The Hessian matrix at the estimated parameter values is not positive definite.
+  warnings.warn(msg, ConvergenceWarning)
+Time to run 'read_basin_data': 0.70082 seconds
+Time to run 'prep_data': 1.01495 seconds
+Time to run 'tree_model': 0.14673 seconds
+|           |   NSE |   RMSE |
+|:----------|------:|-------:|
+| BlueRidge | 0.866 |  2.247 |
+| Chatuge   | 0.872 |  2.200 |
+| Cherokee  | 0.864 |  2.273 |
+| Douglas   | 0.868 |  2.216 |
+| Fontana   | 0.871 |  2.201 |
+| Hiwassee  | 0.860 |  2.315 |
+| Norris    | 0.865 |  2.275 |
+| Nottely   | 0.866 |  2.269 |
+| SHolston  | 0.862 |  2.320 |
+| TimsFord  | 0.868 |  2.250 |
+| Watauga   | 0.866 |  2.268 |
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2200: ConvergenceWarning: Retrying MixedLM optimization with lbfgs
+  warnings.warn(
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:1634: UserWarning: Random effects covariance is singular
+  warnings.warn(msg)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2237: ConvergenceWarning: The MLE may be on the boundary of the parameter space.
+  warnings.warn(msg, ConvergenceWarning)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2261: ConvergenceWarning: The Hessian matrix at the estimated parameter values is not positive definite.
+  warnings.warn(msg, ConvergenceWarning)
+Time to run 'read_basin_data': 0.29697 seconds
+Time to run 'prep_data': 1.51900 seconds
+Time to run 'tree_model': 0.26579 seconds
+| site_name                   |   NSE |   RMSE |
+|:----------------------------|------:|-------:|
+| BLUE MESA                   | 0.826 |  0.190 |
+| CAUSEY                      | 0.980 |  0.006 |
+| DEER CREEK                  | 0.977 |  0.023 |
+| DILLON RESERVOIR            | 0.979 |  0.023 |
+| ECHO                        | 0.981 |  0.023 |
+| FLAMING GORGE               | 0.915 |  0.192 |
+| FONTENELLE                  | 0.981 |  0.125 |
+| HYRUM                       | 0.959 |  0.012 |
+| JORDANELLE                  | 0.970 |  0.029 |
+| LAKE POWELL                 | 0.904 |  1.006 |
+| LEMON                       | 0.967 |  0.012 |
+| LOST CREEK                  | 0.980 |  0.002 |
+| MCPHEE                      | 0.959 |  0.026 |
+| MEEKS CABIN                 | 0.988 |  0.012 |
+| MORROW POINT                | 0.911 |  0.142 |
+| NAVAJO                      | 0.984 |  0.076 |
+| RIDGWAY                     | 0.986 |  0.011 |
+| RUEDI RESERVOIR             | 0.970 |  0.011 |
+| SANTA ROSA                  | 0.846 |  0.052 |
+| SILVER JACK                 | 0.978 |  0.014 |
+| SMITH & MOREHOUSE RESERVOIR | 0.981 |  0.006 |
+| STARVATION                  | 0.974 |  0.012 |
+| TAYLOR PARK                 | 0.974 |  0.013 |
+| VALLECITO                   | 0.980 |  0.028 |
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2200: ConvergenceWarning: Retrying MixedLM optimization with lbfgs
+  warnings.warn(
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2200: ConvergenceWarning: Retrying MixedLM optimization with cg
+  warnings.warn(
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2206: ConvergenceWarning: MixedLM optimization failed, trying a different optimizer may help.
+  warnings.warn(msg, ConvergenceWarning)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2218: ConvergenceWarning: Gradient optimization failed, |grad| = 99.743332
+  warnings.warn(msg, ConvergenceWarning)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2237: ConvergenceWarning: The MLE may be on the boundary of the parameter space.
+  warnings.warn(msg, ConvergenceWarning)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2261: ConvergenceWarning: The Hessian matrix at the estimated parameter values is not positive definite.
+  warnings.warn(msg, ConvergenceWarning)
+Time to run 'read_basin_data': 0.03648 seconds
+Time to run 'prep_data': 0.06316 seconds
+Time to run 'tree_model': 0.02435 seconds
+| site_name   |   NSE |   RMSE |
+|:------------|------:|-------:|
+| Davis       | 0.907 |  0.553 |
+| Hoover      | 0.692 |  1.191 |
+| Parker      | 0.804 |  0.706 |
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2200: ConvergenceWarning: Retrying MixedLM optimization with lbfgs
+  warnings.warn(
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2237: ConvergenceWarning: The MLE may be on the boundary of the parameter space.
+  warnings.warn(msg, ConvergenceWarning)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2261: ConvergenceWarning: The Hessian matrix at the estimated parameter values is not positive definite.
+  warnings.warn(msg, ConvergenceWarning)
+Time to run 'read_basin_data': 0.38188 seconds
+Time to run 'prep_data': 0.22447 seconds
+Time to run 'tree_model': 0.30110 seconds
+| site_name   |   NSE |   RMSE |
+|:------------|------:|-------:|
+| AGR         | 0.918 |  0.062 |
+| ALCR        | 0.982 |  0.077 |
+| BLR         | 0.966 |  0.035 |
+| BigBend     | 0.757 |  3.912 |
+| CCR         | 0.990 |  0.014 |
+| DFR         | 0.986 |  0.001 |
+| FRR         | 0.980 |  0.029 |
+| FortPeck    | 0.976 |  0.345 |
+| FortRandall | 0.971 |  1.304 |
+| GLER        | 0.975 |  0.166 |
+| Garrison    | 0.984 |  0.687 |
+| Oahe        | 0.850 |  2.794 |
+| PATR        | 0.968 |  0.113 |
+| PTR         | 0.990 |  0.004 |
+| SEMR        | 0.978 |  0.089 |
+| WCR         | 0.953 |  0.006 |
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:1634: UserWarning: Random effects covariance is singular
+  warnings.warn(msg)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2200: ConvergenceWarning: Retrying MixedLM optimization with lbfgs
+  warnings.warn(
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:1634: UserWarning: Random effects covariance is singular
+  warnings.warn(msg)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2237: ConvergenceWarning: The MLE may be on the boundary of the parameter space.
+  warnings.warn(msg, ConvergenceWarning)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2261: ConvergenceWarning: The Hessian matrix at the estimated parameter values is not positive definite.
+  warnings.warn(msg, ConvergenceWarning)
+Time to run 'read_basin_data': 0.09762 seconds
+Time to run 'prep_data': 0.16477 seconds
+Time to run 'tree_model': 0.02539 seconds
+| site_name   |   NSE |   RMSE |
+|:------------|------:|-------:|
+| BRN         | 0.950 |  1.251 |
+| GCL         | 0.844 |  8.150 |
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2200: ConvergenceWarning: Retrying MixedLM optimization with lbfgs
+  warnings.warn(
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2200: ConvergenceWarning: Retrying MixedLM optimization with cg
+  warnings.warn(
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2206: ConvergenceWarning: MixedLM optimization failed, trying a different optimizer may help.
+  warnings.warn(msg, ConvergenceWarning)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2218: ConvergenceWarning: Gradient optimization failed, |grad| = 54.497467
+  warnings.warn(msg, ConvergenceWarning)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2237: ConvergenceWarning: The MLE may be on the boundary of the parameter space.
+  warnings.warn(msg, ConvergenceWarning)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2261: ConvergenceWarning: The Hessian matrix at the estimated parameter values is not positive definite.
+  warnings.warn(msg, ConvergenceWarning)
+Time to run 'read_basin_data': 0.70042 seconds
+Time to run 'prep_data': 1.31254 seconds
+| site_name    |   NSE |   RMSE |
+|:-------------|------:|-------:|
+| Apalachia    | 0.974 | 11.023 |
+| Boone        | 0.972 | 11.285 |
+| Chikamauga   | 0.976 | 10.625 |
+| FtLoudoun    | 0.974 | 11.112 |
+| FtPatrick    | 0.974 | 11.054 |
+| Guntersville | 0.973 | 11.252 |
+| Kentucky     | 0.973 | 11.282 |
+| MeltonH      | 0.972 | 11.343 |
+| Nikajack     | 0.971 | 11.684 |
+| Ocoee1       | 0.968 | 12.139 |
+| Ocoee3       | 0.969 | 11.926 |
+| Pickwick     | 0.970 | 11.783 |
+| WattsBar     | 0.969 | 11.831 |
+| Wheeler      | 0.968 | 12.043 |
+| Wilbur       | 0.971 | 11.552 |
+| Wilson       | 0.975 | 10.809 |
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2200: ConvergenceWarning: Retrying MixedLM optimization with lbfgs
+  warnings.warn(
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2237: ConvergenceWarning: The MLE may be on the boundary of the parameter space.
+  warnings.warn(msg, ConvergenceWarning)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2261: ConvergenceWarning: The Hessian matrix at the estimated parameter values is not positive definite.
+  warnings.warn(msg, ConvergenceWarning)
+Time to run 'read_basin_data': 0.29298 seconds
+Time to run 'prep_data': 0.05198 seconds
+| site_name   |   NSE |   RMSE |
+|:------------|------:|-------:|
+| CRYSTAL     | 0.994 |  0.044 |
+Time to run 'read_basin_data': 0.03622 seconds
+No reservoirs to model.
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2200: ConvergenceWarning: Retrying MixedLM optimization with lbfgs
+  warnings.warn(
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2237: ConvergenceWarning: The MLE may be on the boundary of the parameter space.
+  warnings.warn(msg, ConvergenceWarning)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2261: ConvergenceWarning: The Hessian matrix at the estimated parameter values is not positive definite.
+  warnings.warn(msg, ConvergenceWarning)
+Time to run 'read_basin_data': 0.38109 seconds
+Time to run 'prep_data': 0.07467 seconds
+| site_name   |   NSE |   RMSE |
+|:------------|------:|-------:|
+| GRAR        | 0.998 |  0.028 |
+| GavinsPoint | 0.995 |  0.545 |
+| KORR        | 1.000 |  0.012 |
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/base/model.py:604: ConvergenceWarning: Maximum Likelihood optimization failed to converge. Check mle_retvals
+  warnings.warn("Maximum Likelihood optimization failed to "
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2200: ConvergenceWarning: Retrying MixedLM optimization with lbfgs
+  warnings.warn(
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2237: ConvergenceWarning: The MLE may be on the boundary of the parameter space.
+  warnings.warn(msg, ConvergenceWarning)
+/home/lcford2/.conda/envs/gpu2/lib/python3.8/site-packages/statsmodels/regression/mixed_linear_model.py:2261: ConvergenceWarning: The Hessian matrix at the estimated parameter values is not positive definite.
+  warnings.warn(msg, ConvergenceWarning)
+Time to run 'read_basin_data': 0.09741 seconds
+Time to run 'prep_data': 0.37116 seconds
+| site_name   |   NSE |   RMSE |
+|:------------|------:|-------:|
+| LWG         | 0.997 |  1.111 |
+| IHR         | 0.998 |  0.965 |
+| BON         | 0.995 |  3.289 |
+| RIS         | 0.995 |  1.826 |
+| CHJ         | 0.992 |  1.989 |
+| PRD         | 0.992 |  2.366 |
+| RRH         | 0.993 |  2.130 |
+| WEL         | 0.990 |  2.300 |
+| WAN         | 0.988 |  2.843 |

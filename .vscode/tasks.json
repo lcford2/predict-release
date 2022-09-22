@@ -1,0 +1,39 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Convert md to pdf",
+            "type": "shell",
+            "command": "notes/src/convert_md_to_pdf.ps1",
+            "args": [
+                "notes/md/${fileBasename}"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "Convert Dot File to PNG",
+            "type": "shell",
+            "command": "dot",
+            "args": [
+                "-Tpng",
+                "${file}",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}.png"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,125 @@
+#+TITLE: Literature review
+#+DATE: <2021-11-29 Mon>
+
+* Statistical Modeling of Reservoir Operations
+** Simulating California reservoir operation using the classification and regression-tree algorithm combined with a shuffled cross-validation scheme (Yang et al., 2016)
+*** Abstract
+**** 9 major reservoirs in California
+**** Original CART, enhanced CART, random forest,
+***** Enhanced and random forest outperform orignal CART
+***** Enhanced CART predicts peak flow better than random forest
+**** Oroville lake is significantly dominated by SWP allocation amount
+**** Reservoirs with low elevation are more significant to inflow than others.
+*** Introduction
+**** TODO Comeback and read introduction for other related literature
+*** Reservoirs and Data
+**** Trinity Lake, Don Pedro Reservoir, New Exchequer Reservoir, Folsom Lake, Friant Reservoir, New Melones Reservoir, Oroville, Success Lake, Shasta Lake
+***** All reservoirs belong to different river basins, therefore no cascade effects are studied
+**** California Data Exchange Center (CDEC)
+***** Gathers information from various organizations
+**** Model Input:
+***** Reservoir Storage
+****** During verification, this is calculated using mass balance and simulated releases of previous day
+***** Daily inflow
+***** Daily accumulated precipitation [we dont use]
+***** Snow depth in upstream mountains [we dont use]
+***** Downstream flow conditions [we dont use]
+***** Water Year Index (wet/dry conditions) [we dont use]
+****** (1) wet, (2) above normal, (3) below normal, (4) dry, (5) critical year
+***** Six river indices: [we dont use]
+****** Sacramento Valley Oct-Mar runoff
+****** Sacramento Valley Apr-Jul runoff
+****** Sacramento Valley water year total runoff
+****** Same things above but for San Joaquin Valley
+***** State Water Project (SWP) allocation amount [we dont use]
+***** Month of the year to control for seasonality
+**** Model Output:
+***** Controlled reservoir daily outflow [release]
+*** Methodology
+**** Classification and Regression Tree (CART) algorithm
+**** They fit a model for each reservoir
+***** This is in contrast to our goal of fitting a model that works for many reservoirs
+*** Results
+**** Their simulation results with the best model all have good NSE ( >= 0.75 )
+**** Downstream (low elevation reservoirs) are more dependent on inflow
+***** We see similar results in across the country with out methods (except for Lower Colorado)
+**** Authors find that releases are dependent on downstream river stage as well
+***** They state that downstream status is crucial for release decisions during high flow periods
+****** Basically, if downstream flow exceeds a certain level, operators must reduce their release and deviate from rule curves
+**** They state that at the daily level, the release time series is highly variable.
+***** This variability means that regression models underestimate the role of storage in release prediction as it is less variable on a day-to-day basis
+***** Additionally, rule curves are more of a guideline than strict rules and releases often deviate from USACE specified curves
+** Modeling and simulating of reservoir operation using the artificial neural network, support vector regression, deep learning algorithm (Zhang et al., 2018)
+*** Use back propogation NN (BP), support vector regression (SVR), and long short-term memory (LSTM)
+*** Input data:
+**** current inflow
+**** previous inflow (1 day lag)
+**** current water level
+**** previous water level
+**** current downstream water level
+**** previous downstream water level
+**** current month of year
+*** Output:
+**** current outflow [release]
+*** Normalization procedure is slightly different than ours:
+\begin{equation}
+X = \frac{X_{ori} - X_{min}}{X_{max} - X_{min}}
+\end{equation}
+**** basicially all values are between 0 and 1 X = (Xo - Xmin)/(Xmax - Xmin)
+*** Single model for single reservoir (temporal validation)
+*** Not really looking at what variables are important, more so looking at model performs the best
+** Real-time reservoir operation using data mining techniques (Bozorg-Haddad et al., 2018)
+*** Use SVM and ANN to calibrate against optimized releases from a NLP problem
+*** Models of various complexity are fit for each month of the year
+*** They get really good NSE values,
+*** Only fitting one reservoir
+** A large-scale comparison of Artificial Intelligence and Data Mining (AI&DM) techniques in simulating reservoir releases over the Upper Colorado (Yang et al., 2021)
+*** Study 12 AI&DM models to identify the most stable and reliable to assist in a variety of decision making processes
+*** Simulate controlled releases from 33 reservoirs in the Upper Colorado River
+*** Random Forest and Long-Short-Term-Memory (LSTM) perform best given baseline scenario
+*** Given complex input scenarios, the Perceptron model and Extreme Gradient Boosting Tree Algorithm produced more stable and superior results
+*** Inputs:
+**** Daily inflow
+**** Storage
+**** Seasonality (month of year)
+**** 3 scenarios:
+1. Using current variable
+2. Adding Lag-1 variables
+3. Adding Lag-2 variables
+*** Output:
+**** Daily release
+*** Models:
+**** Linear Regression
+**** Ridge Regression
+**** SVR (Polynomial)
+**** SVR (rbf?) [radial basis kernel function]
+**** KNN (10)
+***** KNN (3)
+**** CART
+**** RF
+**** XGBoost
+**** MPL_Tanh (Multiple Layer Perceptron) [ANN]
+**** MPL_Log
+**** LSTM
+*** Temporal validation
+*** Different models for each reservoir
+*** Linear regression improves the most out of all models when the lagged variables are added
+**** This could be because they performed the worst to begin with
+*** Lower elevation reservoirs are more difficult to simulate
+*** Larger reservoirs are also more difficult to simulate than small reservoirs
+*** Ancilliary lagged information can be very beneficial to model performance
+** Integrating a reservoir regulation scheme into a spatially distributed hydrological model (Zhao et al., 2016)
+*** Use reservoir stage-area-storage relationships to define Flood Control, Conservation, and Inactive (dead) pools
+*** Release Scheme:
+**** O if reservoir storage is in dead storage
+**** Downstream demand if in conservation pool
+**** An amount specified by a draw down equation that is dependent on flood inflow if in the flood control space:
+***** This is only if downstream flow is less than the maximum allowable downstream flow
+***** If downstream conditions are at or greater than max allowable the reservoir releases nothing
+**** If stage is greater than spillway height, all volume above max volume is released (spilled)
+*** This is a demand driven scheme with controls for low and high storage situations.
+**** This means you have to have downstream demand specified as well as the stage-area-storage relationships well defined for each reservoir
+**** Not extremely likely given the current state of reservoir data availability
+*** They derive water demand either through available data/reports or during calibration
+**** Typically they derive monthly demand and then partition it evenly among the days of the month
+***

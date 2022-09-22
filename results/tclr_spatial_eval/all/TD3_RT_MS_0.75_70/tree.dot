@@ -1,0 +1,210 @@
+digraph tree {
+<<<<<<< HEAD
+=======
+bgcolor="transparent"
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
+node [shape=rectangle, style="filled, rounded", color="black", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+	"0" [label="mse = 0.117
+samples = 100.0%
+<<<<<<< HEAD
+rts > 304.064", fillcolor="#efb58a"]
+	"8" [label="mse = 0.059
+samples = 30.9%
+rts > 584.033", fillcolor="#f9e5d6"]
+	"1" [label="mse = 0.138
+samples = 69.1%
+rts > 63.227", fillcolor="#eca36e"]
+	"12" [label="mse = 0.048
+samples = 19.2%
+inflow > 0.000", fillcolor="#fbeee5"]
+	"9" [label="mse = 0.066
+samples = 11.7%
+inflow_roll7 > 0.000", fillcolor="#f8decc"]
+	"2" [label="mse = 0.108
+samples = 36.2%
+rts > 10.364", fillcolor="#f1bc96"]
+	"5" [label="mse = 0.141
+samples = 32.9%
+inflow > -0.000", fillcolor="#eba06b"]
+	"13" [label="mse = 0.028
+samples = 12.2%
+               const: -0.010
+          storage_pre: 0.057
+          release_pre: 0.835
+              inflow: -0.099
+       storage_roll7: -0.043
+        release_roll7: 0.120
+         inflow_roll7: 0.019
+     storage_x_inflow: 0.054", fillcolor="#ffffff"]
+	"14" [label="mse = 0.077
+samples = 7.0%
+               const: -0.027
+          storage_pre: 0.679
+          release_pre: 1.040
+              inflow: -0.063
+       storage_roll7: -0.679
+       release_roll7: -0.064
+        inflow_roll7: -0.040
+     storage_x_inflow: 0.124", fillcolor="#f6d6bf"]
+	"10" [label="mse = 0.051
+samples = 7.3%
+               const: -0.039
+          storage_pre: 0.725
+          release_pre: 0.385
+              inflow: -0.594
+       storage_roll7: -0.731
+        release_roll7: 0.548
+         inflow_roll7: 0.522
+    storage_x_inflow: -0.061", fillcolor="#fbebe0"]
+	"11" [label="mse = 0.066
+samples = 4.4%
+               const: -0.012
+          storage_pre: 0.628
+          release_pre: 0.883
+              inflow: -0.164
+       storage_roll7: -0.631
+        release_roll7: 0.088
+         inflow_roll7: 0.108
+     storage_x_inflow: 0.051", fillcolor="#f8dfcc"]
+	"3" [label="mse = 0.038
+samples = 23.0%
+                const: 0.000
+=======
+rts &le; 304.064", fillcolor="#efb58a"]
+	"1" [label="mse = 0.138
+samples = 69.1%
+rts &le; 63.227", fillcolor="#eca36e"]
+	"2" [label="mse = 0.108
+samples = 36.2%
+rts &le; 10.364", fillcolor="#f1bc96"]
+	"3" [label="mse = 0.038
+samples = 23.0%
+               const: -0.000
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
+          storage_pre: 0.144
+          release_pre: 0.228
+               inflow: 0.904
+       storage_roll7: -0.090
+       release_roll7: -0.035
+         inflow_roll7: 0.106
+    storage_x_inflow: -0.212", fillcolor="#fdf6f1"]
+	"4" [label="mse = 0.166
+samples = 13.2%
+               const: -0.000
+          storage_pre: 0.227
+          release_pre: 0.615
+               inflow: 0.115
+       storage_roll7: -0.219
+        release_roll7: 0.223
+        inflow_roll7: -0.011
+     storage_x_inflow: 0.037", fillcolor="#e78c4b"]
+<<<<<<< HEAD
+=======
+	"5" [label="mse = 0.141
+samples = 32.9%
+inflow &le; -0.000", fillcolor="#eba06b"]
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
+	"6" [label="mse = 0.110
+samples = 19.5%
+               const: -0.014
+          storage_pre: 0.049
+          release_pre: 0.607
+              inflow: -0.129
+       storage_roll7: -0.027
+        release_roll7: 0.304
+         inflow_roll7: 0.031
+     storage_x_inflow: 0.076", fillcolor="#f0ba93"]
+	"7" [label="mse = 0.180
+samples = 13.4%
+               const: -0.045
+          storage_pre: 0.044
+          release_pre: 0.779
+              inflow: -0.065
+       storage_roll7: -0.031
+        release_roll7: 0.135
+         inflow_roll7: 0.065
+     storage_x_inflow: 0.083", fillcolor="#e58139"]
+<<<<<<< HEAD
+
+	"0" -> "1"
+	"0" -> "8"
+	"8" -> "9"
+	"8" -> "12"
+	"1" -> "2"
+	"1" -> "5"
+	"12" -> "13"
+	"12" -> "14"
+	"9" -> "10"
+	"9" -> "11"
+	"2" -> "3"
+	"2" -> "4"
+	"5" -> "6"
+	"5" -> "7"
+=======
+	"8" [label="mse = 0.059
+samples = 30.9%
+rts &le; 584.033", fillcolor="#f9e5d6"]
+	"9" [label="mse = 0.066
+samples = 11.7%
+inflow_roll7 &le; 0.000", fillcolor="#f8decc"]
+	"10" [label="mse = 0.051
+samples = 7.3%
+               const: -0.039
+          storage_pre: 0.725
+          release_pre: 0.385
+              inflow: -0.594
+       storage_roll7: -0.731
+        release_roll7: 0.548
+         inflow_roll7: 0.522
+    storage_x_inflow: -0.061", fillcolor="#fbebe0"]
+	"11" [label="mse = 0.066
+samples = 4.4%
+               const: -0.012
+          storage_pre: 0.628
+          release_pre: 0.883
+              inflow: -0.164
+       storage_roll7: -0.631
+        release_roll7: 0.088
+         inflow_roll7: 0.108
+     storage_x_inflow: 0.051", fillcolor="#f8dfcc"]
+	"12" [label="mse = 0.048
+samples = 19.2%
+inflow &le; 0.000", fillcolor="#fbeee5"]
+	"13" [label="mse = 0.028
+samples = 12.2%
+               const: -0.010
+          storage_pre: 0.057
+          release_pre: 0.835
+              inflow: -0.099
+       storage_roll7: -0.043
+        release_roll7: 0.120
+         inflow_roll7: 0.019
+     storage_x_inflow: 0.054", fillcolor="#ffffff"]
+	"14" [label="mse = 0.077
+samples = 7.0%
+               const: -0.027
+          storage_pre: 0.679
+          release_pre: 1.040
+              inflow: -0.063
+       storage_roll7: -0.679
+       release_roll7: -0.064
+        inflow_roll7: -0.040
+     storage_x_inflow: 0.124", fillcolor="#f6d6bf"]
+
+	"0" -> "1" [labeldistance=2.5, labelangle=45, headlabel="True"]
+	"1" -> "2"
+	"2" -> "3"
+	"2" -> "4"
+	"1" -> "5"
+	"5" -> "6"
+	"5" -> "7"
+	"0" -> "8" [labeldistance=2.5, labelangle=-45, headlabel="False"]
+	"8" -> "9"
+	"9" -> "10"
+	"9" -> "11"
+	"8" -> "12"
+	"12" -> "13"
+	"12" -> "14"
+>>>>>>> 579fa811cb8ff98a951e8eb722fffe25011baaf3
+}
