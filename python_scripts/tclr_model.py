@@ -318,8 +318,11 @@ def pipeline(args):
         time_function(model.fit)()
 
         params, groups = get_params_and_groups(X_train, model)
+        # get the unique final leaves
         groups_uniq = groups.unique()
+        # sorts them in ascending order
         groups_uniq.sort()
+        # maps them to their sorted index + 1
         group_map = {j: i + 1 for i, j in enumerate(groups_uniq)}
         groups = groups.apply(group_map.get)
         groups_list = list(groups)

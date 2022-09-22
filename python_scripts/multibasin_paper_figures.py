@@ -67,7 +67,10 @@ def write_pickle(obj, file):
 
 
 def read_results():
-    path_format = "../results/tclr_model_drop_res_sto_diff_pers_testing_minsamples/all/TD{}_RT_MS_exhaustive/results.pickle".format
+    path_format = (
+        "../results/tclr_model_drop_res_sto_diff_pers_testing_minsamples/"
+        + "all/TD{}_RT_MS_exhaustive/results.pickle".format
+    )
     models = {
         # "TD0": path_format(0),
         "TD1": path_format(1),
@@ -610,9 +613,11 @@ def make_maps(axes, coords=None, other_bound=None):
             **label_map[i],
         )
         ax.set_yticks(parallels)
-        ax.set_yticklabels([f"{i:.0f}$^\circ$N" for i in parallels], fontsize=10)
+        ax.set_yticklabels([r"{:.0f}$^\circ$N".format(i) for i in parallels], fontsize=10)
         ax.set_xticks(meridians)
-        ax.set_xticklabels([f"{abs(i):.0f}$^\circ$W" for i in meridians], fontsize=10)
+        ax.set_xticklabels(
+            [r"{:.0f}$^\circ$W".format(abs(i)) for i in meridians], fontsize=10
+        )
         ax.set_frame_on(True)
         for spine in ax.spines.values():
             spine.set_edgecolor("black")
@@ -662,9 +667,11 @@ def make_basin_map(ax, basin_info):
     )
 
     ax.set_yticks(parallels)
-    ax.set_yticklabels([f"{i:.0f}$^\circ$N" for i in parallels], fontsize=16)
+    ax.set_yticklabels([r"{:.0f}$^\circ$N".format(i) for i in parallels], fontsize=16)
     ax.set_xticks(meridians)
-    ax.set_xticklabels([f"{abs(i):.0f}$^\circ$W" for i in meridians], fontsize=16)
+    ax.set_xticklabels(
+        [r"{:.0f}$^\circ$W".format(abs(i)) for i in meridians], fontsize=16
+    )
     ax.set_frame_on(True)
     for spine in ax.spines.values():
         spine.set_edgecolor("black")
@@ -1002,13 +1009,10 @@ def plot_perf_vs_datalength(results):
 
 
 def plot_grid_search_results(ds="simul", metric="NSE"):
-    import glob
-    import re
-
     files = glob.glob(
         "../results/tclr_model_testing/all/TD?_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
     )
-    td_mss_pat = re.compile("TD(\d)_MSS(\d\.\d\d)")
+    td_mss_pat = re.compile(r"TD(\d)_MSS(\d\.\d\d)")
     matches = [re.search(td_mss_pat, i) for i in files]
     td_mss = [i.groups() for i in matches]
     results = {}
@@ -1180,15 +1184,12 @@ def stripplot(
 
 
 def plot_data_assim_results(metric="NSE"):
-    import glob
-    import re
-
     files = glob.glob(
         "../results/tclr_model_testing/all/TD4_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
     ) + glob.glob(
         "../results/tclr_model_testing/all/TD5_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
     )
-    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    td_mss_assim_pat = re.compile(r"TD(\d)_(.*)_MSS(\d\.\d\d)")
     matches = [re.search(td_mss_assim_pat, i) for i in files]
     td_mss_assim = [i.groups() for i in matches]
     results = {}
@@ -1367,13 +1368,10 @@ def plot_data_assim_results(metric="NSE"):
 
 
 def plot_assim_score_ridgelines(metric="NSE"):
-    import glob
-    import re
-
     files = glob.glob(
         "../results/tclr_model_testing/all/TD?_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
     )
-    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    td_mss_assim_pat = re.compile(r"TD(\d)_(.*)_MSS(\d\.\d\d)")
     matches = [re.search(td_mss_assim_pat, i) for i in files]
     td_mss_assim = [i.groups() for i in matches]
     results = {}
@@ -2300,13 +2298,10 @@ def char_split_map_single_var(
 
 
 def plot_data_assim_scatter(metric="NSE"):
-    import glob
-    import re
-
     files = glob.glob(
         "../results/tclr_model_testing/all/TD?_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
     )
-    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    td_mss_assim_pat = re.compile(r"TD(\d)_(.*)_MSS(\d\.\d\d)")
     matches = [re.search(td_mss_assim_pat, i) for i in files]
     td_mss_assim = [i.groups() for i in matches]
     results = {}
@@ -2373,7 +2368,7 @@ def plot_reservoir_metric(metric, ds="simul"):
     files = glob.glob(
         "../results/tclr_model_testing/all/TD?_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
     )
-    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    td_mss_assim_pat = re.compile(r"TD(\d)_(.*)_MSS(\d\.\d\d)")
     matches = [re.search(td_mss_assim_pat, i) for i in files]
     td_mss_assim = [i.groups() for i in matches]
     results = {}
@@ -2422,16 +2417,13 @@ def plot_reservoir_metric(metric, ds="simul"):
 
 
 def plot_assim_metric_scatter():
-    import glob
-    import re
-
     file_templates = [
         "../results/tclr_model_testing/all/TD4_*_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle",
         "../results/tclr_model_testing/all/TD5_*_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle",
     ]
     keys = [(4, 0.1), (5, 0.01)]
     results = {}
-    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    td_mss_assim_pat = re.compile(r"TD(\d)_(.*)_MSS(\d\.\d\d)")
     for ft in file_templates:
         files = glob.glob(ft)
         matches = [re.search(td_mss_assim_pat, i) for i in files]
@@ -2502,15 +2494,12 @@ def plot_basin_performance(metric="nRMSE"):
 
 
 def plot_assim_lines():
-    import glob
-    import re
-
     files = glob.glob(
         "../results/tclr_model_testing/all/TD4_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
     ) + glob.glob(
         "../results/tclr_model_testing/all/TD5_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
     )
-    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    td_mss_assim_pat = re.compile(r"TD(\d)_(.*)_MSS(\d\.\d\d)")
     matches = [re.search(td_mss_assim_pat, i) for i in files]
     td_mss_assim = [i.groups() for i in matches]
     results = {}
@@ -2584,15 +2573,12 @@ def plot_assim_lines():
 
 
 def plot_data_assim_scatter():
-    import glob
-    import re
-
     files = glob.glob(
         "../results/tclr_model_testing/all/TD4_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
     ) + glob.glob(
         "../results/tclr_model_testing/all/TD5_*_MSS0.??_RT_MS_exhaustive_new_hoover/results.pickle"
     )
-    td_mss_assim_pat = re.compile("TD(\d)_(.*)_MSS(\d\.\d\d)")
+    td_mss_assim_pat = re.compile(r"TD(\d)_(.*)_MSS(\d\.\d\d)")
     matches = [re.search(td_mss_assim_pat, i) for i in files]
     td_mss_assim = [i.groups() for i in matches]
     td_mss_assim = [i for i in td_mss_assim if "yearly" not in i]
@@ -2751,7 +2737,9 @@ def get_unique_trees():
                     width=width,
                     color=style_colors[i],
                 )
-                ax.bar(xright, error[group], width=width, color=style_colors[i], hatch="//")
+                ax.bar(
+                    xright, error[group], width=width, color=style_colors[i], hatch="//"
+                )
                 bottom_count = counts[group]
                 bottom_error = error[group]
             else:
@@ -2769,7 +2757,7 @@ def get_unique_trees():
                     bottom=bottom_error,
                     width=width,
                     color=style_colors[i],
-                    hatch="//"
+                    hatch="//",
                 )
                 bottom_count += counts[group]
                 bottom_error += error[group]
@@ -2865,7 +2853,11 @@ def get_operating_groups():
     rbasins = rbasins.replace(rename)
     rbasins = rbasins.str.capitalize()
     op_mod_ids["basin"] = rbasins
+    return op_mod_ids
 
+
+def plot_operation_group_map():
+    op_mod_ids = get_operating_groups()
     res_locs = pd.read_csv("../geo_data/reservoirs.csv")
     res_locs = res_locs.set_index("site_name")
     op_mod_ids["x"] = res_locs["long"]
@@ -2948,6 +2940,91 @@ def get_operating_groups():
         legend_labels=list(op_names.values()),
     )
     plt.show()
+
+
+def plot_error_by_variable():
+    op_mod_ids = get_operating_groups()
+    result_file = (
+        "../results/tclr_model_testing/all/"
+        + "TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle"
+    )
+    data_file = (
+        "../results/tclr_model_testing/all/"
+        + "TD4_MSS0.10_RT_MS_exhaustive_new_hoover/model_data.pickle"
+    )
+    with open(result_file, "rb") as f:
+        results = pickle.load(f)
+    with open(data_file, "rb") as f:
+        data = pickle.load(f)
+
+    results = results["train_data"]
+    results["op_group"] = [
+        op_mod_ids.loc[i, "Group Name"]
+        for i in results.index.get_level_values("site_name")
+    ]
+
+    train_data = data["xtrain"]
+    means = data["means"]
+    std = data["std"]
+
+    train_data_act = train_data.copy()
+    for col in train_data_act.columns:
+        if col in means.columns:
+            train_data_act[col] = (
+                (train_data_act[col].unstack().T * std[col]) + means[col]
+            ).T.stack()
+
+    results["actual_std"] = (
+        (results["actual"].unstack().T - means["release"]) / std["release"]
+    ).T.stack()
+    results["model_std"] = (
+        (results["model"].unstack().T - means["release"]) / std["release"]
+    ).T.stack()
+
+    # results["error"] = (results["model"] - results["actual"]).abs()
+    # results["error_std"] = (results["model_std"] - results["actual_std"]).abs()
+    results["error"] = results["model"] - results["actual"]
+    results["error_std"] = results["model_std"] - results["actual_std"]
+
+    vars = train_data.columns.drop(["const", "rts", "max_sto"])
+
+    # fig, axes = plt.subplots(2, 4, sharex=True, sharey=True, figsize=(19, 10))
+    # axes = axes.flatten()
+
+    # for ax, var in zip(axes, vars):
+    var_map = {
+        "storage_pre": "Current Storage",
+        "release_pre": "Previous Release",
+        "inflow": "Net Inflow",
+        "sto_diff": "Weekly Storage Difference",
+        "release_roll7": "Weekly Mean Release",
+        "inflow_roll7": "Weekly Mean Inflow",
+        "storage_x_inflow": "Storage-Inflow Interaction",
+    }
+    for var in vars:
+        x = train_data_act[var]
+        y = results["error"]
+        color = results["op_group"]
+        df = pd.DataFrame({var: x, "Error": y, "color": color})
+        # sns.scatterplot(data=df, x=var, y="Error", hue="color", ax=ax)
+        ax = sns.scatterplot(
+            data=df,
+            x=var,
+            y="Error",
+            hue="color",
+            hue_order=[
+                "Small ROR",
+                "Large ROR",
+                "Small St. Dam",
+                "Medium St. Dam",
+                "Large St. Dam",
+            ],
+        )
+        ax.legend(loc="upper right")
+        ax.set_xlabel(var_map[var])
+        ax.set_ylabel(r"$|y_{mod} - y_{obs}|$")
+
+        plt.show()
 
 
 def get_unique_paths():
@@ -3038,8 +3115,8 @@ def plot_interannual_group_variability():
         6: "Release Trend Persistence (6)",
     }
 
-    # counts = groups.groupby(["site_name", "year", "month"])["group"].value_counts()
-    counts = groups.groupby(["site_name", "year"])["group"].value_counts()
+    counts = groups.groupby(["site_name", "year", "month"])["group"].value_counts()
+    # counts = groups.groupby(["site_name", "year"])["group"].value_counts()
     counts.name = "count"
 
     # plot_res = counts.index.get_level_values("site_name").unique()
@@ -3062,12 +3139,25 @@ def plot_interannual_group_variability():
 
         df = (
             df.reset_index()
-            .sort_values(by=["year", "group"])
-            .set_index(["year", "group"])["count"]
+            .sort_values(by=["year", "month", "group"])
+            .set_index(["year", "month", "group"])["count"]
         )
         df = df.unstack()
         # get the percentage of each group in each year
         df = df.divide(df.sum(axis=1), axis=0) * 100
+        df = df.fillna(0.0)
+        df.columns = df.columns.values
+        df = df.reset_index().melt(id_vars=["year", "month"], var_name="group")
+        sns.barplot(data=df, x="month", y="value", hue="group", estimator=np.mean, errorbar=("ci", 90), capsize=0.15, errwidth=2)
+
+        # quants = df.groupby("month").quantile([0.1, 0.25, 0.5, 0.75, 0.9])
+        # quants.columns = quants.columns.values
+        # quants = quants.reset_index().rename(columns={"level_1": "quantile"})
+        # quants = quants.melt(id_vars=["month", "quantile"], value_vars=[5, 7])
+
+        II()
+        sys.exit()
+
         # drop the first and last year as they are incomplete
         df = df.drop(df.index.min())
         df = df.drop(df.index.max())
@@ -3215,8 +3305,10 @@ if __name__ == "__main__":
     # plot_basin_performance(metric)
     # plot_assim_lines()
 
-    get_unique_trees()
+    # get_unique_trees()
     # get_unique_paths()
     # get_operating_groups()
-    # plot_interannual_group_variability()
+    plot_interannual_group_variability()
     # plot_interannual_seasonal_group_variability()
+
+    # plot_error_by_variable()
