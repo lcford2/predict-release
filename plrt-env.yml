@@ -1,0 +1,20 @@
+name: plrt
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - numpy
+  - pandas
+  - matplotlib
+  - scipy
+  - scikit-learn
+  - seaborn
+  - IPython
+  - statsmodels
+  - geopandas
+  - pillow
+  - pip:
+    - basemap-data
+    - basemap-data-hires
+    - basemap
