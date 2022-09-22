@@ -1,16 +1,16 @@
 import calendar
+import glob
 import json
 import os
 import pathlib
 import pickle
+import re
 import socket
 import sys
-import re
-import glob
 from functools import partial
+from time import perf_counter as timer
 
 from joblib import Parallel, delayed
-from time import perf_counter as timer
 
 hostname = socket.gethostname()
 if hostname == "CCEE-DT-094":
@@ -37,7 +37,7 @@ from matplotlib.colors import ListedColormap, LogNorm, Normalize
 from matplotlib.transforms import Bbox
 from mpl_toolkits.basemap import Basemap
 from scipy.stats import boxcox
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from utils.helper_functions import linear_scale_values, make_bin_label_map
 
 if hostname == "CCEE-DT-094":
@@ -97,6 +97,10 @@ def mean_absolute_scaled_error(yact, ymod):
     yact = np.array(yact)
     lagerror = np.absolute(yact[1:] - yact[:-1]).mean()
     return error / lagerror
+
+
+def total_absolute_error(yact, ymod):
+    return (ymod - yact).abs().sum()
 
 
 def bias(yact, ymod):
@@ -986,7 +990,12 @@ def plot_upper_lower_perf(results):
 
     scores = scores.reset_index()
 
-    ax = sns.barplot(data=scores, y="NSE", x="Depth", hue="label",)
+    ax = sns.barplot(
+        data=scores,
+        y="NSE",
+        x="Depth",
+        hue="label",
+    )
     ax.set_xlabel("")
     ax.legend(loc="best")
     plt.show()
@@ -2488,7 +2497,12 @@ def plot_basin_performance(metric="nRMSE"):
     df = df.melt(id_vars=["basin"], var_name="model", value_name=metric)
 
     sns.catplot(
-        data=df, x="basin", y=metric, hue="model", palette="colorblind", kind="box",
+        data=df,
+        x="basin",
+        y=metric,
+        hue="model",
+        palette="colorblind",
+        kind="box",
     )
     plt.show()
 
@@ -2674,7 +2688,7 @@ def get_unique_trees():
     )
 
     group_error = df.groupby(["site_name", df["datetime"].dt.month, "Group"]).apply(
-        lambda x: mean_squared_error(x["actual"], x["model"], squared=False)
+        lambda x: total_absolute_error(x["actual"], x["model"])
     )
     value_counts["error"] = group_error
     value_counts = value_counts.reset_index()
@@ -2713,10 +2727,12 @@ def get_unique_trees():
         counts = rdf.pivot(index=["datetime"], columns=["Group"], values=["Count"])
         counts = counts.divide(counts.sum(axis=1).values, axis=0) * 100
         counts.columns = counts.columns.droplevel(0)
+        counts = counts.fillna(0.0)
 
         error = rdf.pivot(index=["datetime"], columns=["Group"], values=["error"])
         error = error.divide(error.sum(axis=1).values, axis=0) * 100
         error.columns = error.columns.droplevel(0)
+        error = error.fillna(0.0)
 
         fig = plt.figure(figsize=(19, 10))
         ax = fig.add_subplot()
@@ -2773,7 +2789,7 @@ def get_unique_trees():
         plt.subplots_adjust(
             top=0.942, bottom=0.141, left=0.066, right=0.985, hspace=0.2, wspace=0.2
         )
-        plt.savefig(f"../figures/monthly_tree_breakdown_error/{rbasins[res]}_{res}.png")
+        plt.savefig(f"../figures/monthly_tree_breakdown_terror/{rbasins[res]}_{res}.png")
         # plt.show()
         plt.close()
         # cont = input("Continue? [Y/n] ")
@@ -3174,7 +3190,7 @@ def plot_interannual_group_variability():
             top=0.942, bottom=0.141, left=0.066, right=0.985, hspace=0.2, wspace=0.2
         )
         plt.savefig(
-            f"../figures/interannual_group_variability/{basin}_{res}.png", dpi=400
+            f"../figures/interannual_group_variability_new/{basin}_{res}.png", dpi=400
         )
 
         plt.close()
