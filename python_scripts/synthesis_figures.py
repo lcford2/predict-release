@@ -54,6 +54,12 @@ OP_NAMES = {
     4: "Large St. Dam",
 }
 
+RESULT_FILE = "../results/tclr_model_testing/all/"\
+    + "TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle"
+
+DATA_FILE = "../results/tclr_model_testing/all/" \
+    + "TD4_MSS0.10_RT_MS_exhaustive_new_hoover/model_data.pickle"
+
 
 def load_pickle(file):
     with open(file, "rb") as f:
@@ -584,12 +590,7 @@ def char_split_map_single_var(
 
 
 def get_unique_trees():
-    with open(
-        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/"
-        + "results.pickle",
-        "rb",
-    ) as f:
-        results = pickle.load(f)
+    results = load_pickle(RESULT_FILE)
 
     groups = results["groups"]
     train_data = results["train_data"]
@@ -625,7 +626,7 @@ def get_unique_trees():
 
     plot_res = value_counts["site_name"].unique()
     name_replacements = get_name_replacements()
-    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    rbasins = pd.load_pickle("../pickles/res_basin_map.pickle")
 
     group_names = {
         7: "High Inflow Storage Maintenance (7)",
@@ -730,12 +731,7 @@ def get_operating_groups():
     for key, file in zip(td_mss_assim, files):
         with open(file, "rb") as f:
             results[key] = pickle.load(f)
-    with open(
-        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/"
-        + "results.pickle",
-        "rb",
-    ) as f:
-        results[("4", "never", "0.10")] = pickle.load(f)
+    results[("4", "never", "0.10")] = load_pickle(RESULT_FILE)
 
     groups = select_results(results, "groups")
     columns = ["Res", "Date", "TD", "Assim", "MSS", "Group"]
@@ -772,7 +768,7 @@ def get_operating_groups():
     op_mod_ids = pd.DataFrame(op_mods.apply(op_codes.index))
     op_mod_ids["Group Name"] = op_mod_ids["Group"].apply(OP_NAMES.get)
 
-    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    rbasins = pd.load_pickle("../pickles/res_basin_map.pickle")
     rename = {
         "upper_col": "colorado",
         "lower_col": "colorado",
@@ -873,18 +869,8 @@ def plot_operation_group_map():
 
 def plot_error_by_variable():
     op_mod_ids = get_operating_groups()
-    result_file = (
-        "../results/tclr_model_testing/all/"
-        + "TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle"
-    )
-    data_file = (
-        "../results/tclr_model_testing/all/"
-        + "TD4_MSS0.10_RT_MS_exhaustive_new_hoover/model_data.pickle"
-    )
-    with open(result_file, "rb") as f:
-        results = pickle.load(f)
-    with open(data_file, "rb") as f:
-        data = pickle.load(f)
+    results = load_pickle(RESULT_FILE)
+    data = load_pickle(DATA_FILE)
 
     results = results["train_data"]
     results["op_group"] = [
@@ -957,7 +943,7 @@ def plot_error_by_variable():
 
 
 def get_unique_paths():
-    df = pd.read_pickle(
+    df = pd.load_pickle(
         "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/"
         + "train_paths.pickle"
     )
@@ -987,7 +973,7 @@ def get_unique_paths():
 
     plot_res = path_counts["site_name"].unique()
     name_replacements = get_name_replacements()
-    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    rbasins = pd.load_pickle("../pickles/res_basin_map.pickle")
 
     figManager = plt.get_current_fig_manager()
     for res in plot_res:
@@ -1018,12 +1004,7 @@ def get_unique_paths():
 
 
 def plot_interannual_group_variability():
-    with open(
-        "../results/tclr_model_testing/all/TD4_MSS0.10_RT_MS_exhaustive_new_hoover/"
-        + "results.pickle",
-        "rb",
-    ) as f:
-        results = pickle.load(f)
+    results = load_pickle(RESULT_FILE)
 
     groups = results["groups"]
     groups = groups.reset_index().rename(columns={0: "group"})
@@ -1051,7 +1032,7 @@ def plot_interannual_group_variability():
     counts.name = "count"
 
     # plot_res = counts.index.get_level_values("site_name").unique()
-    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    rbasins = pd.load_pickle("../pickles/res_basin_map.pickle")
     renames = get_name_replacements()
     basin_name_map = {
         "lower_col": "Lower Colorado",
@@ -1113,6 +1094,35 @@ def plot_interannual_group_variability():
 
         plt.close()
 
+def plot_transition_diagnostics():
+    results = load_pickle(RESULT_FILE)
+    data = load_pickle(DATA_FILE)
+    ydata = results["train_data"]
+    ydata["groups"] = results["groups"]
+
+    ydata["group_shift"] = ydata.groupby("site_name")["groups"].shift(-1)
+    xdata = data["xtrain"]
+    xdata = xdata.drop(["const", "rts", "max_sto"], axis=1)
+    for col in xdata.columns:
+        ydata[col] = xdata[col]
+    
+    transitions = ydata.loc[ydata["groups"] != ydata["group_shift"], :].dropna()
+    transitions["t_type"] = transitions.apply(
+        lambda x: (int(x["groups"]), int(x["group_shift"])), axis=1
+    )
+
+    counts = transitions.groupby([
+        transitions.index.get_level_values(0),
+        transitions.index.get_level_values(1).month
+    ])["t_type"].value_counts()
+
+
+    # res = "Hoover"
+    # df = transitions.loc[pd.IndexSlice[res, :], :]
+    # counts = 
+    
+    II()
+
 
 if __name__ == "__main__":
     args = sys.argv[1:]
@@ -1126,7 +1136,8 @@ if __name__ == "__main__":
     # get_unique_trees()
     # get_unique_paths()
     # get_operating_groups()
-    plot_interannual_group_variability()
+    # plot_interannual_group_variability()
     # plot_interannual_seasonal_group_variability()
-
     # plot_error_by_variable()
+    plot_transition_diagnostics()
+
