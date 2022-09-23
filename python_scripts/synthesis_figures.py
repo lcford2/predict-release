@@ -54,11 +54,23 @@ OP_NAMES = {
     4: "Large St. Dam",
 }
 
-RESULT_FILE = "../results/tclr_model_testing/all/"\
-    + "TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle"
+OP_MODES = {
+    3: "Low Steady Release",
+    4: "Storage Build Up",
+    5: "St. & Rel. Maint.",
+    6: "Rel. Trend Pers.",
+    7: "High Inf. St. Maint.",
+}
 
-DATA_FILE = "../results/tclr_model_testing/all/" \
+RESULT_FILE = (
+    "../results/tclr_model_testing/all/"
+    + "TD4_MSS0.10_RT_MS_exhaustive_new_hoover/results.pickle"
+)
+
+DATA_FILE = (
+    "../results/tclr_model_testing/all/"
     + "TD4_MSS0.10_RT_MS_exhaustive_new_hoover/model_data.pickle"
+)
 
 
 def load_pickle(file):
@@ -1094,6 +1106,7 @@ def plot_interannual_group_variability():
 
         plt.close()
 
+
 def plot_transition_diagnostics():
     results = load_pickle(RESULT_FILE)
     data = load_pickle(DATA_FILE)
@@ -1105,23 +1118,100 @@ def plot_transition_diagnostics():
     xdata = xdata.drop(["const", "rts", "max_sto"], axis=1)
     for col in xdata.columns:
         ydata[col] = xdata[col]
-    
+
     transitions = ydata.loc[ydata["groups"] != ydata["group_shift"], :].dropna()
     transitions["t_type"] = transitions.apply(
         lambda x: (int(x["groups"]), int(x["group_shift"])), axis=1
     )
 
-    counts = transitions.groupby([
-        transitions.index.get_level_values(0),
-        transitions.index.get_level_values(1).month
-    ])["t_type"].value_counts()
+    # counts = transitions.groupby([
+    #     transitions.index.get_level_values(0),
+    #     transitions.index.get_level_values(1).month
+    # ])["t_type"].value_counts()
+
+    # counts = transitions.groupby(
+    #     transitions.index.get_level_values(0),
+    # )["t_type"].value_counts()
+
+    res = "Hoover"
+    df = transitions.loc[pd.IndexSlice[res, :], ["t_type"]]
+    df["from"] = df["t_type"].apply(lambda x: x[0])
+    df["to"] = df["t_type"].apply(lambda x: x[1])
+    df["count"] = 1
+    counts = df.groupby(["from", "to"])["count"].sum()
+    counts = counts.fillna(0.0).unstack()
+    # rows are FROM, columns are TO
+    percents = counts.divide(counts.sum(axis=1), axis=0) * 100
+    percents.columns = [OP_MODES.get(i) for i in percents.columns]
+    percents.index = [OP_MODES.get(i) for i in percents.index]
+    ax = sns.heatmap(percents.T, annot=True, fmt=".0f")
+    ax.tick_params(axis="x", labelrotation=0)
+
+    plt.show()
 
 
-    # res = "Hoover"
-    # df = transitions.loc[pd.IndexSlice[res, :], :]
-    # counts = 
-    
-    II()
+def plot_shift_probabilities():
+    results = load_pickle(RESULT_FILE)
+    data = load_pickle(DATA_FILE)
+    ydata = results["train_data"]
+    ydata["groups"] = results["groups"]
+
+    ydata["group_shift"] = ydata.groupby("site_name")["groups"].shift(-1)
+    xdata = data["xtrain"]
+    xdata = xdata.drop(["const", "rts", "max_sto"], axis=1)
+    for col in xdata.columns:
+        ydata[col] = xdata[col]
+
+    next_count = ydata.groupby(["site_name", "groups"])["group_shift"].value_counts()
+
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    renames = get_name_replacements()
+    basin_name_map = {
+        "lower_col": "Lower Colorado",
+        "upper_col": "Upper Colorado",
+        "missouri": "Missouri",
+        "pnw": "Columbia",
+        "tva": "Tennessee",
+    }
+    resers = next_count.index.get_level_values("site_name").unique()
+    for res in resers:
+        basin = rbasins[res]
+        print_basin = basin_name_map[basin]
+        pname = renames.get(res, res).title()
+
+        df = next_count.loc[pd.IndexSlice[res, :, :]].unstack()
+
+        percents = df.divide(df.sum(axis=1), axis=0) * 100
+        percents.columns = [OP_MODES.get(i) for i in percents.columns]
+        percents.index = [OP_MODES.get(i) for i in percents.index]
+        annot = []
+        for row in percents.values:
+            annot.append([f"{i:.0f} %" for i in row])
+
+        fig = plt.figure(figsize=(19, 10))
+        ax = fig.add_subplot()
+        sns.heatmap(percents, annot=annot, fmt="s", ax=ax)
+        # ax = sns.heatmap(percents, annot=True, fmt=".0f")
+        ax.tick_params(axis="x", labelrotation=0)
+        ax.set_ylabel("Current Op. Mode")
+        ax.set_xlabel("Next Op. Mode")
+        ax.set_title(f"{pname} - {print_basin}")
+        plt.subplots_adjust(
+            top=0.94, bottom=0.105, left=0.163, right=0.985, hspace=0.2, wspace=0.2
+        )
+        plt.savefig(f"../figures/transition_probs/{basin}_{res}.png", dpi=400)
+        plt.close()
+
+
+def rename_transistion_columns(columns):
+    out = []
+    for col in columns:
+        start = col[0]
+        to = col[1]
+        start_text = OP_MODES[int(start)]
+        to_text = OP_MODES[int(to)]
+        out.append(f"{start_text} -> \n{to_text}")
+    return out
 
 
 if __name__ == "__main__":
@@ -1139,5 +1229,5 @@ if __name__ == "__main__":
     # plot_interannual_group_variability()
     # plot_interannual_seasonal_group_variability()
     # plot_error_by_variable()
-    plot_transition_diagnostics()
-
+    # plot_transition_diagnostics()
+    plot_shift_probabilities()
