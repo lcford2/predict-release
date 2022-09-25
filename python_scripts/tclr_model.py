@@ -316,6 +316,8 @@ def pipeline(args):
         )
 
         time_function(model.fit)()
+        II()
+        sys.exit()
 
         params, groups = get_params_and_groups(X_train, model)
         # get the unique final leaves
@@ -519,7 +521,7 @@ def pipeline(args):
     # foldername = foldername + int_mod + all_mod + f"_{max_depth}" + assim_mod + "_RT_MS"
     assim_mod = f"_{args.assim}" if args.assim else ""
     mss_mod = f"_MSS{min_samples_split:0.2f}"
-    foldername = f"TD{max_depth}{assim_mod}{mss_mod}_RT_MS_{args.method}"
+    foldername = f"TD{max_depth}{assim_mod}{mss_mod}_RT_MS_{args.method}_new_hoover_new_rel_adj"
     folderpath = pathlib.Path("..", "results", "tclr_model_testing", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
@@ -785,12 +787,16 @@ def simul_reservoir(
             + rdf.loc[loc, "inflow"]
             - release_act
         )
+        release_adjusted = release_act
         # keep storage and release within bounds
         if storage > upper_bounds.loc[res, "storage"]:
             storage = upper_bounds.loc[res, "storage"]
+            # release_adjusted = rdf.loc[loc, "storage_pre"] - storage + rdf.loc[loc, "inflow"]
         elif storage < lower_bounds.loc[res, "storage"]:
             storage = lower_bounds.loc[res, "storage"]
+            # release_adjusted = rdf.loc[loc, "storage_pre"] - storage + rdf.loc[loc, "inflow"]
 
+        # release_act = release_adjusted
         if release_act > upper_bounds.loc[res, "release"]:
             release_act = upper_bounds.loc[res, "release"]
         elif release_act < lower_bounds.loc[res, "release"]:
