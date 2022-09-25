@@ -7,5 +7,7 @@
 			"path": "../../rtree-lr-combo"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"python.defaultInterpreterPath": "~/.conda/envs/sry-env/bin/python",
+	}
 }
