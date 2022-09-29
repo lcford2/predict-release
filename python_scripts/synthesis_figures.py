@@ -1214,6 +1214,94 @@ def rename_transistion_columns(columns):
     return out
 
 
+def plot_lagged_shift_probabilities():
+    results = load_pickle(RESULT_FILE)
+    data = load_pickle(DATA_FILE)
+    ydata = results["train_data"]
+    ydata["groups"] = results["groups"]
+
+    NLAGS = 30
+
+    for i in range(1, NLAGS + 1):
+        ydata[f"group_shift{i}"] = ydata.groupby("site_name")["groups"].shift(-i)
+
+    xdata = data["xtrain"]
+    xdata = xdata.drop(["const", "rts", "max_sto"], axis=1)
+    for col in xdata.columns:
+        ydata[col] = xdata[col]
+
+    counts = pd.DataFrame()
+    for i in range(1, NLAGS + 1):
+        if counts.empty:
+            temp = ydata.groupby(["site_name", "groups"])[
+                f"group_shift{i}"
+            ].value_counts()
+            temp.name = "lag1_count"
+            counts = temp.to_frame()
+        else:
+            counts[f"lag{i}_count"] = ydata.groupby(["site_name", "groups"])[
+                f"group_shift{i}"
+            ].value_counts()
+
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    renames = get_name_replacements()
+    basin_name_map = {
+        "lower_col": "Lower Colorado",
+        "upper_col": "Upper Colorado",
+        "missouri": "Missouri",
+        "pnw": "Columbia",
+        "tva": "Tennessee",
+    }
+    resers = counts.index.get_level_values("site_name").unique()
+    for res in resers:
+        basin = rbasins[res]
+        print_basin = basin_name_map[basin]
+        pname = renames.get(res, res).title()
+
+        rcounts = counts.loc[pd.IndexSlice[res, :, :], :]
+
+        df = rcounts.unstack().T
+        totals = df.groupby(df.index.get_level_values(0)).sum()
+
+        for lag in totals.index:
+            df.loc[pd.IndexSlice[lag, :], :] /= totals.loc[lag]
+
+        df *= 100
+        df.columns = df.columns.droplevel(0)
+
+        df.columns = [OP_MODES.get(int(i)) for i in df.columns]
+        # percents.index = [OP_MODES.get(i) for i in percents.index]
+        # annot = []
+        # for row in percents.values:
+        #     annot.append([f"{i:.0f} %" for i in row])
+
+        if df.columns.size > 1:
+            fig, axes = plt.subplots(df.columns.size, 1, figsize=(19, 10), sharex=True)
+            axes = axes.flatten()
+
+            for ax, col in zip(axes, df.columns):
+                pdf = df[col].unstack()
+                pdf.index = [int(re.findall("\d\d?", i)[0]) for i in pdf.index]
+                # pdf.plot.bar(ax=ax, stacked=False)
+                pdf.plot(ax=ax)
+                ax.set_xlabel("Lag")
+                ax.set_title(col)
+                if ax == axes[0]:
+                    handles, labels = ax.get_legend_handles_labels()
+                    labels = [OP_MODES.get(int(float(i))) for i in labels]
+                    ax.legend(handles, labels)
+                else:
+                    ax.get_legend().remove()
+            plt.subplots_adjust(
+                top=0.94, bottom=0.113, left=0.072, right=0.984, hspace=0.198, wspace=0.2
+            )
+            fig.text(0.02, 0.5, "Group Probability [%]", va="center", rotation=90)
+            plt.savefig(
+                f"../figures/lagged_transition_probs/lines/{basin}_{res}.png", dpi=400
+            )
+            plt.close()
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) > 0:
@@ -1230,4 +1318,5 @@ if __name__ == "__main__":
     # plot_interannual_seasonal_group_variability()
     # plot_error_by_variable()
     # plot_transition_diagnostics()
-    plot_shift_probabilities()
+    # plot_shift_probabilities()
+    plot_lagged_shift_probabilities()
