@@ -1,0 +1,33 @@
+digraph Tree {
+node [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+0 [label=<Inflow_roll7 &le; 0.787<br/>mse = 1.0<br/>samples = 100.0%<br/>value = -0.0>, fillcolor="#fae6d8"] ;
+1 [label=<sto_diff &le; -0.028<br/>mse = 0.64<br/>samples = 84.9%<br/>value = -0.172>, fillcolor="#fbede2"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label=<Inflow_roll7 &le; -0.351<br/>mse = 0.635<br/>samples = 35.2%<br/>value = 0.25>, fillcolor="#f8ddca"] ;
+1 -> 2 ;
+3 [label=<mse = 0.46<br/>samples = 23.6%<br/>value = 0.06>, fillcolor="#f9e4d5"] ;
+2 -> 3 ;
+4 [label=<mse = 0.769<br/>samples = 11.6%<br/>value = 0.636>, fillcolor="#f5cfb4"] ;
+2 -> 4 ;
+5 [label=<sto_diff &le; 0.022<br/>mse = 0.429<br/>samples = 49.7%<br/>value = -0.471>, fillcolor="#fdf8f3"] ;
+1 -> 5 ;
+6 [label=<mse = 0.426<br/>samples = 27.0%<br/>value = -0.299>, fillcolor="#fcf1ea"] ;
+5 -> 6 ;
+7 [label=<mse = 0.356<br/>samples = 22.6%<br/>value = -0.675>, fillcolor="#ffffff"] ;
+5 -> 7 ;
+8 [label=<sto_diff &le; -0.017<br/>mse = 1.919<br/>samples = 15.1%<br/>value = 0.964>, fillcolor="#f3c3a1"] ;
+0 -> 8 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+9 [label=<Inflow_roll7 &le; 2.042<br/>mse = 1.382<br/>samples = 3.3%<br/>value = 1.901>, fillcolor="#eca16c"] ;
+8 -> 9 ;
+10 [label=<mse = 1.185<br/>samples = 2.8%<br/>value = 1.726>, fillcolor="#eda876"] ;
+9 -> 10 ;
+11 [label=<mse = 1.433<br/>samples = 0.5%<br/>value = 2.796>, fillcolor="#e58139"] ;
+9 -> 11 ;
+12 [label=<Inflow_roll7 &le; 2.097<br/>mse = 1.751<br/>samples = 11.8%<br/>value = 0.698>, fillcolor="#f5cdb1"] ;
+8 -> 12 ;
+13 [label=<mse = 1.022<br/>samples = 8.4%<br/>value = 0.356>, fillcolor="#f7dac4"] ;
+12 -> 13 ;
+14 [label=<mse = 2.55<br/>samples = 3.4%<br/>value = 1.535>, fillcolor="#eeaf81"] ;
+12 -> 14 ;
+}
