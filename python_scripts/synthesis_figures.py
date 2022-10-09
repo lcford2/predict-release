@@ -7,12 +7,14 @@ import pickle
 import re
 import socket
 import sys
+import inflect
 
 import geopandas as gpd
 import matplotlib.gridspec as GS
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
+import numba
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -20,7 +22,10 @@ from IPython import embed as II
 from matplotlib.cm import ScalarMappable, get_cmap
 from matplotlib.colors import ListedColormap, LogNorm, Normalize
 from matplotlib.transforms import Bbox
+from scipy.signal import cwt, ricker
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+from tclr_model import read_basin_data
 
 hostname = socket.gethostname()
 if hostname == "CCEE-DT-094":
@@ -72,6 +77,7 @@ DATA_FILE = (
     + "TD4_MSS0.10_RT_MS_exhaustive_new_hoover/model_data.pickle"
 )
 
+INFLECT_ENGINE = inflect.engine()
 
 def load_pickle(file):
     with open(file, "rb") as f:
@@ -109,8 +115,8 @@ def get_r2score(df, grouper=None):
                 )
             }
         )
-    else:
-        return r2_score(df["actual"], df["model"])
+
+    return r2_score(df["actual"], df["model"])
 
 
 def get_rmse(df, grouper=None):
@@ -122,8 +128,8 @@ def get_rmse(df, grouper=None):
                 )
             }
         )
-    else:
-        return mean_squared_error(df["actual"], df["model"], squared=False)
+
+    return mean_squared_error(df["actual"], df["model"], squared=False)
 
 
 def get_nrmse(df, grouper=None):
@@ -137,11 +143,11 @@ def get_nrmse(df, grouper=None):
                 )
             }
         )
-    else:
-        return (
-            mean_squared_error(df["actual"], df["model"], squared=False)
-            / getattr(df["actual"], normer)()
-        )
+
+    return (
+        mean_squared_error(df["actual"], df["model"], squared=False)
+        / getattr(df["actual"], normer)()
+    )
 
 
 def get_pbias(df, grouper=None):
@@ -149,8 +155,8 @@ def get_pbias(df, grouper=None):
         return pd.DataFrame(
             {"PBIAS": df.groupby(grouper).apply(lambda x: pbias(x["actual"], x["model"]))}
         )
-    else:
-        return pbias(["actual"], df["model"])
+
+    return pbias(["actual"], df["model"])
 
 
 def get_model_scores(model_dfs, metric="NSE", grouper=None):
@@ -1014,6 +1020,92 @@ def get_unique_paths():
 
         # plt.show()
 
+def plot_intraannual_modes():
+    sns.set_context("notebook")
+    results = load_pickle(RESULT_FILE)
+    df = results["groups"]
+    df.name = "group"
+
+    counts = df.groupby(
+        ["site_name", df.index.get_level_values(1).month]
+    ).value_counts()
+    counts.name = "count"
+    counts = counts.to_frame().reset_index()
+
+    single_group_res = []
+    resers = counts["site_name"].unique()
+    for res in resers:
+        rgroups = counts[counts["site_name"] == res]["count"]
+        rgroups = rgroups.unique()
+        if len(rgroups) == 1:
+            single_group_res.append((res, rgroups[0]))
+    drop_res = [i[0] for i in single_group_res]
+
+    counts = counts[~counts["site_name"].isin(drop_res)]
+    
+    # counts["group"] = counts["group"].apply(OP_MODES.get)
+
+    plot_res = counts["site_name"].unique()
+    name_replacements = get_name_replacements()
+    rbasins = load_pickle("../pickles/res_basin_map.pickle")
+    
+    # load inflow data
+    res_ts = read_basin_data("all")
+    inflow = res_ts["inflow"]
+    monthly_flow_records = []
+    for res in inflow.index.get_level_values("site_name").unique():
+        # daily flow records summed to get monthly flow records
+        # units were per day, so now they are per month
+        rminf = inflow.loc[pd.IndexSlice[res, :]].resample("MS").sum()
+        rminf.index = pd.MultiIndex.from_product([[res], rminf.index], names=["site_name", "datetime"])
+        monthly_flow_records.append(rminf)
+    
+    inflow = pd.concat(monthly_flow_records)
+    inflow = inflow.groupby(["site_name", inflow.index.get_level_values("datetime").month]).mean()
+
+    for res in plot_res:
+        basin = rbasins[res]
+        print_basin = " ".join(basin.split("_")).title()
+        print_res = name_replacements.get(res, res).title()
+
+        rdf = counts[counts["site_name"] == res]
+        rdf = rdf.pivot(index=["datetime"], columns=["group"], values=["count"])
+        rdf = rdf.divide(rdf.sum(axis=1).values, axis=0) * 100
+        rdf.columns = rdf.columns.droplevel(0)
+        
+        rinf = inflow.loc[pd.IndexSlice[res, :]]
+        
+        fig = plt.figure(figsize=(19, 10))
+        
+        gs = GS.GridSpec(2, 1, height_ratios=[1, 4])
+        
+        inf_ax = fig.add_subplot(gs[0, 0])
+        ax = fig.add_subplot(gs[1, 0], sharex=inf_ax)
+        
+        rinf.plot.bar(ax=inf_ax)
+        inf_ax.set_title(f"{print_basin} - {print_res}")
+        inf_ax.set_ylabel("Avg. Net Inflow\n[1000 acre-ft / month]")
+
+        rdf.plot.bar(stacked=True, ax=ax)
+        ax.set_ylabel("Operational Mode Likelihood")
+        ax.set_xlabel("Month")
+        handles, labels = ax.get_legend_handles_labels()
+        labels = [OP_MODES.get(int(i)) for i in labels]
+        ax.legend(handles, labels, loc="upper left", title=None, ncol=len(handles))
+        ax.set_ylim(0, 110)
+        ax.set_xticklabels(calendar.month_abbr[1:], rotation=0)
+
+        print(f"Saving figure for {print_res}")
+        fig.align_ylabels()
+        plt.tight_layout()
+        plt.savefig(
+            f"../figures/monthly_tree_breakdown_winflow/{rbasins[res]}_{res}.png"
+        )
+        plt.close()
+
+        # plt.show()
+        # sys.exit()
+
 
 def plot_interannual_group_variability():
     results = load_pickle(RESULT_FILE)
@@ -1154,6 +1246,7 @@ def plot_shift_probabilities():
     results = load_pickle(RESULT_FILE)
     data = load_pickle(DATA_FILE)
     ydata = results["train_data"]
+    ydata = ydata.sort_index()
     ydata["groups"] = results["groups"]
 
     ydata["group_shift"] = ydata.groupby("site_name")["groups"].shift(-1)
@@ -1218,6 +1311,7 @@ def plot_lagged_shift_probabilities():
     results = load_pickle(RESULT_FILE)
     data = load_pickle(DATA_FILE)
     ydata = results["train_data"]
+    ydata = ydata.sort_index()
     ydata["groups"] = results["groups"]
 
     NLAGS = 30
@@ -1253,6 +1347,9 @@ def plot_lagged_shift_probabilities():
         "tva": "Tennessee",
     }
     resers = counts.index.get_level_values("site_name").unique()
+    mean_variance = {}
+    max_lag = {}
+
     for res in resers:
         basin = rbasins[res]
         print_basin = basin_name_map[basin]
@@ -1269,6 +1366,20 @@ def plot_lagged_shift_probabilities():
         df *= 100
         df.columns = df.columns.droplevel(0)
 
+        if df.columns.size > 1:
+            res_var = {}
+            res_maxidx = {}
+            for column in df.columns:
+                unstacked = df[column].unstack()
+                # drop columns that only contain NA
+                unstacked = unstacked.dropna(axis=1, how="all")
+                res_var[column] = unstacked.var().mean()
+                maxidx = unstacked.idxmax(skipna=True)
+                maxidx = maxidx.apply(lambda x: int(re.findall(r"\d\d?", x)[0]))
+                res_maxidx[column] = maxidx
+            mean_variance[res] = res_var
+            max_lag[res] = res_maxidx
+
         df.columns = [OP_MODES.get(int(i)) for i in df.columns]
         # percents.index = [OP_MODES.get(i) for i in percents.index]
         # annot = []
@@ -1281,7 +1392,7 @@ def plot_lagged_shift_probabilities():
 
             for ax, col in zip(axes, df.columns):
                 pdf = df[col].unstack()
-                pdf.index = [int(re.findall("\d\d?", i)[0]) for i in pdf.index]
+                pdf.index = [int(re.findall(r"\d\d?", i)[0]) for i in pdf.index]
                 # pdf.plot.bar(ax=ax, stacked=False)
                 pdf.plot(ax=ax)
                 ax.set_xlabel("Lag")
@@ -1293,15 +1404,326 @@ def plot_lagged_shift_probabilities():
                 else:
                     ax.get_legend().remove()
             plt.subplots_adjust(
-                top=0.94, bottom=0.113, left=0.072, right=0.984, hspace=0.198, wspace=0.2
+                top=0.90, bottom=0.113, left=0.072, right=0.984, hspace=0.198, wspace=0.2
             )
             fig.text(0.02, 0.5, "Group Probability [%]", va="center", rotation=90)
+            fig.suptitle(f"{pname} - {print_basin}")
             plt.savefig(
                 f"../figures/lagged_transition_probs/lines/{basin}_{res}.png", dpi=400
             )
             plt.close()
 
+    vardf = pd.DataFrame.from_dict(mean_variance)
+    # where variance is 0 the groups are constant through time
+    # so I want to drop them
+    vardf = vardf.replace({0.0: np.nan}).dropna(axis=1, how="all")
+    # now drop the rows of groups that dont vary
+    vardf = vardf.dropna(axis=0, how="all").sort_index().T
+    vardf["mean"] = vardf.mean(axis=1)
+    vardf = vardf.sort_values(by="mean")
+    vardf.to_pickle(
+        "../results/synthesis_paper/transition_analysis/lagged_transition_probs_variance.pickle"
+    )
 
+
+@numba.jit(nopython=True)
+def count_values(values, groups):
+    # for this function, each value in values must exit in groups
+    counts = [0 for i in groups]
+    for value in values:
+        idx = groups.index(value)
+        counts[idx] += 1
+    return counts
+
+
+@numba.jit(nopython=True)
+def sort_two_lists(a, b):
+    a_sort = sorted(a)
+    sorted_idx = [a.index(i) for i in a_sort]
+    b_sort = [b[i] for i in sorted_idx]
+    return a_sort, b_sort
+
+
+@numba.jit(nopython=True)
+def cross_reference_lists(master, key, values):
+    # return values in the order that the keys
+    # in key show up in master
+    return [values[key.index(i)] for i in master]
+
+
+@numba.jit(nopython=True)
+def calc_rolling_props(values, groups, window=7):
+    size = values.size
+    output = [[0.0 for i in groups]] * (size - window)
+    for i in range(0, size - window):
+        cvals = values[i : i + window]
+        counts = count_values(cvals, groups)
+        props = [float(i) / window for i in counts]
+        output[i] = props
+    return output
+
+
+def plot_rolling_group_frequencies():
+    results = load_pickle(RESULT_FILE)
+    data = load_pickle(DATA_FILE)
+    ydata = results["train_data"]
+    ydata = ydata.sort_index()
+    ydata["groups"] = results["groups"]
+
+    xdata = data["xtrain"]
+    xdata = xdata.drop(["const", "rts", "max_sto"], axis=1)
+    for col in xdata.columns:
+        ydata[col] = xdata[col]
+
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    renames = get_name_replacements()
+    basin_name_map = {
+        "lower_col": "Lower Colorado",
+        "upper_col": "Upper Colorado",
+        "missouri": "Missouri",
+        "pnw": "Columbia",
+        "tva": "Tennessee",
+    }
+    resers = ydata.index.get_level_values("site_name").unique()
+
+    WINDOW = 7
+    for res in resers:
+        try:
+            basin = rbasins[res]
+            print_basin = basin_name_map[basin]
+            pname = renames.get(res, res).title()
+
+            df = ydata.loc[pd.IndexSlice[res, :], ["groups"]]
+            if df.groups.var() == 0:
+                continue
+            groups = numba.typed.List(df["groups"].unique())
+            rolling_props = calc_rolling_props(df["groups"].values, groups, WINDOW)
+            rolling_props = pd.DataFrame.from_records(
+                rolling_props,
+                columns=groups,
+                index=df.index.get_level_values("datetime")[WINDOW:],
+            )
+            widths = np.arange(1, 366, 7)
+            cwts = [cwt(rolling_props[i], ricker, widths) for i in groups]
+
+            gs = GS.GridSpec(
+                len(cwts), 2, width_ratios=[20, 1], height_ratios=[1 for i in cwts]
+            )
+            fig = plt.figure(figsize=(19, 10))
+            leg_ax = fig.add_subplot(gs[:, 1])
+
+            vmin = float("inf")
+            vmax = -float("inf")
+            for mat in cwts:
+                cmin = abs(mat).min()
+                cmax = abs(mat).max()
+                if cmin < vmin:
+                    vmin = cmin
+                if cmax > vmax:
+                    vmax = cmax
+            cwt_axes = []
+            for i, mat in enumerate(cwts):
+                if i > 0:
+                    ax = fig.add_subplot(gs[i, 0], sharex=cwt_axes[0])
+                else:
+                    ax = fig.add_subplot(gs[i, 0])
+                cwt_axes.append(ax)
+                plt.imshow(
+                    mat,
+                    extent=[0, df.shape[0], max(widths), min(widths)],
+                    aspect="auto",
+                    vmax=vmax,
+                    vmin=vmin,
+                )
+                index = df.index.get_level_values("datetime")
+                nticks = len(ax.get_xticks()) - 1
+                start_year = index.min().year + 1
+                stop_year = index.max().year
+                nyears = stop_year - start_year
+                tick_years = np.arange(start_year, stop_year, nyears // nticks)
+
+                ticks = [
+                    np.where(index == pd.Timestamp(year=i, day=1, month=1))[0][0] for i in tick_years
+                ]
+                tick_labels = [str(i) for i in tick_years]
+                ax.set_xticks(ticks)
+                if i == (len(cwts) - 1):
+                    ax.set_xticklabels(tick_labels)
+                else:
+                    ax.set_xticklabels(["" for i in tick_labels])
+                ax.set_title(OP_MODES[groups[i]])
+
+            norm = Normalize(vmin=vmin, vmax=vmax)
+            color_map = plt.get_cmap("viridis")
+            cbar = plt.colorbar(ScalarMappable(norm=norm, cmap=color_map), cax=leg_ax)
+            cbar.outline.set_edgecolor("k")
+            cbar.outline.set_linewidth(1)
+            cbar.ax.tick_params(labelsize=12)
+            cbar.set_label("Spectral Power", fontsize=14)
+            fig.text(0.02, 0.5, "Days", rotation=90, va="center")
+            plt.subplots_adjust(
+                top=0.910,
+                bottom=0.07,
+                left=0.08,
+                right=0.952,
+                hspace=0.359,
+                wspace=0.043            
+            )
+            fig.suptitle(f"{pname} - {print_basin}")
+        
+            folder = f"../figures/group_wavelet/{INFLECT_ENGINE.number_to_words(WINDOW)}_day_window/"
+            fullpath = os.path.abspath(folder)
+            if not os.path.exists(fullpath):
+                os.makedirs(fullpath)
+            plt.savefig(os.path.join(folder, f"{basin}_{res}.png"))
+            plt.close()
+        except:
+            continue
+
+def plot_all_res_mode_probabilities():
+    sns.set_context("paper")
+    results = load_pickle(RESULT_FILE)
+    
+    df = results["groups"]
+    df.name = "mode"
+    
+    counts = df.groupby(
+        ["site_name", df.index.get_level_values(1).month]
+    ).value_counts()
+    
+    counts.name = "count"
+    counts = counts.to_frame().reset_index()
+    
+    cvar = counts.groupby("site_name")["mode"].var()
+    single_res = cvar[cvar == 0].index
+    
+    counts = counts[~counts["site_name"].isin(single_res)]
+    
+    modes = counts["mode"].unique()
+    
+    counts = counts.set_index(["site_name", "datetime", "mode"])
+    
+    probs = counts.groupby(
+        ["site_name", "datetime"]
+    ).apply(lambda x: x["count"] / x["count"].sum() * 100)
+    
+    probs.index = probs.index.droplevel([0, 1])
+    rbasins = load_pickle("../pickles/res_basin_map.pickle")
+    rename = {
+        "upper_col": "colorado",
+        "lower_col": "colorado",
+        "pnw": "columbia",
+        "tva": "tennessee",
+    }
+    rbasins = rbasins.replace(rename)
+    rbasins = rbasins.str.capitalize()
+     
+    idx = pd.IndexSlice
+    name_replacements = get_name_replacements()
+    
+    for mode in modes:
+        pdf = probs.loc[idx[:, :, mode]].unstack()
+        pdf["basin"] = rbasins
+        pdf = pdf.reset_index().sort_values(by=["basin", "site_name"])
+        pdf = pdf.set_index("site_name").drop("basin", axis=1)
+        pdf = pdf.fillna(0.0)
+        
+        pdf.columns = calendar.month_abbr[1:]
+        pdf.index = [name_replacements.get(i, i).title() for i in pdf.index]
+        
+        gs = GS.GridSpec(1, 2, width_ratios=[20, 1])
+        fig = plt.figure(figsize=(19, 10))
+        ax = fig.add_subplot(gs[0, 0])
+        cbar_ax = fig.add_subplot(gs[0, 1])
+    
+        sns.heatmap(pdf, vmin=0, vmax=100, annot=False, fmt=".0f", ax=ax, cbar_ax=cbar_ax)
+    
+        ax.set_title(OP_MODES.get(mode))
+        ax.set_yticks(np.arange(pdf.shape[0])+0.5)
+        ax.set_yticklabels(pdf.index)
+        
+        cbar_ax.set_ylabel(f"Likelihood of operating in {OP_MODES.get(mode)}")
+        
+        plt.subplots_adjust(
+            top=0.967,
+            bottom=0.038,
+            left=0.1,
+            right=0.5,
+            hspace=0.2,
+            wspace=0.017
+        )
+        plt.savefig(
+            f"../figures/mode_res_monthly_prob_heatmaps/mode{mode}.png"
+        )
+        plt.close()
+        
+def determine_similar_operating_months_across_reservoirs():
+    results = load_pickle(RESULT_FILE)
+    groups = results["groups"]
+    
+    months = list(range(1, 13))
+    
+    var = groups.groupby("site_name").var()
+    resers = var[var != 0].index
+    
+    similar_res = {
+        r: {m: ("", 0.0) for m in months} for r in resers
+    }
+    
+    for month in months:
+        mdf = groups[groups.index.get_level_values("datetime").month == month]
+        for res in resers:
+            max_corr = 0.0
+            best_res = ""
+            for comp_res in resers:
+                if comp_res == res:
+                    continue
+                rdf = mdf.loc[pd.IndexSlice[res, :]]
+                cdf = mdf.loc[pd.IndexSlice[comp_res, :]]
+                cmpdf = pd.DataFrame.from_dict({res: rdf, comp_res: cdf})
+                cmpdf = cmpdf.dropna()
+                corr = cmpdf.corr(method="spearman").loc[res, comp_res]
+                if corr > max_corr:
+                    best_res = comp_res
+                    max_corr = corr
+            
+            similar_res[res][month] = (best_res, max_corr)
+    records = []
+    for res, scores in similar_res.items():
+        for month, (cres, corr) in scores.items():
+            records.append([res, month, cres, corr])
+    
+    df = pd.DataFrame.from_records(records, columns=[
+        "site_name", "month", "similar_res", "corr"
+    ])
+    
+    df.to_pickle("../results/synthesis_paper/similar_res/sim_res.pickle")     
+
+
+def plot_similar_res():
+    df = load_pickle("../results/synthesis_paper/similar_res/sim_res.pickle")
+    rbasins = load_pickle("../pickles/res_basin_map.pickle")
+    rename = {
+        "upper_col": "colorado",
+        "lower_col": "colorado",
+        "pnw": "columbia",
+        "tva": "tennessee",
+    }
+    rbasins = rbasins.replace(rename)
+    rbasins = rbasins.str.capitalize()
+    
+    df["r_basin"] = [rbasins.get(i) for i in df["site_name"]]
+    df["c_basin"] = [rbasins.get(i) for i in df["similar_res"]]
+    
+    diff_basins = df[df["r_basin"] != df["c_basin"]][["r_basin", "c_basin"]].values.tolist()
+    diff_basins = [tuple(i) for i in diff_basins]
+    diff_basins_uniq = list(set(diff_basins))
+    
+    II()
+    
+    
+        
+        
 if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) > 0:
@@ -1319,4 +1741,9 @@ if __name__ == "__main__":
     # plot_error_by_variable()
     # plot_transition_diagnostics()
     # plot_shift_probabilities()
-    plot_lagged_shift_probabilities()
+    # plot_lagged_shift_probabilities()
+    # plot_rolling_group_frequencies()
+    # plot_intraannual_modes()
+    # plot_all_res_mode_probabilities()
+    # determine_similar_operating_months_across_reservoirs()
+    plot_similar_res()
