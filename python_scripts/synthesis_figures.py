@@ -1830,6 +1830,8 @@ def make_multicolored_line_plot(df, x, y, c, colors, ax=None, **kwargs):
 
 
 def plot_res_group_colored_timeseries():
+    arg_res = sys.argv[1:]
+        
     sns.set_context("notebook")
     results = load_pickle(RESULT_FILE)
     data = load_pickle(DATA_FILE)
@@ -1864,20 +1866,38 @@ def plot_res_group_colored_timeseries():
     
     style_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     
-    Parallel(n_jobs=-1, verbose=11)(
-        delayed(parallel_body_colored_group_plots)(
-            df,
-            res,
-            name_replacements.get(res, res).title(),
-            rbasins[res],
-            " ".join(rbasins[res].split("_")).title(),
-            style_colors
+    parallel = True
+    if arg_res:
+        resers = arg_res
+        parallel = False
+        
+    if parallel:
+        Parallel(n_jobs=-1, verbose=11)(
+            delayed(parallel_body_colored_group_plots)(
+                df,
+                res,
+                name_replacements.get(res, res).title(),
+                rbasins[res],
+                " ".join(rbasins[res].split("_")).title(),
+                style_colors
+            )
+            for res in resers
         )
-        for res in resers
-    )
+    else:
+        for res in resers:
+            parallel_body_colored_group_plots(
+                df,
+                res,
+                name_replacements.get(res, res).title(),
+                rbasins[res],
+                " ".join(rbasins[res].split("_")).title(),
+                style_colors,
+                show=True,
+                save=False
+            )
         
 
-def parallel_body_colored_group_plots(df, res, print_res, basin, print_basin, style_colors):
+def parallel_body_colored_group_plots(df, res, print_res, basin, print_basin, style_colors, show=False, save=True):
     pdf = df.loc[pd.IndexSlice[res, :]]
     rgroups = sorted(list(pdf["groups"].unique()))
     if len(rgroups) == 1:
@@ -1928,8 +1948,96 @@ def parallel_body_colored_group_plots(df, res, print_res, basin, print_basin, st
         wspace=0.2
     )
     
-    plt.savefig(f"../figures/group_colored_timeseries/{basin}_{res}.png", dpi=400)    
+    if save:
+        plt.savefig(f"../figures/group_colored_timeseries/{basin}_{res}.png", dpi=450)
+    if show:
+        plt.show()
     plt.close()
+    
+
+def enso_correlation():
+    nino34 = pd.read_csv("../csv/nino34.tsv", delim_whitespace=True, index_col=0, header=0)
+    nino34 = nino34.stack()
+    nino34 = nino34.reset_index().rename(columns={"level_1": "month", 0: "nino34"})
+    nino34["day"] = 1
+    nino34["datetime"] = pd.to_datetime(nino34[["year", "month", "day"]])
+    nino34 = nino34.set_index("datetime").drop(["year", "month", "day"], axis=1)
+    nino34 = nino34.replace({-99.99: np.nan}).dropna()
+    
+    renames = {
+        "nino34": "Lag 0",
+    }
+    for lag in range(1, 7):
+        nino34[f"nino34_lag{lag}"] = nino34["nino34"].shift(lag)
+        renames[f"nino34_lag{lag}"] = f"Lag {lag}"
+    
+    nino34 = nino34.dropna()
+    
+    results = load_pickle(RESULT_FILE)
+    groups = results["groups"]
+    groups.name = "group"
+    
+    II()
+    sys.exit()
+    
+    resers = groups.index.get_level_values(0).unique()
+
+    rbasins = load_pickle("../pickles/res_basin_map.pickle")
+    name_replacements = get_name_replacements()
+        
+    for res in resers:
+        print_res = name_replacements.get(res, res).title()
+        basin = rbasins[res]
+        print_basin = " ".join(rbasins[res].split("_")).title()
+        df = groups.loc[pd.IndexSlice[res, :]].to_frame()
+        df["value"] = 1
+    
+        df = df.pivot(columns="group", values="value")
+        if df.columns.size == 1:
+            continue
+    
+        df = df.resample("MS").sum()
+        
+        orig_cols = df.columns
+        df = pd.concat([df, nino34], axis=1)
+        df = df.dropna()
+
+        corr = df.corr(method="spearman")
+        
+        corr = corr[orig_cols].drop(orig_cols, axis=0)
+        corr = corr.rename(index=renames, columns=OP_MODES)
+        
+        fig = plt.figure(figsize=(38, 21))
+        axes = fig.add_subplot()
+        
+        sns.heatmap(
+            corr.T,
+            annot=True,
+            ax=axes,
+            cbar_kws={"label": "Spearman Correlation"}
+        )
+        axes.tick_params(axis="both", labelrotation=0)
+        axes.set_xlabel("Nino3.4")
+        axes.set_title(f"{print_res} - {print_basin}")
+        
+        plt.subplots_adjust(
+            top=0.942,
+            bottom=0.102,
+            left=0.102,
+            right=0.985,
+            hspace=0.2,
+            wspace=0.2
+        )
+        
+        plt.savefig(
+            f"../figures/enso_corr_heatmaps_jpg/{basin}_{res}.jpeg",
+            dpi=400,
+            format="jpeg",
+            pil_kwargs={"quality": 85}
+        )
+        plt.close()
+        # plt.show()
+        # sys.exit()
         
 if __name__ == "__main__":
     args = sys.argv[1:]
@@ -1955,3 +2063,4 @@ if __name__ == "__main__":
     # determine_similar_operating_months_across_reservoirs()
     # determine_similar_operating_reservoirs()
     plot_res_group_colored_timeseries()
+    # enso_correlation()
