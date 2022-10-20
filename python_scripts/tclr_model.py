@@ -133,6 +133,8 @@ def prep_data(df):
         "inflow_roll7",
         "storage_roll7",
         "storage_x_inflow",
+        "inflow2",
+        "release_pre2",
         # "sto_diff",
     ]
     X = std_data.loc[:, columns]
@@ -161,7 +163,7 @@ def split_train_test_res(index, test_res):
 def get_params_and_groups(X, tree):
     # use the tree to get what leaves correpond with each entry
     # in the X matrix
-    params, leaves = tree.apply(X)
+    params, leaves, paths = tree.apply(X)
     # make those leaves into a pandas series for the ml model
     groups = pd.Series(leaves, index=X.index)
     return params, groups
@@ -227,6 +229,8 @@ def pipeline(args):
     res_grouper = df.index.get_level_values(0)
 
     # df["sto_diff"] = df["storage_pre"] - df["storage_roll7"]
+    df["inflow2"] = df["inflow"] * df["inflow"]
+    df["release_pre2"] = df["release_pre"] * df["release_pre"]
     X, y, means, std = prep_data(df)
     df["sto_diff"] = X["storage_pre"] - X["storage_roll7"]
     X["sto_diff"] = X["storage_pre"] - X["storage_roll7"]
@@ -254,6 +258,8 @@ def pipeline(args):
         "release_roll7",
         "inflow_roll7",
         "storage_x_inflow",
+        "inflow2",
+        "release2"
     ]
 
     X_vars_tree = copy.copy(X_vars)
@@ -376,8 +382,7 @@ def pipeline(args):
     fitted = pd.Series(fitted, index=X_train.index)
     preds = pd.Series(preds, index=X_test.index)
     simmed = simuled["release"]
-    
-
+   
     y_train_act = (
         y_train.unstack().T * std.loc[train_res, "release"]
         + means.loc[train_res, "release"]
@@ -520,7 +525,7 @@ def pipeline(args):
     assim_mod = f"_{args.assim}" if args.assim else ""
     mss_mod = f"_MSS{min_samples_split:0.2f}"
     foldername = f"TD{max_depth}{assim_mod}{mss_mod}_RT_MS_{args.method}"
-    folderpath = pathlib.Path("..", "results", "tclr_model_testing", basin, foldername)
+    folderpath = pathlib.Path("..", "results", "tclr_model_squared_terms", basin, foldername)
     # check if the directory exists and handle it
     if folderpath.is_dir():
         # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
