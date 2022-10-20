@@ -81,6 +81,7 @@ DATA_FILE = (
 
 INFLECT_ENGINE = inflect.engine()
 
+
 def load_pickle(file):
     with open(file, "rb") as f:
         data = pickle.load(f)
@@ -1022,15 +1023,14 @@ def get_unique_paths():
 
         # plt.show()
 
+
 def plot_intraannual_modes():
     sns.set_context("notebook")
     results = load_pickle(RESULT_FILE)
     df = results["groups"]
     df.name = "group"
 
-    counts = df.groupby(
-        ["site_name", df.index.get_level_values(1).month]
-    ).value_counts()
+    counts = df.groupby(["site_name", df.index.get_level_values(1).month]).value_counts()
     counts.name = "count"
     counts = counts.to_frame().reset_index()
 
@@ -1044,13 +1044,13 @@ def plot_intraannual_modes():
     drop_res = [i[0] for i in single_group_res]
 
     counts = counts[~counts["site_name"].isin(drop_res)]
-    
+
     # counts["group"] = counts["group"].apply(OP_MODES.get)
 
     plot_res = counts["site_name"].unique()
     name_replacements = get_name_replacements()
     rbasins = load_pickle("../pickles/res_basin_map.pickle")
-    
+
     # load inflow data
     res_ts = read_basin_data("all")
     inflow = res_ts["inflow"]
@@ -1059,11 +1059,15 @@ def plot_intraannual_modes():
         # daily flow records summed to get monthly flow records
         # units were per day, so now they are per month
         rminf = inflow.loc[pd.IndexSlice[res, :]].resample("MS").sum()
-        rminf.index = pd.MultiIndex.from_product([[res], rminf.index], names=["site_name", "datetime"])
+        rminf.index = pd.MultiIndex.from_product(
+            [[res], rminf.index], names=["site_name", "datetime"]
+        )
         monthly_flow_records.append(rminf)
-    
+
     inflow = pd.concat(monthly_flow_records)
-    inflow = inflow.groupby(["site_name", inflow.index.get_level_values("datetime").month]).mean()
+    inflow = inflow.groupby(
+        ["site_name", inflow.index.get_level_values("datetime").month]
+    ).mean()
 
     for res in plot_res:
         basin = rbasins[res]
@@ -1074,16 +1078,16 @@ def plot_intraannual_modes():
         rdf = rdf.pivot(index=["datetime"], columns=["group"], values=["count"])
         rdf = rdf.divide(rdf.sum(axis=1).values, axis=0) * 100
         rdf.columns = rdf.columns.droplevel(0)
-        
+
         rinf = inflow.loc[pd.IndexSlice[res, :]]
-        
+
         fig = plt.figure(figsize=(19, 10))
-        
+
         gs = GS.GridSpec(2, 1, height_ratios=[1, 4])
-        
+
         inf_ax = fig.add_subplot(gs[0, 0])
         ax = fig.add_subplot(gs[1, 0], sharex=inf_ax)
-        
+
         rinf.plot.bar(ax=inf_ax)
         inf_ax.set_title(f"{print_basin} - {print_res}")
         inf_ax.set_ylabel("Avg. Net Inflow\n[1000 acre-ft / month]")
@@ -1100,9 +1104,7 @@ def plot_intraannual_modes():
         print(f"Saving figure for {print_res}")
         fig.align_ylabels()
         plt.tight_layout()
-        plt.savefig(
-            f"../figures/monthly_tree_breakdown_winflow/{rbasins[res]}_{res}.png"
-        )
+        plt.savefig(f"../figures/monthly_tree_breakdown_winflow/{rbasins[res]}_{res}.png")
         plt.close()
 
         # plt.show()
@@ -1545,7 +1547,8 @@ def plot_rolling_group_frequencies():
                 tick_years = np.arange(start_year, stop_year, nyears // nticks)
 
                 ticks = [
-                    np.where(index == pd.Timestamp(year=i, day=1, month=1))[0][0] for i in tick_years
+                    np.where(index == pd.Timestamp(year=i, day=1, month=1))[0][0]
+                    for i in tick_years
                 ]
                 tick_labels = [str(i) for i in tick_years]
                 ax.set_xticks(ticks)
@@ -1564,15 +1567,10 @@ def plot_rolling_group_frequencies():
             cbar.set_label("Spectral Power", fontsize=14)
             fig.text(0.02, 0.5, "Days", rotation=90, va="center")
             plt.subplots_adjust(
-                top=0.910,
-                bottom=0.07,
-                left=0.08,
-                right=0.952,
-                hspace=0.359,
-                wspace=0.043            
+                top=0.910, bottom=0.07, left=0.08, right=0.952, hspace=0.359, wspace=0.043
             )
             fig.suptitle(f"{pname} - {print_basin}")
-        
+
             folder = f"../figures/group_wavelet/{INFLECT_ENGINE.number_to_words(WINDOW)}_day_window/"
             fullpath = os.path.abspath(folder)
             if not os.path.exists(fullpath):
@@ -1582,33 +1580,32 @@ def plot_rolling_group_frequencies():
         except:
             continue
 
+
 def plot_all_res_mode_probabilities():
     sns.set_context("paper")
     results = load_pickle(RESULT_FILE)
-    
+
     df = results["groups"]
     df.name = "mode"
-    
-    counts = df.groupby(
-        ["site_name", df.index.get_level_values(1).month]
-    ).value_counts()
-    
+
+    counts = df.groupby(["site_name", df.index.get_level_values(1).month]).value_counts()
+
     counts.name = "count"
     counts = counts.to_frame().reset_index()
-    
+
     cvar = counts.groupby("site_name")["mode"].var()
     single_res = cvar[cvar == 0].index
-    
+
     counts = counts[~counts["site_name"].isin(single_res)]
-    
+
     modes = counts["mode"].unique()
-    
+
     counts = counts.set_index(["site_name", "datetime", "mode"])
-    
-    probs = counts.groupby(
-        ["site_name", "datetime"]
-    ).apply(lambda x: x["count"] / x["count"].sum() * 100)
-    
+
+    probs = counts.groupby(["site_name", "datetime"]).apply(
+        lambda x: x["count"] / x["count"].sum() * 100
+    )
+
     probs.index = probs.index.droplevel([0, 1])
     rbasins = load_pickle("../pickles/res_basin_map.pickle")
     rename = {
@@ -1619,59 +1616,51 @@ def plot_all_res_mode_probabilities():
     }
     rbasins = rbasins.replace(rename)
     rbasins = rbasins.str.capitalize()
-     
+
     idx = pd.IndexSlice
     name_replacements = get_name_replacements()
-    
+
     for mode in modes:
         pdf = probs.loc[idx[:, :, mode]].unstack()
         pdf["basin"] = rbasins
         pdf = pdf.reset_index().sort_values(by=["basin", "site_name"])
         pdf = pdf.set_index("site_name").drop("basin", axis=1)
         pdf = pdf.fillna(0.0)
-        
+
         pdf.columns = calendar.month_abbr[1:]
         pdf.index = [name_replacements.get(i, i).title() for i in pdf.index]
-        
+
         gs = GS.GridSpec(1, 2, width_ratios=[20, 1])
         fig = plt.figure(figsize=(19, 10))
         ax = fig.add_subplot(gs[0, 0])
         cbar_ax = fig.add_subplot(gs[0, 1])
-    
+
         sns.heatmap(pdf, vmin=0, vmax=100, annot=False, fmt=".0f", ax=ax, cbar_ax=cbar_ax)
-    
+
         ax.set_title(OP_MODES.get(mode))
-        ax.set_yticks(np.arange(pdf.shape[0])+0.5)
+        ax.set_yticks(np.arange(pdf.shape[0]) + 0.5)
         ax.set_yticklabels(pdf.index)
-        
+
         cbar_ax.set_ylabel(f"Likelihood of operating in {OP_MODES.get(mode)}")
-        
+
         plt.subplots_adjust(
-            top=0.967,
-            bottom=0.038,
-            left=0.1,
-            right=0.5,
-            hspace=0.2,
-            wspace=0.017
+            top=0.967, bottom=0.038, left=0.1, right=0.5, hspace=0.2, wspace=0.017
         )
-        plt.savefig(
-            f"../figures/mode_res_monthly_prob_heatmaps/mode{mode}.png"
-        )
+        plt.savefig(f"../figures/mode_res_monthly_prob_heatmaps/mode{mode}.png")
         plt.close()
-        
+
+
 def determine_similar_operating_months_across_reservoirs_corr():
     results = load_pickle(RESULT_FILE)
     groups = results["groups"]
-    
+
     months = list(range(1, 13))
-    
+
     var = groups.groupby("site_name").var()
     resers = var[var != 0].index
-    
-    similar_res = {
-        r: {m: ("", 0.0) for m in months} for r in resers
-    }
-    
+
+    similar_res = {r: {m: ("", 0.0) for m in months} for r in resers}
+
     for month in months:
         mdf = groups[groups.index.get_level_values("datetime").month == month]
         for res in resers:
@@ -1688,31 +1677,35 @@ def determine_similar_operating_months_across_reservoirs_corr():
                 if corr > max_corr:
                     best_res = comp_res
                     max_corr = corr
-            
+
             similar_res[res][month] = (best_res, max_corr)
     records = []
     for res, scores in similar_res.items():
         for month, (cres, corr) in scores.items():
             records.append([res, month, cres, corr])
-    
-    df = pd.DataFrame.from_records(records, columns=[
-        "site_name", "month", "similar_res", "corr"
-    ])
-    
-    df.to_pickle("../results/synthesis_paper/similar_res/sim_res.pickle")     
-    
-    
+
+    df = pd.DataFrame.from_records(
+        records, columns=["site_name", "month", "similar_res", "corr"]
+    )
+
+    df.to_pickle("../results/synthesis_paper/similar_res/sim_res.pickle")
+
+
 def determine_transition_similarities(df, res1, res2):
     df[f"{res1}_shift"] = df[res1].shift(-1)
     df[f"{res2}_shift"] = df[res2].shift(-1)
     df[f"{res1}_trans"] = df[res1] != df[f"{res1}_shift"]
     df[f"{res2}_trans"] = df[res2] != df[f"{res2}_shift"]
-    
-    res1_tcounts = df[df[f"{res1}_trans"]].groupby(res1)[f"{res1}_shift"].apply(
-        lambda x: x.value_counts() / x.shape[0]
+
+    res1_tcounts = (
+        df[df[f"{res1}_trans"]]
+        .groupby(res1)[f"{res1}_shift"]
+        .apply(lambda x: x.value_counts() / x.shape[0])
     )
-    res2_tcounts = df[df[f"{res2}_trans"]].groupby(res2)[f"{res2}_shift"].apply(
-        lambda x: x.value_counts() / x.shape[0]
+    res2_tcounts = (
+        df[df[f"{res2}_trans"]]
+        .groupby(res2)[f"{res2}_shift"]
+        .apply(lambda x: x.value_counts() / x.shape[0])
     )
     res1_tcounts.index = pd.MultiIndex.from_tuples(
         [(int(i), int(j)) for i, j in res1_tcounts.index]
@@ -1721,19 +1714,17 @@ def determine_transition_similarities(df, res1, res2):
         [(int(i), int(j)) for i, j in res2_tcounts.index]
     )
     return 1 - (res1_tcounts - res2_tcounts).abs().mean()
-    
-    
+
+
 def determine_similar_operating_reservoirs():
     results = load_pickle(RESULT_FILE)
     groups = results["groups"]
-    
+
     var = groups.groupby("site_name").var()
     resers = var[var != 0].index
-    
-    similar_res = {
-        r: {} for r in resers
-    }
-    
+
+    similar_res = {r: {} for r in resers}
+
     for res in resers:
         osims = []
         tsims = []
@@ -1754,31 +1745,37 @@ def determine_similar_operating_reservoirs():
                 continue
             cmpdf["same"] = cmpdf[res] == cmpdf[comp_res]
             overall_similarity = cmpdf["same"].sum() / cmpdf.shape[0]
-            transition_similarity = determine_transition_similarities(cmpdf, res, comp_res)
+            transition_similarity = determine_transition_similarities(
+                cmpdf, res, comp_res
+            )
             osims.append((comp_res, overall_similarity))
             tsims.append((comp_res, transition_similarity))
-        
+
         osims.sort(key=lambda x: x[1], reverse=True)
         tsims.sort(key=lambda x: x[1], reverse=True)
         similar_res[res] = {"overall_sim": osims, "transition_sim": tsims}
-    
+
     osim_records, tsim_records = [], []
     for res, sims in similar_res.items():
         for cres, osim in sims["overall_sim"]:
             osim_records.append([res, cres, osim])
         for cres, tsim in sims["transition_sim"]:
             tsim_records.append([res, cres, tsim])
-    
-    osim = pd.DataFrame.from_records(osim_records, columns=["site_name", "comp_site_name", "sim"])
-    tsim = pd.DataFrame.from_records(tsim_records, columns=["site_name", "comp_site_name", "sim"])
-    
+
+    osim = pd.DataFrame.from_records(
+        osim_records, columns=["site_name", "comp_site_name", "sim"]
+    )
+    tsim = pd.DataFrame.from_records(
+        tsim_records, columns=["site_name", "comp_site_name", "sim"]
+    )
+
     osim_max = osim.groupby("site_name")["sim"].idxmax()
     osim_max.name = "max_idx"
     osim_max = osim_max.to_frame().reset_index()
     tsim_max = tsim.groupby("site_name")["sim"].idxmax()
     tsim_max.name = "max_idx"
     tsim_max = tsim_max.to_frame().reset_index()
-    
+
     osim_max["comp_site_name"] = osim.loc[osim_max["max_idx"], "comp_site_name"].values
     osim_max["sim"] = osim.loc[osim_max["max_idx"], "sim"].values
 
@@ -1794,29 +1791,29 @@ def determine_similar_operating_reservoirs():
     }
     rbasins = rbasins.replace(rename)
     rbasins = rbasins.str.capitalize()
-    
+
     osim_max["basin"] = [rbasins[i] for i in osim_max["site_name"]]
     osim_max["comp_basin"] = [rbasins[i] for i in osim_max["comp_site_name"]]
-    
+
     tsim_max["basin"] = [rbasins[i] for i in tsim_max["site_name"]]
     tsim_max["comp_basin"] = [rbasins[i] for i in tsim_max["comp_site_name"]]
-    
+
     osim_max["same_basin"] = osim_max["basin"] == osim_max["comp_basin"]
     tsim_max["same_basin"] = tsim_max["basin"] == tsim_max["comp_basin"]
     II()
-    
+
 
 def make_multicolored_line_plot(df, x, y, c, colors, ax=None, **kwargs):
     if not ax:
         ax = plt.gca()
-    
+
     df["shift"] = df[c].shift()
     df["mask"] = 1
     df.loc[df[c] == df["shift"], "mask"] = 0
     df["mask"] = df["mask"].cumsum()
-    
+
     plot_segments = df["mask"].unique()
-    
+
     groups = sorted(list(df[c].unique()))
 
     for ps in plot_segments:
@@ -1831,26 +1828,28 @@ def make_multicolored_line_plot(df, x, y, c, colors, ax=None, **kwargs):
 
 def plot_res_group_colored_timeseries():
     arg_res = sys.argv[1:]
-        
+
     sns.set_context("notebook")
     results = load_pickle(RESULT_FILE)
     data = load_pickle(DATA_FILE)
     xtrain = data["xtrain"]
     means = data["means"]
     std = data["std"]
-    
+
     ydata = results["train_data"]
     groups = results["groups"]
     vars = ["storage_pre", "inflow"]
-    
+
     df = xtrain.loc[:, vars]
 
-    df["storage_pre"] = (df["storage_pre"].unstack().T * std["storage_pre"] + means["storage_pre"]).T.stack()
+    df["storage_pre"] = (
+        df["storage_pre"].unstack().T * std["storage_pre"] + means["storage_pre"]
+    ).T.stack()
     df["inflow"] = (df["inflow"].unstack().T * std["inflow"] + means["inflow"]).T.stack()
     df["release"] = ydata["actual"]
     df["modeled_release"] = ydata["model"]
     df["groups"] = groups
-    
+
     rbasins = load_pickle("../pickles/res_basin_map.pickle")
     rename = {
         "upper_col": "colorado",
@@ -1861,16 +1860,16 @@ def plot_res_group_colored_timeseries():
     rbasins = rbasins.replace(rename)
     rbasins = rbasins.str.capitalize()
     name_replacements = get_name_replacements()
-    
+
     resers = df.index.get_level_values("site_name").unique()
-    
+
     style_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-    
+
     parallel = True
     if arg_res:
         resers = arg_res
         parallel = False
-        
+
     if parallel:
         Parallel(n_jobs=-1, verbose=11)(
             delayed(parallel_body_colored_group_plots)(
@@ -1879,7 +1878,7 @@ def plot_res_group_colored_timeseries():
                 name_replacements.get(res, res).title(),
                 rbasins[res],
                 " ".join(rbasins[res].split("_")).title(),
-                style_colors
+                style_colors,
             )
             for res in resers
         )
@@ -1893,11 +1892,21 @@ def plot_res_group_colored_timeseries():
                 " ".join(rbasins[res].split("_")).title(),
                 style_colors,
                 show=True,
-                save=False
+                save=False,
             )
-        
 
-def parallel_body_colored_group_plots(df, res, print_res, basin, print_basin, style_colors, show=False, save=True):
+
+def parallel_body_colored_group_plots(
+    df,
+    res,
+    print_res,
+    basin,
+    print_basin,
+    style_colors,
+    ptype="scatter",
+    show=False,
+    save=True,
+):
     pdf = df.loc[pd.IndexSlice[res, :]]
     rgroups = sorted(list(pdf["groups"].unique()))
     if len(rgroups) == 1:
@@ -1905,140 +1914,140 @@ def parallel_body_colored_group_plots(df, res, print_res, basin, print_basin, st
 
     fig, axes = plt.subplots(4, 1, sharex=True, figsize=(19, 10))
     axes = axes.flatten()
-    
+
     pdf = pdf.reset_index()
-            
-    # axes[0].scatter(pdf.index, pdf["storage_pre"], c=colors, s=10)
-    # axes[1].scatter(pdf.index, pdf["inflow"], c=colors, s=10)
-    # axes[2].scatter(pdf.index, pdf["release"], c=colors, s=10)
-    # axes[3].scatter(pdf.index, pdf["modeled_release"] - pdf["release"], c=colors, s=10)
-    
+
     for var in ["storage_pre", "inflow"]:
         inf_scores = zscore(pdf[var])
         pdf.loc[inf_scores.abs() > 3, var] = np.nan
         pdf[var] = pdf[var].interpolate()
 
     pdf["residual"] = pdf["modeled_release"] - pdf["release"]
-    make_multicolored_line_plot(pdf, "datetime", "storage_pre", "groups", style_colors, ax=axes[0])
-    make_multicolored_line_plot(pdf, "datetime", "inflow", "groups", style_colors, ax=axes[1])
-    make_multicolored_line_plot(pdf, "datetime", "release", "groups", style_colors, ax=axes[2])
-    make_multicolored_line_plot(pdf, "datetime", "residual", "groups", style_colors, ax=axes[3])
     
+    if ptype == "scatter":
+        groups = list(pdf["groups"].unique())
+        colors = [style_colors[groups.index(i)] for i in pdf["groups"]]
+        axes[0].scatter(pdf.index, pdf["storage_pre"], c=colors, s=10)
+        axes[1].scatter(pdf.index, pdf["inflow"], c=colors, s=10)
+        axes[2].scatter(pdf.index, pdf["release"], c=colors, s=10)
+        axes[3].scatter(pdf.index, pdf["modeled_release"] - pdf["release"], c=colors, s=10)
+    else:
+        make_multicolored_line_plot(
+            pdf, "datetime", "storage_pre", "groups", style_colors, ax=axes[0]
+        )
+        make_multicolored_line_plot(
+            pdf, "datetime", "inflow", "groups", style_colors, ax=axes[1]
+        )
+        make_multicolored_line_plot(
+            pdf, "datetime", "release", "groups", style_colors, ax=axes[2]
+        )
+        make_multicolored_line_plot(
+            pdf, "datetime", "residual", "groups", style_colors, ax=axes[3]
+        )
+
     axes[0].set_ylabel("Storage [TAF]")
     axes[1].set_ylabel("Inflow [TAF/day]")
     axes[2].set_ylabel("Release [TAF/day]")
     axes[3].set_ylabel("Residual [TAF/day]")
-    
+
     handles = [
         mlines.Line2D([], [], color=style_colors[rgroups.index(i)], alpha=1, linewidth=1)
         for i in rgroups
     ]
-    labels = [
-        OP_MODES.get(i) for i in rgroups
-    ]
+    labels = [OP_MODES.get(i) for i in rgroups]
     axes[3].legend(handles, labels, loc="upper right")
     fig.align_ylabels()
     fig.suptitle(f"{print_res} - {print_basin}")
     plt.subplots_adjust(
-        top=0.945,
-        bottom=0.045,
-        left=0.045,
-        right=0.991,
-        hspace=0.126,
-        wspace=0.2
+        top=0.945, bottom=0.045, left=0.045, right=0.991, hspace=0.126, wspace=0.2
     )
-    
+
     if save:
         plt.savefig(f"../figures/group_colored_timeseries/{basin}_{res}.png", dpi=450)
     if show:
         plt.show()
     plt.close()
-    
+
 
 def enso_correlation():
-    nino34 = pd.read_csv("../csv/nino34.tsv", delim_whitespace=True, index_col=0, header=0)
+    nino34 = pd.read_csv(
+        "../csv/nino34.tsv", delim_whitespace=True, index_col=0, header=0
+    )
     nino34 = nino34.stack()
     nino34 = nino34.reset_index().rename(columns={"level_1": "month", 0: "nino34"})
     nino34["day"] = 1
     nino34["datetime"] = pd.to_datetime(nino34[["year", "month", "day"]])
     nino34 = nino34.set_index("datetime").drop(["year", "month", "day"], axis=1)
     nino34 = nino34.replace({-99.99: np.nan}).dropna()
-    
+
     renames = {
         "nino34": "Lag 0",
     }
     for lag in range(1, 7):
         nino34[f"nino34_lag{lag}"] = nino34["nino34"].shift(lag)
         renames[f"nino34_lag{lag}"] = f"Lag {lag}"
-    
+
     nino34 = nino34.dropna()
-    
+
     results = load_pickle(RESULT_FILE)
     groups = results["groups"]
     groups.name = "group"
-    
+
     II()
     sys.exit()
-    
+
     resers = groups.index.get_level_values(0).unique()
 
     rbasins = load_pickle("../pickles/res_basin_map.pickle")
     name_replacements = get_name_replacements()
-        
+
     for res in resers:
         print_res = name_replacements.get(res, res).title()
         basin = rbasins[res]
         print_basin = " ".join(rbasins[res].split("_")).title()
         df = groups.loc[pd.IndexSlice[res, :]].to_frame()
         df["value"] = 1
-    
+
         df = df.pivot(columns="group", values="value")
         if df.columns.size == 1:
             continue
-    
+
         df = df.resample("MS").sum()
-        
+
         orig_cols = df.columns
         df = pd.concat([df, nino34], axis=1)
         df = df.dropna()
 
         corr = df.corr(method="spearman")
-        
+
         corr = corr[orig_cols].drop(orig_cols, axis=0)
         corr = corr.rename(index=renames, columns=OP_MODES)
-        
+
         fig = plt.figure(figsize=(38, 21))
         axes = fig.add_subplot()
-        
+
         sns.heatmap(
-            corr.T,
-            annot=True,
-            ax=axes,
-            cbar_kws={"label": "Spearman Correlation"}
+            corr.T, annot=True, ax=axes, cbar_kws={"label": "Spearman Correlation"}
         )
         axes.tick_params(axis="both", labelrotation=0)
         axes.set_xlabel("Nino3.4")
         axes.set_title(f"{print_res} - {print_basin}")
-        
+
         plt.subplots_adjust(
-            top=0.942,
-            bottom=0.102,
-            left=0.102,
-            right=0.985,
-            hspace=0.2,
-            wspace=0.2
+            top=0.942, bottom=0.102, left=0.102, right=0.985, hspace=0.2, wspace=0.2
         )
-        
+
         plt.savefig(
             f"../figures/enso_corr_heatmaps_jpg/{basin}_{res}.jpeg",
             dpi=400,
             format="jpeg",
-            pil_kwargs={"quality": 85}
+            pil_kwargs={"quality": 85},
         )
         plt.close()
         # plt.show()
         # sys.exit()
-        
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) > 0:
