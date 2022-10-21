@@ -7,9 +7,9 @@ import pickle
 import re
 import socket
 import sys
-import inflect
 
 import geopandas as gpd
+import inflect
 import matplotlib.gridspec as GS
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatch
@@ -20,13 +20,12 @@ import pandas as pd
 import seaborn as sns
 from IPython import embed as II
 from joblib import Parallel, delayed
-from scipy.stats import zscore
 from matplotlib.cm import ScalarMappable, get_cmap
 from matplotlib.colors import ListedColormap, LogNorm, Normalize
 from matplotlib.transforms import Bbox
 from scipy.signal import cwt, ricker
+from scipy.stats import zscore
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-
 from tclr_model import read_basin_data
 
 hostname = socket.gethostname()
@@ -36,11 +35,14 @@ if hostname == "CCEE-DT-094":
         "anaconda3\\envs\\sry-env\\Library\\share"
     )
     GIS_DIR = pathlib.Path("G:/My Drive/PHD/GIS")
+    HOME = "C:\\Users\\lcford2"
 elif hostname == "inspiron-laptop":
     os.environ[
         "PROJ_LIB"
     ] = r"C:\\Users\\lcford\\miniconda3\\envs\\sry-env\\Library\\share"
     GIS_DIR = pathlib.Path("/home/lford/data/GIS")
+    HOME = "~"
+
 
 from mpl_toolkits.basemap import Basemap
 
@@ -1467,6 +1469,19 @@ def calc_rolling_props(values, groups, window=7):
     return output
 
 
+def get_tick_years(index, ax):
+    nticks = len(ax.get_xticks()) - 1
+    start_year = index.min().year + 1
+    stop_year = index.max().year
+    nyears = stop_year - start_year
+    tick_years = np.arange(start_year, stop_year, nyears // nticks)
+
+    ticks = [
+        np.where(index == pd.Timestamp(year=i, day=1, month=1))[0][0] for i in tick_years
+    ]
+    return tick_years, ticks
+
+
 def plot_rolling_group_frequencies():
     results = load_pickle(RESULT_FILE)
     data = load_pickle(DATA_FILE)
@@ -1540,16 +1555,7 @@ def plot_rolling_group_frequencies():
                     vmin=vmin,
                 )
                 index = df.index.get_level_values("datetime")
-                nticks = len(ax.get_xticks()) - 1
-                start_year = index.min().year + 1
-                stop_year = index.max().year
-                nyears = stop_year - start_year
-                tick_years = np.arange(start_year, stop_year, nyears // nticks)
-
-                ticks = [
-                    np.where(index == pd.Timestamp(year=i, day=1, month=1))[0][0]
-                    for i in tick_years
-                ]
+                tick_years, ticks = get_tick_years(index, ax)
                 tick_labels = [str(i) for i in tick_years]
                 ax.set_xticks(ticks)
                 if i == (len(cwts) - 1):
@@ -1892,7 +1898,7 @@ def plot_res_group_colored_timeseries():
                 " ".join(rbasins[res].split("_")).title(),
                 style_colors,
                 show=True,
-                save=False,
+                save=True,
             )
 
 
@@ -1912,8 +1918,13 @@ def parallel_body_colored_group_plots(
     if len(rgroups) == 1:
         return
 
-    fig, axes = plt.subplots(4, 1, sharex=True, figsize=(19, 10))
-    axes = axes.flatten()
+    plot_resid = False
+    if plot_resid:
+        fig, axes = plt.subplots(4, 1, sharex=True, figsize=(19, 10))
+        axes = axes.flatten()
+    else:
+        fig, axes = plt.subplots(3, 1, sharex=True, figsize=(19, 10))
+        axes = axes.flatten()
 
     pdf = pdf.reset_index()
 
@@ -1923,14 +1934,19 @@ def parallel_body_colored_group_plots(
         pdf[var] = pdf[var].interpolate()
 
     pdf["residual"] = pdf["modeled_release"] - pdf["release"]
-    
+
     if ptype == "scatter":
-        groups = list(pdf["groups"].unique())
-        colors = [style_colors[groups.index(i)] for i in pdf["groups"]]
+        colors = [style_colors[rgroups.index(i)] for i in pdf["groups"]]
         axes[0].scatter(pdf.index, pdf["storage_pre"], c=colors, s=10)
         axes[1].scatter(pdf.index, pdf["inflow"], c=colors, s=10)
         axes[2].scatter(pdf.index, pdf["release"], c=colors, s=10)
-        axes[3].scatter(pdf.index, pdf["modeled_release"] - pdf["release"], c=colors, s=10)
+        if plot_resid:
+            axes[3].scatter(
+                pdf.index,
+                pdf["modeled_release"] - pdf["release"],
+                c=colors,
+                s=10,
+            )
     else:
         make_multicolored_line_plot(
             pdf, "datetime", "storage_pre", "groups", style_colors, ax=axes[0]
@@ -1941,21 +1957,39 @@ def parallel_body_colored_group_plots(
         make_multicolored_line_plot(
             pdf, "datetime", "release", "groups", style_colors, ax=axes[2]
         )
-        make_multicolored_line_plot(
-            pdf, "datetime", "residual", "groups", style_colors, ax=axes[3]
-        )
+        if plot_resid:
+            make_multicolored_line_plot(
+                pdf, "datetime", "residual", "groups", style_colors, ax=axes[3]
+            )
 
     axes[0].set_ylabel("Storage [TAF]")
     axes[1].set_ylabel("Inflow [TAF/day]")
     axes[2].set_ylabel("Release [TAF/day]")
-    axes[3].set_ylabel("Residual [TAF/day]")
+    bottom_ax = axes[2]
+    if plot_resid:
+        axes[3].set_ylabel("Residual [TAF/day]")
+        bottom_ax = axes[3]
 
-    handles = [
-        mlines.Line2D([], [], color=style_colors[rgroups.index(i)], alpha=1, linewidth=1)
-        for i in rgroups
-    ]
-    labels = [OP_MODES.get(i) for i in rgroups]
-    axes[3].legend(handles, labels, loc="upper right")
+    index = pdf["datetime"]
+    tick_years, ticks = get_tick_years(index, bottom_ax)
+    tick_labels = [str(i) for i in tick_years]
+
+    bottom_ax.set_xticks(ticks)
+    bottom_ax.set_xticklabels(tick_labels)
+
+    if ptype == "scatter":
+        handles = [
+            plt.scatter([], [], color=style_colors[i], alpha=1)
+            for i in range(len(rgroups))
+        ]
+    else:
+        handles = [
+            mlines.Line2D([], [], color=style_colors[i], alpha=1, linewidth=1)
+            for i in range(len(rgroups))
+        ]
+    # labels = [OP_MODES.get(i) for i in rgroups]
+    labels = rgroups
+    bottom_ax.legend(handles, labels, loc="upper right")
     fig.align_ylabels()
     fig.suptitle(f"{print_res} - {print_basin}")
     plt.subplots_adjust(
@@ -1963,7 +1997,11 @@ def parallel_body_colored_group_plots(
     )
 
     if save:
-        plt.savefig(f"../figures/group_colored_timeseries/{basin}_{res}.png", dpi=450)
+        plt.savefig(
+            f"{HOME}/Dropbox/PHD/multibasin_model_figures/new_paper_figures/"
+            f"group_colored_timeseries/{basin}_{res}.png",
+            dpi=450,
+        )
     if show:
         plt.show()
     plt.close()
@@ -2071,5 +2109,5 @@ if __name__ == "__main__":
     # plot_all_res_mode_probabilities()
     # determine_similar_operating_months_across_reservoirs()
     # determine_similar_operating_reservoirs()
-    plot_res_group_colored_timeseries()
-    # enso_correlation()
+    # plot_res_group_colored_timeseries()
+    enso_correlation()
