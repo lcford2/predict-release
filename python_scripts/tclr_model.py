@@ -2,10 +2,9 @@ import argparse
 import calendar
 import copy
 import glob
+import os
 import pathlib
 import pickle
-import os
-import subprocess
 from datetime import datetime, timedelta
 from multiprocessing import cpu_count
 
@@ -195,8 +194,16 @@ def pipeline(args):
     except KeyError:
         # basin does not have MCPHEE in it
         pass
-    drop_res = ["Causey", "Lost Creek", "Echo", "Smith & Morehouse Reservoir",
-                "Jordanelle", "Deer Creek", "Hyrum", "Santa Rosa "]
+    drop_res = [
+        "Causey",
+        "Lost Creek",
+        "Echo",
+        "Smith & Morehouse Reservoir",
+        "Jordanelle",
+        "Deer Creek",
+        "Hyrum",
+        "Santa Rosa ",
+    ]
     drop_res = [i.upper() for i in drop_res]
 
     meta = meta.drop(drop_res)
@@ -211,16 +218,13 @@ def pipeline(args):
         reservoirs = meta[meta["group"] == "high_rt"].index
 
     idx = pd.IndexSlice
-    spans = {res: get_max_date_span(df.loc[idx[res,:], :]) for res in reservoirs}
-    
+    spans = {res: get_max_date_span(df.loc[idx[res, :], :]) for res in reservoirs}
+
     trimmed = []
     for res, span in spans.items():
         rdf = df.loc[idx[res, :], :]
         rindex = rdf.index.get_level_values(1)
-        trimmed.append(rdf[
-            (rindex >= span[0]) &
-            (rindex <= span[1])
-        ])
+        trimmed.append(rdf[(rindex >= span[0]) & (rindex <= span[1])])
     df = pd.concat(trimmed).sort_index()
 
     res_grouper = df.index.get_level_values(0)
@@ -258,8 +262,8 @@ def pipeline(args):
         "release_roll7",
         "inflow_roll7",
         "storage_x_inflow",
-        "inflow2",
-        "release2"
+        # "inflow2",
+        # "release_pre2",
     ]
 
     X_vars_tree = copy.copy(X_vars)
@@ -304,6 +308,7 @@ def pipeline(args):
     if args.data_init:
         II()
         import sys
+
         sys.exit()
     if max_depth > 0:
         make_dot = True
@@ -318,7 +323,7 @@ def pipeline(args):
             njobs=njobs,
             method=args.method,
             n_disc_samples=1000,
-            min_samples_split=min_samples_split
+            min_samples_split=min_samples_split,
         )
 
         time_function(model.fit)()
@@ -352,7 +357,7 @@ def pipeline(args):
             upper_bounds,
             args.assim,
             pd.Series(preds, index=X_test.index),
-            X_test
+            X_test,
         )
         simuled = simuled[["release", "storage"]].dropna()
     else:
@@ -364,7 +369,7 @@ def pipeline(args):
         fitted = X_train @ beta
         preds = X_test @ beta
         simuled = simulate_tclr_model(
-            beta, 
+            beta,
             "beta",
             X_test_act,
             means,
@@ -375,14 +380,14 @@ def pipeline(args):
             upper_bounds,
             args.assim,
             pd.Series(preds, index=X_test.index),
-            X_test
+            X_test,
         )
         simuled = simuled[["release", "storage"]].dropna()
 
     fitted = pd.Series(fitted, index=X_train.index)
     preds = pd.Series(preds, index=X_test.index)
     simmed = simuled["release"]
-   
+
     y_train_act = (
         y_train.unstack().T * std.loc[train_res, "release"]
         + means.loc[train_res, "release"]
@@ -399,7 +404,6 @@ def pipeline(args):
         preds.unstack().T * std.loc[test_res, "release"] + means.loc[test_res, "release"]
     ).T.stack()
 
-        
     y_test_sim = y_test_act.loc[simmed.index]
 
     f_act_score = r2_score(y_train_act, fitted_act)
@@ -487,12 +491,12 @@ def pipeline(args):
 
     results["simmed_res_scores"] = simmed_res_scores
 
-# print(test_res_scores.to_markdown(floatfmt="0.3f"))
-# print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
+    # print(test_res_scores.to_markdown(floatfmt="0.3f"))
+    # print(simmed_res_scores.to_markdown(floatfmt="0.3f"))
     print(
         f"{simmed_res_scores['NSE'].mean():.3f}",
         f"{simmed_res_scores['NSE'].median():.3f}",
-        f"{simmed_res_scores['NSE'].std():.3f}"
+        f"{simmed_res_scores['NSE'].std():.3f}",
     )
 
     train_quant, train_bins = pd.qcut(train_data["actual"], 3, labels=False, retbins=True)
@@ -525,10 +529,14 @@ def pipeline(args):
     assim_mod = f"_{args.assim}" if args.assim else ""
     mss_mod = f"_MSS{min_samples_split:0.2f}"
     foldername = f"TD{max_depth}{assim_mod}{mss_mod}_RT_MS_{args.method}"
-    folderpath = pathlib.Path("..", "results", "tclr_model_squared_terms", basin, foldername)
+    folderpath = pathlib.Path(
+        "..", "results", "tclr_model_squared_terms", basin, foldername
+    )
     # check if the directory exists and handle it
     if folderpath.is_dir():
-        # response = input(f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] ")
+        # response = input(
+        #    f"{folderpath} already exists. Are you sure you want to overwrite its contents? [y/N] "
+        # )
         response = "y"
         if response[0].lower() != "y":
             folderpath = pathlib.Path(
@@ -563,15 +571,15 @@ def pipeline(args):
     #     ),
     # )
     output = {
-            "f_act_score": f_act_score,
-            "p_act_score": p_act_score,
-            "s_act_score": s_act_score,
-            "f_res_scores": train_res_scores,
-            "p_res_scores": test_res_scores,
-            "s_res_scores": simmed_res_scores,
-            "train_data": train_data,
-            "test_data": test_data,
-            "simmed_data": simmed_data,
+        "f_act_score": f_act_score,
+        "p_act_score": p_act_score,
+        "s_act_score": s_act_score,
+        "f_res_scores": train_res_scores,
+        "p_res_scores": test_res_scores,
+        "s_res_scores": simmed_res_scores,
+        "train_data": train_data,
+        "test_data": test_data,
+        "simmed_data": simmed_data,
     }
     if max_depth > 0:
         output["groups"] = groups
@@ -581,13 +589,13 @@ def pipeline(args):
 
     # write the random effects to a csv file for easy access
     coefs.to_csv((folderpath / "random_effects.csv").as_posix())
-    dot_command = [
-        "dot",
-        "-Tpng",
-        (folderpath / "tree.dot").as_posix(),
-        "-o",
-        (folderpath / "tree.png").as_posix(),
-    ]
+    # dot_command = [
+    #     "dot",
+    #     "-Tpng",
+    #     (folderpath / "tree.dot").as_posix(),
+    #     "-o",
+    #     (folderpath / "tree.png").as_posix(),
+    # ]
     # subprocess.call(dot_command)
 
 
@@ -603,7 +611,7 @@ def simulate_tclr_model(
     upper_bounds,
     assim,
     preds,
-    X_test
+    X_test,
 ):
 
     # I need to keep track of actual storage and release outputs
@@ -644,13 +652,13 @@ def simulate_tclr_model(
     track_df.loc[
         init_rolling.index, ["storage_roll7", "release_roll7"]
     ] = init_rolling.values
-    
+
     X_act["storage_roll7"] = track_df["storage_roll7"]
 
     # since all reservoirs have different temporal spans
     # we have to iterate through each reservoir independently
     from joblib import Parallel, delayed
-   
+
     parallel = True
     if parallel:
         outputdfs = Parallel(n_jobs=-1, verbose=11)(
@@ -667,8 +675,9 @@ def simulate_tclr_model(
                 upper_bounds,
                 assim,
                 preds,
-                X_test
-            ) for res in resers
+                X_test,
+            )
+            for res in resers
         )
     else:
         outputdfs = []
@@ -687,7 +696,7 @@ def simulate_tclr_model(
                     upper_bounds,
                     assim,
                     preds,
-                    X_test
+                    X_test,
                 )
             )
     return pd.concat(outputdfs)
@@ -706,7 +715,7 @@ def simul_reservoir(
     upper_bounds,
     assim=None,
     preds=None,
-    X_test=None
+    X_test=None,
 ):
     idx = pd.IndexSlice
     rdf = track_df.loc[idx[res, :], :].copy(deep=True)
@@ -732,12 +741,10 @@ def simul_reservoir(
     if "const" in reg_vars:
         cindex = reg_vars.index("const")
         reg_vars = reg_vars[:cindex] + reg_vars[cindex + 1:]
-        
-    roll_storage = pd.Series(index=rdf.index, dtype=np.float64)
-    roll_storage.loc[idx[res, dates[0]]] = rdf.loc[
-        idx[res, dates[0]], "storage_roll7"]
 
-    counter = 0
+    roll_storage = pd.Series(index=rdf.index, dtype=np.float64)
+    roll_storage.loc[idx[res, dates[0]]] = rdf.loc[idx[res, dates[0]], "storage_roll7"]
+
     for date in dates:
         loc = idx[res, date]
         # get values for today
@@ -758,8 +765,9 @@ def simul_reservoir(
         reg_vars_nsd.remove("sto_diff")
         X_r = (X_r - means.loc[res, reg_vars_nsd]) / std.loc[res, reg_vars_nsd]
         X_r["sto_diff"] = X_r["storage_pre"] - (
-            (rdf.loc[loc, "storage_roll7"] -
-             means.loc[res, "storage_roll7"]) / std.loc[res, "storage_roll7"])
+            (rdf.loc[loc, "storage_roll7"] - means.loc[res, "storage_roll7"])
+            / std.loc[res, "storage_roll7"]
+        )
 
         # and the constant
         X_r["const"] = 1
@@ -775,7 +783,7 @@ def simul_reservoir(
             # release = model.predict(X_r[model.feats].values.reshape(1, X_r.size))[0]
         else:
             release = X_r[X_loc_vars] @ model
-        
+
         # if abs(release - preds.loc[loc]) > 0.000001:
         #     print(res, date, release, preds.loc[loc])
         # if date - np.timedelta64(7, "D"):
@@ -785,11 +793,7 @@ def simul_reservoir(
         # get release back to actual space
         release_act = release * std.loc[res, "release"] + means.loc[res, "release"]
         # calculate storage from mass balance
-        storage = (
-            rdf.loc[loc, "storage_pre"]
-            + rdf.loc[loc, "inflow"]
-            - release_act
-        )
+        storage = rdf.loc[loc, "storage_pre"] + rdf.loc[loc, "inflow"] - release_act
         # keep storage and release within bounds
         if storage > upper_bounds.loc[res, "storage"]:
             storage = upper_bounds.loc[res, "storage"]
@@ -825,8 +829,9 @@ def simul_reservoir(
             else:
                 rdf.loc[idx[res, tomorrow], "storage_pre"] = storage
                 rdf.loc[idx[res, tomorrow], "release_pre"] = release_act
-            # here we already updated the _pre values we can use the same logic to get rolling values
-            
+            # here we already updated the _pre values we can use the
+            # same logic to get rolling values
+
             rdf.loc[idx[res, tomorrow], "storage_roll7"] = rdf.loc[
                 idx[res, prev_seven], "storage_pre"
             ].mean()
@@ -879,14 +884,7 @@ def parse_args(arg_list=None):
     parser.add_argument(
         "--assim",
         default=None,
-        choices=(
-            "daily", 
-            "weekly",
-            "monthly",
-            "seasonally", 
-            "semi-annually", 
-            "yearly"
-        ),
+        choices=("daily", "weekly", "monthly", "seasonally", "semi-annually", "yearly"),
         help="Frequency at which to assimilate observed storage and release values",
     )
     parser.add_argument(
@@ -894,20 +892,20 @@ def parse_args(arg_list=None):
         "--method",
         # default="Nelder-Mead",
         default="exhaustive",
-        help="Optimization algorithm to use for fitting the TCLR model."
+        help="Optimization algorithm to use for fitting the TCLR model.",
     )
     parser.add_argument(
         "--mss",
         type=float,
         default=0.05,
-        help="Fraction of samples required to be in a child node to perform a split"
+        help="Fraction of samples required to be in a child node to perform a split",
     )
     parser.add_argument(
         "--data-init",
         dest="data_init",
         action="store_true",
         default=False,
-        help="Just prepare the training and testing data then launch an IPython session."
+        help="Just prepare the training and testing data then launch an IPython session.",
     )
     if arg_list:
         return parser.parse_args(arg_list)
