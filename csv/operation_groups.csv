@@ -1,0 +1,77 @@
+site_name,op_group
+Davis,medium_st_dam
+Hoover,large_st_dam
+Parker,large_st_dam
+AGR,small_st_dam
+ALCR,small_st_dam
+BLR,small_st_dam
+BigBend,medium_st_dam
+CCR,small_st_dam
+DFR,small_st_dam
+FRR,small_st_dam
+FortPeck,large_st_dam
+FortRandall,large_st_dam
+GLER,medium_st_dam
+GRAR,small_ror
+Garrison,large_st_dam
+GavinsPoint,small_st_dam
+KORR,small_ror
+Oahe,large_st_dam
+PATR,medium_st_dam
+PTR,small_st_dam
+SEMR,medium_st_dam
+WCR,small_st_dam
+BON,large_ror
+BRN,medium_st_dam
+CHJ,large_ror
+GCL,medium_st_dam
+IHR,large_ror
+LWG,large_ror
+PRD,small_ror
+RIS,small_ror
+RRH,small_ror
+WAN,large_ror
+WEL,small_ror
+Apalachia,small_ror
+BlueRidge,small_st_dam
+Boone,small_st_dam
+Chatuge,small_st_dam
+Cherokee,medium_st_dam
+Chikamauga,large_ror
+Douglas,medium_st_dam
+Fontana,medium_st_dam
+FtLoudoun,large_ror
+FtPatrick,small_ror
+Guntersville,large_ror
+Hiwassee,small_st_dam
+Kentucky,large_st_dam
+MeltonH,small_ror
+Nikajack,large_ror
+Norris,medium_st_dam
+Nottely,small_st_dam
+Ocoee1,small_st_dam
+Ocoee3,small_ror
+Pickwick,large_ror
+SHolston,medium_st_dam
+TimsFord,small_st_dam
+Watauga,small_st_dam
+WattsBar,large_ror
+Wheeler,large_ror
+Wilbur,small_ror
+Wilson,large_ror
+BLUE MESA,medium_st_dam
+CRYSTAL,small_st_dam
+DILLON RESERVOIR,small_st_dam
+FLAMING GORGE,medium_st_dam
+FONTENELLE,small_st_dam
+LAKE POWELL,large_st_dam
+LEMON,small_st_dam
+MEEKS CABIN,small_st_dam
+MORROW POINT,small_st_dam
+NAVAJO,medium_st_dam
+RIDGWAY,small_st_dam
+RUEDI RESERVOIR,small_st_dam
+SILVER JACK,small_st_dam
+STARVATION,small_st_dam
+TAYLOR PARK,small_st_dam
+VALLECITO,small_st_dam
