@@ -83,6 +83,8 @@ DATA_FILE = (
 
 INFLECT_ENGINE = inflect.engine()
 
+MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
 
 def load_pickle(file):
     with open(file, "rb") as f:
@@ -197,6 +199,19 @@ def get_name_replacements():
             key, value = line.split(",")
             tva[key] = value
     return pnw | tva | missouri
+
+
+def load_rbasins():
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
+    rename = {
+        "upper_col": "colorado",
+        "lower_col": "colorado",
+        "pnw": "columbia",
+        "tva": "tennessee",
+    }
+    rbasins = rbasins.replace(rename)
+    rbasins = rbasins.str.capitalize()
+    return rbasins
 
 
 def make_bin(df, res=True):
@@ -2086,6 +2101,227 @@ def enso_correlation():
         # sys.exit()
 
 
+def find_thirds(series):
+    pct = series.rank(pct=True)
+
+    def third(i):
+        if i < 1 / 3:
+            return 0
+        elif i < 2 / 3:
+            return 1
+        else:
+            return 2
+
+    return pct.apply(third)
+
+
+def plot_daily_most_likely_groups():
+    sns.set_context("paper")
+    results = load_pickle(RESULT_FILE)
+    data = load_pickle(DATA_FILE)
+
+    inflow = data["xtrain"]["inflow"]
+    inf_means = data["means"]["inflow"]
+    inf_std = data["std"]["inflow"]
+    inflow = (inflow.unstack().T * inf_std + inf_means).T.stack()
+    inflow = inflow.sort_index()
+
+    groups = results["groups"]
+    groups.name = "group"
+
+    titles = [
+        "Below Normal Inflow",
+        "Normal Inflow",
+        "Above Normal Inflow",
+    ]
+
+    ticks = [0]
+    for i in range(11):
+        ticks.append(ticks[i] + MONTH_DAYS[i])
+
+    rbasins = load_rbasins()
+    name_replacements = get_name_replacements()
+
+    resers = groups.index.get_level_values("site_name").unique()
+    resers = ["Fontana"]
+    for res in resers:
+        df = groups.loc[pd.IndexSlice[res, :]].to_frame()
+        if df["group"].var() == 0:
+            continue
+        print(f"Making Plot for {res}")
+        basin = rbasins[res]
+        print_basin = " ".join(basin.split("_")).title()
+        print_res = name_replacements.get(res, res).title()
+
+        rinflow = inflow.loc[pd.IndexSlice[res, :]]
+        rinflow_year = rinflow.resample("Y").sum()
+        rinflow_year.index = rinflow_year.index.year
+        inflow_bin = find_thirds(rinflow_year)
+
+        df["inflow_bin"] = [inflow_bin.loc[i.year] for i in df.index]
+        df = df.dropna()
+        df = df.groupby([df.index.dayofyear, "inflow_bin"]).value_counts().unstack()
+        df = df[df.index.get_level_values(0) != 366]
+
+        # for col in df.columns:
+        #     df[col] = df[col].unstack().rolling(7).sum().stack()
+
+        # df = df.dropna(how="all")
+
+        pcts = df.divide(df.sum(axis=1), axis=0) * 100
+
+        pcts = pcts.melt(ignore_index=False).reset_index()
+        pcts = pcts.pivot(index=["datetime", "group"], columns=["inflow_bin"])
+        pcts.columns = pcts.columns.droplevel(0)
+
+        fig, axes = plt.subplots(3, 1, sharex=True, sharey=True, figsize=(19, 10))
+        axes = axes.flatten()
+
+        tick_labels = calendar.month_abbr[1:]
+        for col, ax, title in zip(pcts.columns, axes, titles):
+            pdf = pcts[col].unstack()
+            pdf.plot.bar(stacked=True, ax=ax, width=0.8)
+            # pdf.plot.area(stacked=True, ax=ax)
+            ax.set_title(title)
+            if ax == axes[-1]:
+                ax.legend(loc="best")
+            else:
+                ax.get_legend().remove()
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(tick_labels)
+        ax.set_xticks([], minor=True)
+
+        ax.set_xlim(-2, 367)
+
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        fig.text(0.02, 0.5, "Group Occurence Probability", va="center", rotation=90)
+        fig.suptitle(f"{print_res} - {print_basin}")
+
+        plt.subplots_adjust(
+            top=0.918, bottom=0.069, left=0.046, right=0.992, hspace=0.144, wspace=0.2
+        )
+
+        file_name = f"../figures/inflow_thirds_group_probability/bars/{basin}_{res}.png"
+        # plt.savefig(file_name, dpi=400)
+        # plt.close()
+        plt.show()
+
+
+def relate_groups_and_vars():
+    sns.set_context("notebook")
+    results = load_pickle(RESULT_FILE)
+    raw_data = read_basin_data("all").sort_index()
+    data = load_pickle(DATA_FILE)
+    op_groups = pd.read_csv("../csv/operation_groups.csv", index_col=0).squeeze()
+
+    df = data["xtrain"]
+    df = df.drop(["const", "rts", "max_sto"], axis=1)
+
+    resers = df.index.get_level_values(0).unique()
+    raw_data = raw_data[raw_data.index.get_level_values(0).isin(resers)]
+
+    raw_data["storage_fraction"] = raw_data.groupby(
+        raw_data.index.get_level_values(0), group_keys=False
+    )["storage_pre"].apply(lambda x: x / x.max())
+
+    df["groups"] = results["groups"]
+    df["storage_fraction"] = raw_data["storage_fraction"]
+    df["op_group"] = [op_groups[i] for i in df.index.get_level_values(0)]
+
+    raw_data["groups"] = results["groups"]
+    raw_data["op_group"] = [op_groups[i] for i in raw_data.index.get_level_values(0)]
+    select_columns = [
+        "release_pre",
+        "storage_pre",
+        "inflow",
+        "release_roll7",
+        "storage_roll7",
+        "inflow_roll7",
+        "storage_x_inflow",
+        "storage_fraction",
+        "groups",
+        "op_group",
+    ]
+    raw_data = raw_data[select_columns].dropna()
+    corrs = raw_data.groupby(
+        [raw_data.index.get_level_values(0), "op_group", "groups"]
+    ).corr()
+    corrs = corrs.groupby(corrs.index.droplevel(0)).mean()
+    corrs.index = pd.MultiIndex.from_tuples(corrs.index)
+    corrs = corrs[corrs.index.get_level_values(1) > 2]
+    corrs = corrs.stack().reset_index()
+    corrs = corrs.rename(
+        columns={
+            "level_0": "op_group",
+            "level_1": "group",
+            "level_2": "var1",
+            "level_3": "var2",
+            0: "corr",
+        }
+    )
+    corrs = corrs[corrs["var1"] != corrs["var2"]]
+    corrs = corrs[~corrs.apply(
+        lambda x: (x["var1"] in x["var2"]) or (x["var2"] in x["var1"]), axis=1)
+    ]
+    corrs["group"] = corrs["group"].astype(int)
+    variables = corrs["var1"].unique()
+
+    # var_map = {
+    #     "storage_pre": r"$S_{t-1}$",
+    #     "release_pre": r"$R_{t-1}$",
+    #     "release_roll7": r"$\bar{R}^7_{t-1}",
+    #     "storage_roll7": r"$\bar{I}^7_{t-1}",
+    #     "storage_roll7": r"$S_{t-1}/S_{max}"
+    #     "inflow"
+
+    for v in variables:
+        vcorrs = corrs[corrs["var1"] == v]
+        titles = vcorrs["op_group"].unique()
+        fig, axes = plt.subplots(len(titles), 1, sharex=True, sharey=True, figsize=(19, 10))
+        axes = axes.flatten()
+        for ax, title in zip(axes, titles):
+            pdf = vcorrs[vcorrs["op_group"] == title]
+            # pdf.plot.bar(x="var2", y="corr", ax=ax)
+            sns.barplot(
+                data=pdf,
+                x="var2",
+                y="corr",
+                hue="group",
+                ax=ax
+            )
+            title = title.split("_")
+            title[1] = "Storage"
+            ax.set_title(" ".join(title).title())
+            ax.set_xlabel("")
+            ax.legend(loc="best", prop={"size": 12}, ncol=3, title="")
+            ax.set_ylabel(r"$\rho$")
+        fig.suptitle(v)
+        plt.subplots_adjust(
+            top=0.924,
+            bottom=0.045,
+            left=0.047,
+            right=0.991,
+            hspace=0.179,
+            wspace=0.2
+        )
+        filename = f"../figures/grouped_means/{v}.png"
+        plt.savefig(filename, dpi=400)
+
+    means = df.groupby([df.index.get_level_values(0), "op_group", "groups"]).mean()
+
+    means = means[means.index.get_level_values(2) > 2]
+
+    means = means.groupby(
+        [
+            means.index.get_level_values(1),
+            means.index.get_level_values(2),
+        ]
+    ).mean()
+
+    II()
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) > 0:
@@ -2110,4 +2346,6 @@ if __name__ == "__main__":
     # determine_similar_operating_months_across_reservoirs()
     # determine_similar_operating_reservoirs()
     # plot_res_group_colored_timeseries()
-    enso_correlation()
+    # enso_correlation()
+    # plot_daily_most_likely_groups()
+    relate_groups_and_vars()
