@@ -2144,12 +2144,12 @@ def plot_daily_most_likely_groups():
     name_replacements = get_name_replacements()
 
     resers = groups.index.get_level_values("site_name").unique()
-    resers = ["Hoover"]
-    full_date = datetime.datetime(1980, 6, 20)
-    close_date = datetime.datetime(1963, 9, 13)
+    resers = ["GavinsPoint"]
+    # full_date = datetime.datetime(1980, 6, 20)
+    # close_date = datetime.datetime(1963, 9, 13)
     for res in resers:
         df = groups.loc[pd.IndexSlice[res, :]].to_frame()
-        df = df[df.index > full_date]
+        # df = df[df.index > full_date]
         if df["group"].var() == 0:
             continue
         print(f"Making Plot for {res}")
@@ -2160,12 +2160,31 @@ def plot_daily_most_likely_groups():
         rinflow = inflow.loc[pd.IndexSlice[res, :]]
         rinflow_year = rinflow.resample("Y").sum()
         rinflow_year.index = rinflow_year.index.year
-        inflow_bin = find_thirds(rinflow_year)
+        # inflow_bin = find_thirds(rinflow_year)
+        min_year = rinflow_year.idxmin()
+        max_year = rinflow_year.idxmax()
+        ranks = rinflow_year.rank()
+        mid_rank = round(ranks.mean())
+        mid_year = ranks[ranks == mid_rank].index[0]
 
-        df["inflow_bin"] = [inflow_bin.loc[i.year] for i in df.index]
-        df = df.dropna()
-        df = df.groupby([df.index.dayofyear, "inflow_bin"]).value_counts().unstack()
-        df = df[df.index.get_level_values(0) != 366]
+        year_rename = {
+            min_year: f"Min - {min_year}",
+            max_year: f"Max - {max_year}",
+            mid_year: f"Mid - {mid_year}"
+        }
+
+        # df["inflow_bin"] = [inflow_bin.loc[i.year] for i in df.index]
+        # df = df.dropna()
+        # df = df.groupby([df.index.dayofyear, "inflow_bin"]).value_counts().unstack()
+        df = df[df.index.year.isin([min_year, mid_year, max_year])]
+        # df = df.groupby([df.index.dayofyear, df.index.year]).value_counts().unstack()
+        # df = df[df.index.get_level_values(0) != 366]
+        df = df.groupby(df.index.year).value_counts().unstack()
+        df = df.loc[[min_year, mid_year, max_year]]
+        df.index = [year_rename[i] for i in df.index]
+        df = df.divide(df.sum(axis=1), axis=0)
+        print(df.to_markdown(floatfmt=".2%"))
+        sys.exit()
 
         # for col in df.columns:
         #     df[col] = df[col].unstack().rolling(7).sum().stack()
@@ -2363,5 +2382,5 @@ if __name__ == "__main__":
     # determine_similar_operating_reservoirs()
     # plot_res_group_colored_timeseries()
     # enso_correlation()
-    # plot_daily_most_likely_groups()
-    relate_groups_and_vars()
+    plot_daily_most_likely_groups()
+    # relate_groups_and_vars()
