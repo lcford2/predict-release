@@ -7,6 +7,7 @@ import pickle
 import re
 import socket
 import sys
+import datetime
 
 import geopandas as gpd
 import inflect
@@ -2143,9 +2144,12 @@ def plot_daily_most_likely_groups():
     name_replacements = get_name_replacements()
 
     resers = groups.index.get_level_values("site_name").unique()
-    resers = ["Fontana"]
+    resers = ["Hoover"]
+    full_date = datetime.datetime(1980, 6, 20)
+    close_date = datetime.datetime(1963, 9, 13)
     for res in resers:
         df = groups.loc[pd.IndexSlice[res, :]].to_frame()
+        df = df[df.index > full_date]
         if df["group"].var() == 0:
             continue
         print(f"Making Plot for {res}")
@@ -2180,30 +2184,30 @@ def plot_daily_most_likely_groups():
         tick_labels = calendar.month_abbr[1:]
         for col, ax, title in zip(pcts.columns, axes, titles):
             pdf = pcts[col].unstack()
-            pdf.plot.bar(stacked=True, ax=ax, width=0.8)
-            # pdf.plot.area(stacked=True, ax=ax)
+            # pdf.plot.bar(stacked=True, ax=ax, width=0.8)
+            pdf.plot.area(stacked=True, ax=ax)
             ax.set_title(title)
             if ax == axes[-1]:
                 ax.legend(loc="best")
             else:
                 ax.get_legend().remove()
-        ax.set_xticks(ticks)
-        ax.set_xticklabels(tick_labels)
-        ax.set_xticks([], minor=True)
+            ax.set_xticks(ticks)
+            ax.set_xticklabels(tick_labels)
+            ax.set_xticks([], minor=True)
 
-        ax.set_xlim(-2, 367)
+            ax.set_xlim(-2, 367)
 
-        ax.set_xlabel("")
-        ax.set_ylabel("")
+            ax.set_xlabel("")
+            ax.set_ylabel("")
         fig.text(0.02, 0.5, "Group Occurence Probability", va="center", rotation=90)
-        fig.suptitle(f"{print_res} - {print_basin}")
+        fig.suptitle(f"{print_res} - {print_basin} - Post Powell Filling")
 
         plt.subplots_adjust(
             top=0.918, bottom=0.069, left=0.046, right=0.992, hspace=0.144, wspace=0.2
         )
 
-        file_name = f"../figures/inflow_thirds_group_probability/bars/{basin}_{res}.png"
-        # plt.savefig(file_name, dpi=400)
+        file_name = f"../figures/inflow_thirds_group_probability/bars/{basin}_{res}_powellfull.png"
+        plt.savefig(file_name, dpi=400)
         # plt.close()
         plt.show()
 
@@ -2260,10 +2264,21 @@ def relate_groups_and_vars():
             0: "corr",
         }
     )
-    corrs = corrs[corrs["var1"] != corrs["var2"]]
-    corrs = corrs[~corrs.apply(
-        lambda x: (x["var1"] in x["var2"]) or (x["var2"] in x["var1"]), axis=1)
-    ]
+    corrs = corrs[corrs["var1"] != "storage_roll7"]
+    corrs = corrs[corrs["var2"] != "storage_roll7"]
+    drop_vars = {
+        "release_pre": ["release_pre", "release_roll7"],
+        "storage_pre": ["storage_pre", "sto_diff", "storage_x_inflow", "storage_fraction"],
+        "inflow": ["inflow", "inflow_roll7", "storage_x_inflow"],
+        "inflow_roll7": ["inflow", "inflow_roll7", "storage_x_inflow"],
+        "release_roll7": ["release_pre", "release_roll7"],
+        "sto_diff": ["storage_pre", "sto_diff", "storage_x_inflow"],
+        "storage_x_inflow": ["storage_pre", "storage_x_inflow", "inflow", "storage_fraction"],
+        "storage_fraction": ["storage_pre", "sto_diff", "storage_x_inflow", "storage_fraction"],
+    }
+    # corrs = corrs[~corrs.apply(
+    #     lambda x: (x["var1"] in x["var2"]) or (x["var2"] in x["var1"]), axis=1)
+    # ]
     corrs["group"] = corrs["group"].astype(int)
     variables = corrs["var1"].unique()
 
@@ -2277,6 +2292,7 @@ def relate_groups_and_vars():
 
     for v in variables:
         vcorrs = corrs[corrs["var1"] == v]
+        vcorrs = vcorrs[~vcorrs["var2"].isin(drop_vars[v])]
         titles = vcorrs["op_group"].unique()
         fig, axes = plt.subplots(len(titles), 1, sharex=True, sharey=True, figsize=(19, 10))
         axes = axes.flatten()
@@ -2305,7 +2321,7 @@ def relate_groups_and_vars():
             hspace=0.179,
             wspace=0.2
         )
-        filename = f"../figures/grouped_means/{v}.png"
+        filename = f"../figures/grouped_corrs/{v}.png"
         plt.savefig(filename, dpi=400)
 
     means = df.groupby([df.index.get_level_values(0), "op_group", "groups"]).mean()
