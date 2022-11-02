@@ -2184,6 +2184,9 @@ def plot_daily_most_likely_groups():
         df.index = [year_rename[i] for i in df.index]
         df = df.divide(df.sum(axis=1), axis=0)
         print(df.to_markdown(floatfmt=".2%"))
+        ax = df.plot.bar()
+        ax.tick_params(axis="both",)
+        II()
         sys.exit()
 
         # for col in df.columns:
