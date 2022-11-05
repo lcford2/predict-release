@@ -2117,7 +2117,7 @@ def find_thirds(series):
 
 
 def plot_daily_most_likely_groups():
-    sns.set_context("paper")
+    # sns.set_context("paper")
     results = load_pickle(RESULT_FILE)
     data = load_pickle(DATA_FILE)
 
@@ -2144,12 +2144,12 @@ def plot_daily_most_likely_groups():
     name_replacements = get_name_replacements()
 
     resers = groups.index.get_level_values("site_name").unique()
-    resers = ["GavinsPoint"]
-    # full_date = datetime.datetime(1980, 6, 20)
+    resers = ["Hoover"]
+    full_date = datetime.datetime(1980, 6, 20)
     # close_date = datetime.datetime(1963, 9, 13)
     for res in resers:
         df = groups.loc[pd.IndexSlice[res, :]].to_frame()
-        # df = df[df.index > full_date]
+        df = df[df.index > full_date]
         if df["group"].var() == 0:
             continue
         print(f"Making Plot for {res}")
@@ -2158,6 +2158,7 @@ def plot_daily_most_likely_groups():
         print_res = name_replacements.get(res, res).title()
 
         rinflow = inflow.loc[pd.IndexSlice[res, :]]
+        rinflow = rinflow[rinflow.index > full_date]
         rinflow_year = rinflow.resample("Y").sum()
         rinflow_year.index = rinflow_year.index.year
         # inflow_bin = find_thirds(rinflow_year)
@@ -2183,7 +2184,14 @@ def plot_daily_most_likely_groups():
         df = df.loc[[min_year, mid_year, max_year]]
         df.index = [year_rename[i] for i in df.index]
         df = df.divide(df.sum(axis=1), axis=0)
+
         print(df.to_markdown(floatfmt=".2%"))
+        ax = (df * 100).plot.bar()
+        ax.tick_params(axis="x", labelrotation=0)
+        ax.set_ylabel("Group Occurence Proportion [%]")
+        ax.legend(loc="upper left", ncol=3)
+        ax.set_title(f"{print_res} - {print_basin}")
+        plt.show()
         sys.exit()
 
         # for col in df.columns:
