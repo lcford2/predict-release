@@ -70,7 +70,6 @@ threadpoolctl==3.1.0
 tomli==2.0.1
 tomlkit==0.11.5
 traitlets==5.5.0
--e git+ssh://git@github.com/lcford2/rtree-lr-combo.git@1d09822fe8f4d8080247b70e9e598bab6a129099#egg=tree_combo_lr
 typeguard==2.13.3
 typing_extensions==4.4.0
 wcwidth==0.2.5
