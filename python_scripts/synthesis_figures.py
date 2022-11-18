@@ -1,4 +1,5 @@
 import calendar
+import datetime
 import glob
 import json
 import os
@@ -7,7 +8,6 @@ import pickle
 import re
 import socket
 import sys
-import datetime
 
 import geopandas as gpd
 import inflect
@@ -45,7 +45,7 @@ elif hostname == "inspiron-laptop":
     HOME = "~"
 
 
-from mpl_toolkits.basemap import Basemap
+from mpl_toolkits.basemap import Basemap  # noqa: I100, E402
 
 CHAR_VARS = [
     "Release Seasonality",
@@ -370,12 +370,42 @@ def make_maps(axes, coords=None, other_bound=None):
             other_gdfs.append((gpd.read_file(b + ".shp"), c))
 
     label_map = {
-        0: dict(labelleft=True, labelright=False, labeltop=True, labelbottom=False),
-        1: dict(labelleft=False, labelright=True, labeltop=True, labelbottom=False),
-        2: dict(labelleft=True, labelright=False, labeltop=False, labelbottom=False),
-        3: dict(labelleft=False, labelright=True, labeltop=False, labelbottom=False),
-        4: dict(labelleft=True, labelright=False, labeltop=False, labelbottom=True),
-        5: dict(labelleft=False, labelright=True, labeltop=False, labelbottom=True),
+        0: {
+            "labelleft": True,
+            "labelright": False,
+            "labeltop": True,
+            "labelbottom": False,
+        },
+        1: {
+            "labelleft": False,
+            "labelright": True,
+            "labeltop": True,
+            "labelbottom": False,
+        },
+        2: {
+            "labelleft": True,
+            "labelright": False,
+            "labeltop": False,
+            "labelbottom": False,
+        },
+        3: {
+            "labelleft": False,
+            "labelright": True,
+            "labeltop": False,
+            "labelbottom": False,
+        },
+        4: {
+            "labelleft": True,
+            "labelright": False,
+            "labeltop": False,
+            "labelbottom": True,
+        },
+        5: {
+            "labelleft": False,
+            "labelright": True,
+            "labeltop": False,
+            "labelbottom": True,
+        },
     }
     for i, ax in enumerate(axes):
         states.plot(ax=ax, edgecolor="k", facecolor="None")
@@ -940,7 +970,7 @@ def plot_error_by_variable():
     results["error"] = results["model"] - results["actual"]
     results["error_std"] = results["model_std"] - results["actual_std"]
 
-    vars = train_data.columns.drop(["const", "rts", "max_sto"])
+    columns = train_data.columns.drop(["const", "rts", "max_sto"])
 
     # fig, axes = plt.subplots(2, 4, sharex=True, sharey=True, figsize=(19, 10))
     # axes = axes.flatten()
@@ -955,7 +985,7 @@ def plot_error_by_variable():
         "inflow_roll7": "Weekly Mean Inflow",
         "storage_x_inflow": "Storage-Inflow Interaction",
     }
-    for var in vars:
+    for var in columns:
         x = train_data_act[var]
         y = results["error"]
         color = results["op_group"]
@@ -1444,7 +1474,8 @@ def plot_lagged_shift_probabilities():
     vardf["mean"] = vardf.mean(axis=1)
     vardf = vardf.sort_values(by="mean")
     vardf.to_pickle(
-        "../results/synthesis_paper/transition_analysis/lagged_transition_probs_variance.pickle"
+        "../results/synthesis_paper/transition_analysis/"
+        "lagged_transition_probs_variance.pickle"
     )
 
 
@@ -1593,13 +1624,16 @@ def plot_rolling_group_frequencies():
             )
             fig.suptitle(f"{pname} - {print_basin}")
 
-            folder = f"../figures/group_wavelet/{INFLECT_ENGINE.number_to_words(WINDOW)}_day_window/"
+            folder = (
+                "../figures/group_wavelet/"
+                f"{INFLECT_ENGINE.number_to_words(WINDOW)}_day_window/"
+            )
             fullpath = os.path.abspath(folder)
             if not os.path.exists(fullpath):
                 os.makedirs(fullpath)
             plt.savefig(os.path.join(folder, f"{basin}_{res}.png"))
             plt.close()
-        except:
+        except:  # noqa: B901, E722
             continue
 
 
@@ -1836,7 +1870,7 @@ def make_multicolored_line_plot(df, x, y, c, colors, ax=None, **kwargs):
 
     plot_segments = df["mask"].unique()
 
-    groups = sorted(list(df[c].unique()))
+    groups = sorted(df[c].unique())
 
     for ps in plot_segments:
         pdf = df[df["mask"] == ps]
@@ -1860,9 +1894,9 @@ def plot_res_group_colored_timeseries():
 
     ydata = results["train_data"]
     groups = results["groups"]
-    vars = ["storage_pre", "inflow"]
+    columns = ["storage_pre", "inflow"]
 
-    df = xtrain.loc[:, vars]
+    df = xtrain.loc[:, columns]
 
     df["storage_pre"] = (
         df["storage_pre"].unstack().T * std["storage_pre"] + means["storage_pre"]
@@ -1930,7 +1964,7 @@ def parallel_body_colored_group_plots(
     save=True,
 ):
     pdf = df.loc[pd.IndexSlice[res, :]]
-    rgroups = sorted(list(pdf["groups"].unique()))
+    rgroups = sorted(pdf["groups"].unique())
     if len(rgroups) == 1:
         return
 
@@ -2171,7 +2205,7 @@ def plot_daily_most_likely_groups():
         year_rename = {
             min_year: f"Min - {min_year}",
             max_year: f"Max - {max_year}",
-            mid_year: f"Mid - {mid_year}"
+            mid_year: f"Mid - {mid_year}",
         }
 
         # df["inflow_bin"] = [inflow_bin.loc[i.year] for i in df.index]
@@ -2233,7 +2267,10 @@ def plot_daily_most_likely_groups():
             top=0.918, bottom=0.069, left=0.046, right=0.992, hspace=0.144, wspace=0.2
         )
 
-        file_name = f"../figures/inflow_thirds_group_probability/bars/{basin}_{res}_powellfull.png"
+        file_name = (
+            "../figures/inflow_thirds_group_probability/bars/"
+            f"{basin}_{res}_powellfull.png"
+        )
         plt.savefig(file_name, dpi=400)
         # plt.close()
         plt.show()
@@ -2295,13 +2332,28 @@ def relate_groups_and_vars():
     corrs = corrs[corrs["var2"] != "storage_roll7"]
     drop_vars = {
         "release_pre": ["release_pre", "release_roll7"],
-        "storage_pre": ["storage_pre", "sto_diff", "storage_x_inflow", "storage_fraction"],
+        "storage_pre": [
+            "storage_pre",
+            "sto_diff",
+            "storage_x_inflow",
+            "storage_fraction",
+        ],
         "inflow": ["inflow", "inflow_roll7", "storage_x_inflow"],
         "inflow_roll7": ["inflow", "inflow_roll7", "storage_x_inflow"],
         "release_roll7": ["release_pre", "release_roll7"],
         "sto_diff": ["storage_pre", "sto_diff", "storage_x_inflow"],
-        "storage_x_inflow": ["storage_pre", "storage_x_inflow", "inflow", "storage_fraction"],
-        "storage_fraction": ["storage_pre", "sto_diff", "storage_x_inflow", "storage_fraction"],
+        "storage_x_inflow": [
+            "storage_pre",
+            "storage_x_inflow",
+            "inflow",
+            "storage_fraction",
+        ],
+        "storage_fraction": [
+            "storage_pre",
+            "sto_diff",
+            "storage_x_inflow",
+            "storage_fraction",
+        ],
     }
     # corrs = corrs[~corrs.apply(
     #     lambda x: (x["var1"] in x["var2"]) or (x["var2"] in x["var1"]), axis=1)
@@ -2321,18 +2373,14 @@ def relate_groups_and_vars():
         vcorrs = corrs[corrs["var1"] == v]
         vcorrs = vcorrs[~vcorrs["var2"].isin(drop_vars[v])]
         titles = vcorrs["op_group"].unique()
-        fig, axes = plt.subplots(len(titles), 1, sharex=True, sharey=True, figsize=(19, 10))
+        fig, axes = plt.subplots(
+            len(titles), 1, sharex=True, sharey=True, figsize=(19, 10)
+        )
         axes = axes.flatten()
         for ax, title in zip(axes, titles):
             pdf = vcorrs[vcorrs["op_group"] == title]
             # pdf.plot.bar(x="var2", y="corr", ax=ax)
-            sns.barplot(
-                data=pdf,
-                x="var2",
-                y="corr",
-                hue="group",
-                ax=ax
-            )
+            sns.barplot(data=pdf, x="var2", y="corr", hue="group", ax=ax)
             title = title.split("_")
             title[1] = "Storage"
             ax.set_title(" ".join(title).title())
@@ -2341,12 +2389,7 @@ def relate_groups_and_vars():
             ax.set_ylabel(r"$\rho$")
         fig.suptitle(v)
         plt.subplots_adjust(
-            top=0.924,
-            bottom=0.045,
-            left=0.047,
-            right=0.991,
-            hspace=0.179,
-            wspace=0.2
+            top=0.924, bottom=0.045, left=0.047, right=0.991, hspace=0.179, wspace=0.2
         )
         filename = f"../figures/grouped_corrs/{v}.png"
         plt.savefig(filename, dpi=400)
