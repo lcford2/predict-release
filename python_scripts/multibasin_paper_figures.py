@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import calendar
 import glob
 import json
@@ -42,8 +44,9 @@ from utils.helper_functions import linear_scale_values, make_bin_label_map
 
 if hostname == "CCEE-DT-094":
     GIS_DIR = pathlib.Path("G:/My Drive/PHD/GIS")
-elif hostname == "inspiron13":
-    GIS_DIR = pathlib.Path("/home/lford/data/GIS")
+# elif hostname == "inspiron13":
+else:
+    GIS_DIR = pathlib.Path("/home/lucas/data/GIS")
 
 CHAR_VARS = [
     "Release Seasonality",
@@ -710,43 +713,43 @@ def plot_res_locs(colors=None):
         ((GIS_DIR / "tennessee_shp" / "Shape" / "WBDHU2").as_posix(), color_map[3]),
     ]
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(19, 10), dpi=800)
     ax = fig.add_subplot()
     m = make_map(ax, other_bound=basins)
     x, y = m(res_locs.long, res_locs.lat)
-    # max_size = 600
-    # min_size = 50
-    # size_var = "max_sto"
-    # max_value = res_locs[size_var].max()
-    # min_value = res_locs[size_var].min()
+    max_size = 600
+    min_size = 50
+    size_var = "max_sto"
+    max_value = res_locs[size_var].max()
+    min_value = res_locs[size_var].min()
 
-    # ratio = (max_size - min_size) / (max_value - min_value)
-    # sizes = [min_size + i * ratio for i in res_locs[size_var]]
-    # markers = ax.scatter(x, y, marker="v", edgecolor="k", s=sizes, zorder=4)
-    markers = ax.scatter(x, y, marker="v", edgecolor="k", s=150, zorder=4)
+    ratio = (max_size - min_size) / (max_value - min_value)
+    sizes = [min_size + i * ratio for i in res_locs[size_var]]
+    markers = ax.scatter(x, y, marker="v", edgecolor="k", s=sizes, zorder=4)
+    # markers = ax.scatter(x, y, marker="v", edgecolor="k", s=150, zorder=4)
     marker_color = markers.get_facecolor()
 
     river_line = mlines.Line2D([], [], color="b", alpha=1, linewidth=0.5)
     river_basins = [mpatch.Patch(facecolor=color_map[i], alpha=0.5) for i in range(4)]
-    # size_legend_sizes = np.linspace(min_size, max_size, 4)
-    # # size_legend_labels = [(i-min_size) / ratio for i in size_legend_sizes]
-    # size_legend_labels = np.linspace(min_value, max_value, 4)
+    size_legend_sizes = np.linspace(min_size, max_size, 4)
+    # size_legend_labels = [(i-min_size) / ratio for i in size_legend_sizes]
+    size_legend_labels = np.linspace(min_value, max_value, 4)
 
-    # size_markers = [
-    #     plt.scatter([], [], s=i, edgecolors="k", c=marker_color, marker="v")
-    #     for i in size_legend_sizes
-    # ]
+    size_markers = [
+        plt.scatter([], [], s=i, edgecolors="k", c=marker_color, marker="v")
+        for i in size_legend_sizes
+    ]
 
-    # size_legend = plt.legend(
-    #     size_markers,
-    #     [
-    #         f"{round(size_legend_labels[0]*1000, -2):.0f}",
-    #         *[f"{round(i / 1000, 0):,.0f} million" for i in size_legend_labels[1:]],
-    #     ],
-    #     title="Maximum Storage [acre-feet]",
-    #     loc="lower left",
-    #     ncol=4,
-    # )
+    size_legend = plt.legend(
+        size_markers,
+        [
+            f"{round(size_legend_labels[0]*1000, -2):.0f}",
+            *[f"{round(i / 1000, 0):,.0f} million" for i in size_legend_labels[1:]],
+        ],
+        title="Maximum Storage [acre-feet]",
+        loc="lower left",
+        ncol=4,
+    )
     hydro_legend = plt.legend(
         [river_line, *river_basins],
         [
@@ -758,10 +761,13 @@ def plot_res_locs(colors=None):
         ],
         loc="lower right",
     )
-    # ax.add_artist(size_legend)
+    ax.add_artist(size_legend)
     ax.add_artist(hydro_legend)
 
-    plt.show()
+    # plt.show()
+    plt.savefig(
+        "../figures/agu_2022_figures/res_map.png", format="png", dpi=800
+    )
 
 
 def plot_res_perf_map(results):
@@ -3292,7 +3298,7 @@ if __name__ == "__main__":
     # plot_perf_vs_datalength(results)
 
     # * FIGURE 1
-    # plot_res_locs()
+    plot_res_locs()
     # * FIGURE 2
     # plot_variable_correlations()
     # * FIGURE 3
@@ -3324,7 +3330,7 @@ if __name__ == "__main__":
     # get_unique_trees()
     # get_unique_paths()
     # get_operating_groups()
-    plot_interannual_group_variability()
+    # plot_interannual_group_variability()
     # plot_interannual_seasonal_group_variability()
 
     # plot_error_by_variable()
