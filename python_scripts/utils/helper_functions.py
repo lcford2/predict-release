@@ -1,6 +1,8 @@
 import pathlib
 import pickle
 import sys
+import os
+import json
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -41,6 +43,9 @@ tva_res = [
 ]
 
 acf_res = ["Woodruff", "Buford", "George", "West"]
+
+
+PROJECT_ROOT = os.path.expanduser("~/projects/predict-release")
 
 
 # @time_function
@@ -324,3 +329,69 @@ class ColorInterpolator:
 
     def __repr__(self):
         return f"ColorInterpolator({self.start_color}, {self.stop_color}, {self.start_value}, {self.stop_value})"
+
+
+def read_pickle(file):
+    with open(file, "rb") as f:
+        data = pickle.load(f)
+    return data
+
+
+def write_pickle(file, data):
+    with open(file, "wb") as f:
+        pickle.dump(data, f)
+
+
+def get_name_replacements():
+    with open(f"{PROJECT_ROOT}/pnw_data/dam_names.json", "r") as f:
+        pnw = json.load(f)
+
+    with open(f"{PROJECT_ROOT}/missouri_data/dam_names.json", "r") as f:
+        missouri = json.load(f)
+
+    tva = {}
+    with open(f"{PROJECT_ROOT}/python_scripts/actual_names.csv", "r") as f:
+        for line in f.readlines():
+            line = line.strip("\n\r")
+            key, value = line.split(",")
+            tva[key] = value
+    return pnw | tva | missouri
+
+
+def load_rbasins():
+    rbasins = pd.read_pickle(f"{PROJECT_ROOT}/pickles/res_basin_map.pickle")
+    rename = {
+        "upper_col": "colorado",
+        "lower_col": "colorado",
+        "pnw": "columbia",
+        "tva": "tennessee",
+    }
+    rbasins = rbasins.replace(rename)
+    rbasins = rbasins.str.capitalize()
+    return rbasins
+
+
+def is_approx_equal(a, b, e):
+    return np.abs(a - b) <= e
+
+
+def get_n_median_index(series, ngroups=0):
+    """Get the index of the median value for each nsplits number of splits
+
+    The number of indices returned will always be nsplits + 1
+    When nsplits = 0, the median of the data set is returned.
+    When nsplits is 1, the 25th and 75th percentile values are returned.
+    The data set is split nsplits number of times, and the median of those
+    sub data sets is returned.
+
+    """
+    indices = []
+    if ngroups > 0:
+        splits = [0] + [(i+1) / (ngroups) for i in range(ngroups)]
+        medians = [round(sum(splits[i:i+2]) / 2 * series.size, 0) for i in range(ngroups)]
+        ranks = series.rank()
+        for i, median in enumerate(medians):
+            entry = ranks[ranks == median]
+            index = entry.index[0]
+            indices.append(index)
+    return indices
