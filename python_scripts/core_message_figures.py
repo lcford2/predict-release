@@ -1,22 +1,21 @@
+import calendar
 import json
 import os
-import re
 import pathlib
-import calendar
+import re
 from itertools import product
 
 import geopandas as gpd
 import matplotlib.gridspec as GS
-import matplotlib.patches as mpatch
 import matplotlib.lines as mlines
+import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib.transforms import Bbox
-from utils.helper_functions import read_pickle, write_pickle, get_n_median_index
-
 from IPython import embed as II
+from matplotlib.transforms import Bbox
+from utils.helper_functions import get_n_median_index, read_pickle, write_pickle
 
 GIS_DIR = pathlib.Path(os.path.expanduser("~/data/GIS"))
 
@@ -296,10 +295,9 @@ def plot_core_res_seasonal_group_percentages(core_res):
     resers = core_res["name"]
     groups = groups.loc[pd.IndexSlice[resers, :]]
 
-    counts = groups.groupby([
-        groups.index.get_level_values(0),
-        groups.index.get_level_values(1).month
-    ]).value_counts()
+    counts = groups.groupby(
+        [groups.index.get_level_values(0), groups.index.get_level_values(1).month]
+    ).value_counts()
     counts.index.names = ["site_name", "datetime", "group"]
     counts.name = "count"
     counts = counts.reset_index()
@@ -331,15 +329,18 @@ def plot_core_res_seasonal_group_percentages(core_res):
         ax.set_xticklabels(calendar.month_abbr[1:])
         ax.set_xlabel("")
 
-    fig.text(0.02, 0.5, "Monthly Group Occurence Probability [%]", rotation=90, ha="center", va="center", fontsize=14)
+    fig.text(
+        0.02,
+        0.5,
+        "Monthly Group Occurence Probability [%]",
+        rotation=90,
+        ha="center",
+        va="center",
+        fontsize=14,
+    )
 
     plt.subplots_adjust(
-        top=0.938,
-        bottom=0.121,
-        left=0.096,
-        right=0.903,
-        hspace=0.27,
-        wspace=0.048
+        top=0.938, bottom=0.121, left=0.096, right=0.903, hspace=0.27, wspace=0.048
     )
 
     plt.show()
@@ -377,15 +378,9 @@ def plot_median_inflow_year_time_series(core_res):
     for ax, res in zip(axes, res_years.keys()):
         years = res_years[res]
         res_results = train_data.loc[pd.IndexSlice[res, :]]
-        min_year = res_results.loc[
-            res_results.index.year == years[0]
-        ]
-        mid_year = res_results.loc[
-            res_results.index.year == years[1]
-        ]
-        max_year = res_results.loc[
-            res_results.index.year == years[2]
-        ]
+        min_year = res_results.loc[res_results.index.year == years[0]]
+        mid_year = res_results.loc[res_results.index.year == years[1]]
+        max_year = res_results.loc[res_results.index.year == years[2]]
         min_year.index = min_year.index.dayofyear
         mid_year.index = mid_year.index.dayofyear
         max_year.index = max_year.index.dayofyear
@@ -437,16 +432,13 @@ def plot_median_inflow_year_time_series(core_res):
         title = f"{pretty_name} - {basin} - {pretty_group}"
         ax.set_title(title)
 
-    fig.text(0.13, 0.5, "Release [1000 acre-ft / day]", rotation=90, va="center", ha="center")
+    fig.text(
+        0.13, 0.5, "Release [1000 acre-ft / day]", rotation=90, va="center", ha="center"
+    )
     fig.text(0.5, 0.02, "Day of Year", ha="center")
 
     plt.subplots_adjust(
-        top=0.961,
-        bottom=0.065,
-        left=0.15,
-        right=0.85,
-        hspace=0.322,
-        wspace=0.067
+        top=0.961, bottom=0.065, left=0.15, right=0.85, hspace=0.322, wspace=0.067
     )
 
     leg_fig = plt.figure()
@@ -454,7 +446,10 @@ def plot_median_inflow_year_time_series(core_res):
     leg_ax.set_axis_off()
     handles = [mlines.Line2D([], [], color=c) for c in colors]
     handles.extend(
-        [mlines.Line2D([], [], color="k"), mlines.Line2D([], [], color="k", linestyle="--")]
+        [
+            mlines.Line2D([], [], color="k"),
+            mlines.Line2D([], [], color="k", linestyle="--"),
+        ]
     )
 
     labels = ["Below Normal", "Normal", "Above Normal", "Observed", "Predicted"]
