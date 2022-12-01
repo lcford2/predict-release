@@ -22,6 +22,7 @@ from utils.helper_functions import (
     idxquantile,
     read_pickle,
     write_pickle,
+    load_rbasins,
 )
 
 GIS_DIR = pathlib.Path(os.path.expanduser("~/data/GIS"))
@@ -74,7 +75,7 @@ def make_core_res_df(core_res):
 
 
 def plot_core_reservoirs_map(
-    core_res, basin_info, save=False, add_legend=False, legend_labels=None
+    res_locs, core_res, basin_info, save=False, add_legend=False, legend_labels=None
 ):
     fig = plt.figure(figsize=(19, 10))
     gs = GS.GridSpec(2, 2, height_ratios=[1, 1], width_ratios=[1, 1])
@@ -112,24 +113,46 @@ def plot_core_reservoirs_map(
             ]
         ),
     ]
-    colors = sns.color_palette("colorblind", 3)
+    colors = [
+        "#D62728",
+        "#2CA02C",
+        "#FF7F0E",
+        "#1F77BF"
+    ]
+
     color_map = {
         j: colors[i]
         for i, j in enumerate(["small_st_dam", "medium_st_dam", "large_st_dam"])
     }
+
+    res_locs["basin"] = load_rbasins()
+    non_core_res = res_locs[~res_locs["core"]]
     for ax, pos, (basin, binfo) in zip(axes, positions, basin_info.items()):
         make_basin_map(ax, binfo)
         ax.set_position(pos)
         bdf = core_res[core_res["basin"] == basin]
-        colors = [color_map[i] for i in bdf["group"]]
+        core_colors = [color_map[i] for i in bdf["group"]]
         ax.scatter(
             bdf["x"],
             bdf["y"],
             edgecolor="k",
-            facecolors=colors,
+            marker="v",
+            facecolor=core_colors,
             linewidths=0.5,
-            zorder=4,
+            zorder=10,
             s=250,
+        )
+        other_res = non_core_res[non_core_res["basin"] == basin]
+        ax.scatter(
+            other_res["long"],
+            other_res["lat"],
+            edgecolor="k",
+            marker="v",
+            facecolor=colors[-1],
+            linewidths=0.5,
+            zorder=9,
+            s=250,
+            alpha=0.5
         )
 
     if add_legend:
@@ -137,16 +160,21 @@ def plot_core_reservoirs_map(
         leg_ax = leg_fig.add_subplot()
         leg_ax.set_axis_off()
         handles = [
-            plt.scatter([], [], facecolor=c, s=250, edgecolor="k", linewidth=0.5)
-            for c in colors
-        ]
-        handles.extend(
             mpatch.Patch(facecolor=binfo["color"], edgecolor="k", linewidth=0.5)
             for binfo in basin_info.values()
+        ]
+        handles.extend(
+            plt.scatter([], [], facecolor=c, marker="v", s=250, edgecolor="k", linewidth=0.5)
+            for c in colors[:3]
         )
+        handles.append(
+            plt.scatter([], [], facecolor=colors[-1], s=250, marker="v", edgecolor="k", linewidth=0.5, alpha=0.5)
+        )
+
         legend_labels.extend(basin_info.keys())
-        handles = handles[3:] + handles[:3]
+        # handles = handles[3:] + handles[:3]
         labels = legend_labels[3:] + legend_labels[:3]
+        labels.append("Other Dams")
 
         leg_ax.legend(
             handles, labels, loc="center", frameon=False, prop={"size": 18}, ncol=4
@@ -212,8 +240,21 @@ def make_basin_map(ax, basin_info):
 def make_core_reservoirs_split_map(core_res):
     res_locs = pd.read_csv("../geo_data/reservoirs.csv")
     res_locs = res_locs.set_index("site_name")
+    drop_res = [
+        "Causey",
+        "Lost Creek",
+        "Echo",
+        "Smith & Morehouse Reservoir",
+        "Jordanelle",
+        "Deer Creek",
+        "Hyrum",
+        "Santa Rosa ",
+    ]
+    drop_res = [i.upper() for i in drop_res]
+    res_locs = res_locs.drop(drop_res)
     core_res["x"] = [res_locs.loc[name, "long"] for name in core_res["name"]]
     core_res["y"] = [res_locs.loc[name, "lat"] for name in core_res["name"]]
+    res_locs["core"] = [name in core_res["name"].values for name in res_locs.index.get_level_values(0)]
 
     with open("../geo_data/extents.json", "r") as f:
         coords = json.load(f)
@@ -285,6 +326,7 @@ def make_core_reservoirs_split_map(core_res):
         },
     }
     fig, axes = plot_core_reservoirs_map(
+        res_locs,
         core_res,
         basin_info,
         save=False,
@@ -351,20 +393,20 @@ def plot_core_res_seasonal_group_percentages(core_res):
 
         # title = f"{pretty_name} - {basin} - {pretty_group}"
         title = pretty_name
-        ax.set_title(title, fontsize=24)
+        ax.set_title(title, fontsize=18)
 
         ax.tick_params(axis="x", labelrotation=0)
 
         handles, labels = ax.get_legend_handles_labels()
         if i in legend_ax:
             ax.legend(
-                handles, labels, title="", ncol=3, loc="lower left", prop={"size": 14}
+                handles, labels, title="", ncol=3, loc="lower left", prop={"size": 10}
             )
         else:
             ax.get_legend().remove()
         ax.set_xticklabels(
             [i[0] for i in water_year_months],
-            fontsize=18,
+            fontsize=14,
         )
         ax.set_xlabel("")
 
@@ -375,7 +417,7 @@ def plot_core_res_seasonal_group_percentages(core_res):
         rotation=90,
         ha="center",
         va="center",
-        fontsize=14,
+        fontsize=16,
     )
 
     plt.subplots_adjust(
@@ -415,11 +457,29 @@ def plot_median_inflow_year_time_series(core_res):
         median_indices = [idxquantile(year_inflow, q) for q in quantiles]
         res_years[res] = median_indices
 
-    fig, axes = plt.subplots(5, 2, sharex=True, sharey=False)
-    axes = axes.flatten()
+    # fig, axes = plt.subplots(5, 2, sharex=True, sharey=False)
+    # axes = axes.flatten()
+    fig, all_axes = plt.subplots(3, 4, sharex=False, sharey=False)
+    #           -------------------------
+    # sm st dam | Col | Mis | Ten |     |
+    #           -------------------------
+    # md st dam | Col | Mis | Ten | PNW |
+    #           -------------------------
+    # lg st dam | Col | Mis | Ten |     |
+    #           -------------------------
+    all_axes = list(all_axes.flatten())
+    axes = all_axes[:3] + all_axes[4:11]
+    other_axes = [all_axes[3], all_axes[11]]
+    for ax in other_axes:
+        ax.axis("off")
 
-    colors = sns.color_palette("colorblind", 5)
-    for ax, res in zip(axes, res_years.keys()):
+    # swap 5 and 6
+    resers = list(res_years.keys())
+    resers_5 = resers[5]
+    resers[5] = resers[6]
+    resers[6] = resers_5
+    colors = sns.color_palette("colorblind", 3)
+    for ax, res in zip(axes, resers):
         years = res_years[res]
         res_results = train_data.loc[pd.IndexSlice[res, :]]
         water_year = res_results.index
@@ -429,6 +489,7 @@ def plot_median_inflow_year_time_series(core_res):
             for i, j in zip(res_results.index, water_year)
         ]
         res_results.index = new_index
+        years = years[1:-1]
         for year, color in zip(years, colors):
             year_data = res_results.loc[res_results.index.year == year]
             year_data.index = range(year_data.shape[0])
@@ -481,14 +542,16 @@ def plot_median_inflow_year_time_series(core_res):
     )
 
     year_labels = ["Min.", r"25%ile", r"50%ile", r"75%ile", "Max."]
+    year_labels = year_labels[1:-1] 
     labels = year_labels + ["Observed", "Predicted"]
     order = [0,5,1,6,2,3,4]
+    order = [0,4,1,4,2]
     leg_ax.legend(
         [handles[i] for i in order],
         [labels[i] for i in order], 
         loc="center", 
         prop={"size": 20}, 
-        ncol=5,
+        ncol=3,
         frameon=False,
     )
 

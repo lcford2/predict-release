@@ -1,6 +1,7 @@
 import pathlib
 import pickle
 import sys
+import socket
 import os
 import json
 from dataclasses import dataclass
@@ -44,8 +45,10 @@ tva_res = [
 
 acf_res = ["Woodruff", "Buford", "George", "West"]
 
-
-PROJECT_ROOT = os.path.expanduser("~/projects/predict-release")
+if socket.gethostname() == "inspiron-laptop":
+    PROJECT_ROOT = os.path.expanduser("~/Desktop/cloned_repos/predict-release")
+else:
+    PROJECT_ROOT = os.path.expanduser("~/projects/predict-release")
 
 
 # @time_function
