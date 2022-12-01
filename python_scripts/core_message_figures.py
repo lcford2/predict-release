@@ -295,6 +295,8 @@ def make_core_reservoirs_split_map(core_res):
 
 
 def plot_core_res_seasonal_group_percentages(core_res):
+    water_year = [10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    water_year_months = [calendar.month_abbr[i] for i in water_year]
     results = read_pickle(RESULT_FILE)
     groups = results["groups"]
     core_res = core_res.sort_values(by="group", ascending=False)
@@ -309,14 +311,35 @@ def plot_core_res_seasonal_group_percentages(core_res):
     counts.name = "count"
     counts = counts.reset_index()
 
-    fig, axes = plt.subplots(5, 2, sharex=True, sharey=True)
-    axes = axes.flatten()
+    # fig, axes = plt.subplots(5, 2, sharex=True, sharey=True)
+    # axes = axes.flatten()
+    fig, all_axes = plt.subplots(3, 4, sharex=False, sharey=True)
+    #           -------------------------
+    # sm st dam | Col | Mis | Ten |     |
+    #           -------------------------
+    # md st dam | Col | Mis | Ten | PNW |
+    #           -------------------------
+    # lg st dam | Col | Mis | Ten |     |
+    #           -------------------------
+    all_axes = list(all_axes.flatten())
+    axes = all_axes[:3] + all_axes[4:11]
+    other_axes = [all_axes[3], all_axes[11]]
+    for ax in other_axes:
+        ax.axis("off")
 
-    for res, ax in zip(resers, axes):
+    # swap 5 and 6
+    resers = list(resers)
+    resers_5 = resers[5]
+    resers[5] = resers[6]
+    resers[6] = resers_5
+
+    legend_ax = [0, 3, 7]
+    for i, (res, ax) in enumerate(zip(resers, axes)):
         rdf = counts[counts["site_name"] == res]
         rdf = rdf.drop("site_name", axis=1).pivot(index="datetime", columns="group")
         rdf.columns = rdf.columns.droplevel(0)
         rdf = rdf.apply(lambda x: x / x.sum() * 100, axis=1)
+        rdf = rdf.loc[water_year]
         rdf.plot.bar(stacked=True, ax=ax, width=0.7)
 
         core_res_row = core_res[core_res["name"] == res]
@@ -326,14 +349,23 @@ def plot_core_res_seasonal_group_percentages(core_res):
         group = re.sub("st", "st.", group)
         pretty_group = " ".join(group.split("_")).title()
 
-        title = f"{pretty_name} - {basin} - {pretty_group}"
-        ax.set_title(title)
+        # title = f"{pretty_name} - {basin} - {pretty_group}"
+        title = pretty_name
+        ax.set_title(title, fontsize=24)
 
         ax.tick_params(axis="x", labelrotation=0)
 
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles, labels, title="", ncol=3, loc="lower left")
-        ax.set_xticklabels(calendar.month_abbr[1:])
+        if i in legend_ax:
+            ax.legend(
+                handles, labels, title="", ncol=3, loc="lower left", prop={"size": 14}
+            )
+        else:
+            ax.get_legend().remove()
+        ax.set_xticklabels(
+            [i[0] for i in water_year_months],
+            fontsize=18,
+        )
         ax.set_xlabel("")
 
     fig.text(
@@ -421,6 +453,7 @@ def plot_median_inflow_year_time_series(core_res):
 
         title = f"{pretty_name} - {basin} - {pretty_group}"
         ax.set_title(title)
+
         ticks = get_julian_day_for_month_starts(2022, 10)
         water_year_months = [(i + 10 - 1) % 12 + 1 for i in range(12)]
         tick_labels = [calendar.month_abbr[i][0] for i in water_year_months]
