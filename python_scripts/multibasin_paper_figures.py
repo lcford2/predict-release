@@ -725,9 +725,26 @@ def plot_res_locs(colors=None):
 
     ratio = (max_size - min_size) / (max_value - min_value)
     sizes = [min_size + i * ratio for i in res_locs[size_var]]
-    markers = ax.scatter(x, y, marker="v", edgecolor="k", s=sizes, zorder=4)
+
+    from core_message_figures import get_core_reservoirs
+
+    core_res = get_core_reservoirs()
+    core_res = [i[2][0] for i in core_res if i[2]]
+
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    marker_colors = []
+    for res in res_locs.index:
+        if res in core_res:
+            marker_colors.append(colors[1])
+        else:
+            marker_colors.append(colors[0])
+
+    markers = ax.scatter(
+        x, y, marker="v", edgecolor="k", c=marker_colors, s=sizes, zorder=4
+    )
     # markers = ax.scatter(x, y, marker="v", edgecolor="k", s=150, zorder=4)
-    marker_color = markers.get_facecolor()
+    # marker_color = markers.get_facecolor()
+    marker_color = colors[0]
 
     river_line = mlines.Line2D([], [], color="b", alpha=1, linewidth=0.5)
     river_basins = [mpatch.Patch(facecolor=color_map[i], alpha=0.5) for i in range(4)]
@@ -765,9 +782,7 @@ def plot_res_locs(colors=None):
     ax.add_artist(hydro_legend)
 
     # plt.show()
-    plt.savefig(
-        "../figures/agu_2022_figures/res_map.png", format="png", dpi=800
-    )
+    plt.savefig("../figures/agu_2022_figures/res_map.png", format="png", dpi=800)
 
 
 def plot_res_perf_map(results):
@@ -1873,6 +1888,8 @@ def plot_characteristic_res_line_plot(metric="NSE"):
 
 
 def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
+    plt.style.use("seaborn-colorblind")
+    sns.set_context("talk")
     char_df = get_res_characteristic(metric)
     cuts = {}
     for var in CHAR_VARS:
@@ -1881,8 +1898,12 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         cuts[var] = labels
 
     label_map = make_bin_label_map(nbins, start_index=1)
+    char_df = char_df.drop("TD5-MSS0.01", axis=1)
     df = char_df.melt(
-        id_vars=["TD4-MSS0.10", "TD5-MSS0.01"], value_name="bin", ignore_index=False
+        # id_vars=["TD4-MSS0.10", "TD5-MSS0.01"], value_name="bin", ignore_index=False
+        id_vars=["TD4-MSS0.10"],
+        value_name="bin",
+        ignore_index=False,
     ).melt(
         id_vars=["variable", "bin"],
         var_name="model",
@@ -1890,21 +1911,24 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         ignore_index=False,
     )
     df["bin"] = df["bin"].replace(label_map)
-
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    color = "#009e73"
     fg = sns.catplot(
         data=df,
         x="bin",
         y=metric,
-        hue="model",
+        # hue="model",
+        color=color,
         col="variable",
         col_wrap=2,
         kind="bar",
         legend_out=False,
-        errorbar=None,
-        # errwidth=1,
-        # capsize=0.1,
-        palette="colorblind",
+        # errorbar=None,
+        errwidth=1,
+        capsize=0.1,
+        # palette="colorblind",
         order=[label_map[i] for i in range(1, nbins + 1)],
+        alpha=0.8,
     )
     for ax in fg.axes:
         ax.grid(False)
@@ -1912,14 +1936,15 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         ax.set_axis_on()
         ax.spines["bottom"].set_color("black")
         ax.spines["left"].set_color("black")
-        ax.tick_params(axis="both", color="black", labelcolor="black")
+        ax.tick_params(axis="both", color="black", labelcolor="black", labelsize=16)
 
-    fg.set_titles("{col_name}")
-    fg.set_ylabels(metric, color="black")
-    fg.set_xlabels("Attribute Percentile", color="black")
+    fg.set_titles("{col_name}", size=28)
+    fg.set_ylabels(metric, color="black", size=24)
+    fg.set_xlabels("Attribute Percentile", color="black", size=24)
     handles, labels = fg.axes[0].get_legend_handles_labels()
-    fg.axes[0].legend(handles, labels, frameon=False)
+    fg.axes[0].legend(handles, labels, frameon=False, prop={"size": 16})
     plt.show()
+    # plt.savefig("../figures/agu_2022_figures/char_bin_nRMSE.png", dpi=800)
 
 
 def plot_res_characteristic_scatter_performance(metric="NSE"):
@@ -3170,7 +3195,16 @@ def plot_interannual_group_variability():
         df = df.fillna(0.0)
         df.columns = df.columns.values
         df = df.reset_index().melt(id_vars=["year", "month"], var_name="group")
-        sns.barplot(data=df, x="month", y="value", hue="group", estimator=np.mean, errorbar=("ci", 90), capsize=0.15, errwidth=2)
+        sns.barplot(
+            data=df,
+            x="month",
+            y="value",
+            hue="group",
+            estimator=np.mean,
+            errorbar=("ci", 90),
+            capsize=0.15,
+            errwidth=2,
+        )
 
         # quants = df.groupby("month").quantile([0.1, 0.25, 0.5, 0.75, 0.9])
         # quants.columns = quants.columns.values
@@ -3290,6 +3324,7 @@ if __name__ == "__main__":
         metric = "NSE"
     plt.style.use("tableau-colorblind10")
     # plt.style.use(["science", "nature"])
+    # sns.set_context("poster", font_scale=1.2)
     sns.set_context("talk", font_scale=1.1)
     # results = read_results()
     # plot_res_perf_map(results)
@@ -3298,7 +3333,7 @@ if __name__ == "__main__":
     # plot_perf_vs_datalength(results)
 
     # * FIGURE 1
-    plot_res_locs()
+    # plot_res_locs()
     # * FIGURE 2
     # plot_variable_correlations()
     # * FIGURE 3
@@ -3308,7 +3343,7 @@ if __name__ == "__main__":
     # * FIGURE 5 - NOT INCLUDING AT THE MOMENT
     # plot_best_and_worst_reservoirs(metric)
     # * FIGURE 5
-    # plot_res_characteristic_bin_performance(metric, 5)
+    plot_res_characteristic_bin_performance(metric, 5)
     # plot_res_characteristic_scatter_performance(metric)
     # * FIGURE 6
     # * this is the attribute maps

@@ -1,22 +1,21 @@
+import calendar
 import json
 import os
-import re
 import pathlib
-import calendar
+import re
 from itertools import product
 
 import geopandas as gpd
 import matplotlib.gridspec as GS
-import matplotlib.patches as mpatch
 import matplotlib.lines as mlines
+import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib.transforms import Bbox
-from utils.helper_functions import read_pickle, write_pickle, get_n_median_index
-
 from IPython import embed as II
+from matplotlib.transforms import Bbox
+from utils.helper_functions import get_n_median_index, read_pickle, write_pickle
 
 GIS_DIR = pathlib.Path(os.path.expanduser("~/data/GIS"))
 
@@ -289,6 +288,8 @@ def make_core_reservoirs_split_map(core_res):
 
 
 def plot_core_res_seasonal_group_percentages(core_res):
+    water_year = [10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    water_year_months = [calendar.month_abbr[i] for i in water_year]
     results = read_pickle(RESULT_FILE)
     groups = results["groups"]
     core_res = core_res.sort_values(by="group", ascending=False)
@@ -296,22 +297,42 @@ def plot_core_res_seasonal_group_percentages(core_res):
     resers = core_res["name"]
     groups = groups.loc[pd.IndexSlice[resers, :]]
 
-    counts = groups.groupby([
-        groups.index.get_level_values(0),
-        groups.index.get_level_values(1).month
-    ]).value_counts()
+    counts = groups.groupby(
+        [groups.index.get_level_values(0), groups.index.get_level_values(1).month]
+    ).value_counts()
     counts.index.names = ["site_name", "datetime", "group"]
     counts.name = "count"
     counts = counts.reset_index()
 
-    fig, axes = plt.subplots(5, 2, sharex=True, sharey=True)
-    axes = axes.flatten()
+    # fig, axes = plt.subplots(5, 2, sharex=True, sharey=True)
+    # axes = axes.flatten()
+    fig, all_axes = plt.subplots(3, 4, sharex=False, sharey=True)
+    #           -------------------------
+    # sm st dam | Col | Mis | Ten |     |
+    #           -------------------------
+    # md st dam | Col | Mis | Ten | PNW |
+    #           -------------------------
+    # lg st dam | Col | Mis | Ten |     |
+    #           -------------------------
+    all_axes = list(all_axes.flatten())
+    axes = all_axes[:3] + all_axes[4:11]
+    other_axes = [all_axes[3], all_axes[11]]
+    for ax in other_axes:
+        ax.axis("off")
 
-    for res, ax in zip(resers, axes):
+    # swap 5 and 6
+    resers = list(resers)
+    resers_5 = resers[5]
+    resers[5] = resers[6]
+    resers[6] = resers_5
+
+    legend_ax = [0, 3, 7]
+    for i, (res, ax) in enumerate(zip(resers, axes)):
         rdf = counts[counts["site_name"] == res]
         rdf = rdf.drop("site_name", axis=1).pivot(index="datetime", columns="group")
         rdf.columns = rdf.columns.droplevel(0)
         rdf = rdf.apply(lambda x: x / x.sum() * 100, axis=1)
+        rdf = rdf.loc[water_year]
         rdf.plot.bar(stacked=True, ax=ax, width=0.7)
 
         core_res_row = core_res[core_res["name"] == res]
@@ -321,25 +342,37 @@ def plot_core_res_seasonal_group_percentages(core_res):
         group = re.sub("st", "st.", group)
         pretty_group = " ".join(group.split("_")).title()
 
-        title = f"{pretty_name} - {basin} - {pretty_group}"
-        ax.set_title(title)
+        # title = f"{pretty_name} - {basin} - {pretty_group}"
+        title = pretty_name
+        ax.set_title(title, fontsize=24)
 
         ax.tick_params(axis="x", labelrotation=0)
 
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles, labels, title="", ncol=3, loc="lower left")
-        ax.set_xticklabels(calendar.month_abbr[1:])
+        if i in legend_ax:
+            ax.legend(
+                handles, labels, title="", ncol=3, loc="lower left", prop={"size": 14}
+            )
+        else:
+            ax.get_legend().remove()
+        ax.set_xticklabels(
+            [i[0] for i in water_year_months],
+            fontsize=18,
+        )
         ax.set_xlabel("")
 
-    fig.text(0.02, 0.5, "Monthly Group Occurence Probability [%]", rotation=90, ha="center", va="center", fontsize=14)
+    fig.text(
+        0.02,
+        0.5,
+        "Monthly Group Occurence Probability [%]",
+        rotation=90,
+        ha="center",
+        va="center",
+        fontsize=24,
+    )
 
     plt.subplots_adjust(
-        top=0.938,
-        bottom=0.121,
-        left=0.096,
-        right=0.903,
-        hspace=0.27,
-        wspace=0.048
+        top=0.938, bottom=0.121, left=0.096, right=0.903, hspace=0.27, wspace=0.048
     )
 
     plt.show()
@@ -377,15 +410,9 @@ def plot_median_inflow_year_time_series(core_res):
     for ax, res in zip(axes, res_years.keys()):
         years = res_years[res]
         res_results = train_data.loc[pd.IndexSlice[res, :]]
-        min_year = res_results.loc[
-            res_results.index.year == years[0]
-        ]
-        mid_year = res_results.loc[
-            res_results.index.year == years[1]
-        ]
-        max_year = res_results.loc[
-            res_results.index.year == years[2]
-        ]
+        min_year = res_results.loc[res_results.index.year == years[0]]
+        mid_year = res_results.loc[res_results.index.year == years[1]]
+        max_year = res_results.loc[res_results.index.year == years[2]]
         min_year.index = min_year.index.dayofyear
         mid_year.index = mid_year.index.dayofyear
         max_year.index = max_year.index.dayofyear
@@ -437,16 +464,13 @@ def plot_median_inflow_year_time_series(core_res):
         title = f"{pretty_name} - {basin} - {pretty_group}"
         ax.set_title(title)
 
-    fig.text(0.13, 0.5, "Release [1000 acre-ft / day]", rotation=90, va="center", ha="center")
+    fig.text(
+        0.13, 0.5, "Release [1000 acre-ft / day]", rotation=90, va="center", ha="center"
+    )
     fig.text(0.5, 0.02, "Day of Year", ha="center")
 
     plt.subplots_adjust(
-        top=0.961,
-        bottom=0.065,
-        left=0.15,
-        right=0.85,
-        hspace=0.322,
-        wspace=0.067
+        top=0.961, bottom=0.065, left=0.15, right=0.85, hspace=0.322, wspace=0.067
     )
 
     leg_fig = plt.figure()
@@ -454,7 +478,10 @@ def plot_median_inflow_year_time_series(core_res):
     leg_ax.set_axis_off()
     handles = [mlines.Line2D([], [], color=c) for c in colors]
     handles.extend(
-        [mlines.Line2D([], [], color="k"), mlines.Line2D([], [], color="k", linestyle="--")]
+        [
+            mlines.Line2D([], [], color="k"),
+            mlines.Line2D([], [], color="k", linestyle="--"),
+        ]
     )
 
     labels = ["Below Normal", "Normal", "Above Normal", "Observed", "Predicted"]
@@ -468,5 +495,5 @@ if __name__ == "__main__":
     sns.set_context("notebook")
     core_res = get_core_reservoirs()
     core_res = make_core_res_df(core_res)
-    # plot_core_res_seasonal_group_percentages(core_res)
-    plot_median_inflow_year_time_series(core_res)
+    plot_core_res_seasonal_group_percentages(core_res)
+    # plot_median_inflow_year_time_series(core_res)
