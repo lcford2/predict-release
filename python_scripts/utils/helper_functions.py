@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from IPython import embed as II
-from utils.timing_function import time_function
+# from utils.timing_function import time_function
 
 tva_res = [
     "BlueRidge",
@@ -395,3 +395,40 @@ def get_n_median_index(series, ngroups=0):
             index = entry.index[0]
             indices.append(index)
     return indices
+
+def idxquantile(s, q=0.5, *args, **kwargs):
+    qv = s.quantile(q, *args, **kwargs)
+    return (s.sort_values()[::-1] <= qv).idxmax()
+
+def get_julian_day(day, month, year, year_start=1):
+    dt = datetime(year, month, day)
+
+    if month >= year_start:
+        year_start_offset = datetime(year, year_start, 1)
+    else:
+        year_start_offset = datetime(year - 1, year_start, 1)
+    
+    if dt < year_start_offset:
+        raise ValueError("Day cannot be before the start of the year.")
+    
+    return (dt - year_start_offset).days + 1
+
+def test_get_julian_day():
+    assert get_julian_day(2, 1, 2022, 1) == 2
+    assert get_julian_day(1, 1, 2022, 1) == 1
+    assert get_julian_day(31, 12, 2022, 1) == 365 
+    assert get_julian_day(2, 10, 2022, 10) == 2
+    assert get_julian_day(30, 9, 2022, 10) == 365
+
+def get_julian_day_for_month_starts(year, year_start=1):
+    months = [(i + year_start - 1) % 12 + 1 for i in range(12)]
+    days = [
+        get_julian_day(1, m, year, year_start)
+        for m in months
+    ]
+    return days
+    
+
+if __name__ == "__main__":
+    from IPython import embed as II
+    II()

@@ -1,4 +1,5 @@
 import calendar
+import datetime
 import json
 import os
 import pathlib
@@ -15,7 +16,13 @@ import pandas as pd
 import seaborn as sns
 from IPython import embed as II
 from matplotlib.transforms import Bbox
-from utils.helper_functions import get_n_median_index, read_pickle, write_pickle
+from utils.helper_functions import (
+    get_julian_day_for_month_starts,
+    get_n_median_index,
+    idxquantile,
+    read_pickle,
+    write_pickle,
+)
 
 GIS_DIR = pathlib.Path(os.path.expanduser("~/data/GIS"))
 
@@ -363,65 +370,48 @@ def plot_median_inflow_year_time_series(core_res):
     for res in core_res["name"]:
         res_inflow = inflow[res]
         res_inflow = res_inflow.dropna()
+        water_year = res_inflow.index
+        water_year = water_year.year.where(water_year.month < 10, water_year.year + 1)
 
-        year_inflow = res_inflow.resample("Y").sum()
-        year_inflow.index = year_inflow.index.year
+        # year_inflow = res_inflow.resample("Y").sum()
+        # year_inflow.index = year_inflow.index.year
+        year_inflow = res_inflow.groupby(water_year).sum()
         year_inflow = year_inflow.drop(year_inflow.index[0])
         year_inflow = year_inflow.drop(year_inflow.index[-1])
-        median_indices = get_n_median_index(year_inflow, 3)
+        # median_indices = get_n_median_index(year_inflow, 3)
+        quantiles = [0.0, 0.25, 0.5, 0.75, 1.0]
+        median_indices = [idxquantile(year_inflow, q) for q in quantiles]
         res_years[res] = median_indices
 
     fig, axes = plt.subplots(5, 2, sharex=True, sharey=False)
     axes = axes.flatten()
 
-    colors = sns.color_palette("colorblind", 3)
+    colors = sns.color_palette("colorblind", 5)
     for ax, res in zip(axes, res_years.keys()):
         years = res_years[res]
         res_results = train_data.loc[pd.IndexSlice[res, :]]
-        min_year = res_results.loc[res_results.index.year == years[0]]
-        mid_year = res_results.loc[res_results.index.year == years[1]]
-        max_year = res_results.loc[res_results.index.year == years[2]]
-        min_year.index = min_year.index.dayofyear
-        mid_year.index = mid_year.index.dayofyear
-        max_year.index = max_year.index.dayofyear
+        water_year = res_results.index
+        water_year = water_year.year.where(water_year.month < 10, water_year.year + 1)
+        new_index = [
+            datetime.datetime(j, i.month, i.day)
+            for i, j in zip(res_results.index, water_year)
+        ]
+        res_results.index = new_index
+        for year, color in zip(years, colors):
+            year_data = res_results.loc[res_results.index.year == year]
+            year_data.index = range(year_data.shape[0])
 
-        # min year
-        ax.plot(
-            min_year.index,
-            min_year["actual"].values,
-            color=colors[0],
-            label="Bottom 1/3",
-        )
-        ax.plot(
-            min_year.index,
-            min_year["model"].values,
-            color=colors[0],
-            linestyle="--",
-        )
-        # mid year
-        ax.plot(
-            mid_year.index,
-            mid_year["actual"].values,
-            color=colors[1],
-        )
-        ax.plot(
-            mid_year.index,
-            mid_year["model"].values,
-            color=colors[1],
-            linestyle="--",
-        )
-        # max year
-        ax.plot(
-            max_year.index,
-            max_year["actual"].values,
-            color=colors[2],
-        )
-        ax.plot(
-            max_year.index,
-            max_year["model"].values,
-            color=colors[2],
-            linestyle="--",
-        )
+            ax.plot(
+                year_data.index,
+                year_data["actual"].values,
+                color=color,
+            )
+            ax.plot(
+                year_data.index,
+                year_data["model"].values,
+                color=color,
+                linestyle="--",
+            )
         core_res_row = core_res[core_res["name"] == res]
         pretty_name = core_res_row["pretty_name"].values[0]
         basin = core_res_row["basin"].values[0]
@@ -431,11 +421,16 @@ def plot_median_inflow_year_time_series(core_res):
 
         title = f"{pretty_name} - {basin} - {pretty_group}"
         ax.set_title(title)
+        ticks = get_julian_day_for_month_starts(2022, 10)
+        water_year_months = [(i + 10 - 1) % 12 + 1 for i in range(12)]
+        tick_labels = [calendar.month_abbr[i][0] for i in water_year_months]
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(tick_labels)
 
     fig.text(
         0.13, 0.5, "Release [1000 acre-ft / day]", rotation=90, va="center", ha="center"
     )
-    fig.text(0.5, 0.02, "Day of Year", ha="center")
+    fig.text(0.5, 0.02, "Day of Water Year", ha="center")
 
     plt.subplots_adjust(
         top=0.961, bottom=0.065, left=0.15, right=0.85, hspace=0.322, wspace=0.067
@@ -452,8 +447,17 @@ def plot_median_inflow_year_time_series(core_res):
         ]
     )
 
-    labels = ["Below Normal", "Normal", "Above Normal", "Observed", "Predicted"]
-    leg_ax.legend(handles, labels, loc="center", prop={"size": 20}, ncol=2)
+    year_labels = ["Min.", r"25%ile", r"50%ile", r"75%ile", "Max."]
+    labels = year_labels + ["Observed", "Predicted"]
+    order = [0,5,1,6,2,3,4]
+    leg_ax.legend(
+        [handles[i] for i in order],
+        [labels[i] for i in order], 
+        loc="center", 
+        prop={"size": 20}, 
+        ncol=5,
+        frameon=False,
+    )
 
     plt.show()
 
@@ -463,5 +467,6 @@ if __name__ == "__main__":
     sns.set_context("notebook")
     core_res = get_core_reservoirs()
     core_res = make_core_res_df(core_res)
+    # make_core_reservoirs_split_map(core_res)
     # plot_core_res_seasonal_group_percentages(core_res)
     plot_median_inflow_year_time_series(core_res)
