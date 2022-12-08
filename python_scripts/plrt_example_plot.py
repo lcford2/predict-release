@@ -4,39 +4,49 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scienceplots
 import seaborn as sns
+from functools import partial
 
-plt.style.use(["science", "nature"])
+# setup python
+# plt.style.use(["science", "nature"])
 # plt.style.use("tableau-colorblind10")
 # plt.rcParams.update({"figure.dpi": 100})  # only for ieee
 sns.set_context("poster")
 colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
+# generate random data
 x = np.random.rand(1000) * 10
 x.sort()
 
 x1 = x[:500]
 x2 = x[500:]
+x_split = (x1.max() + x2.min()) / 2
 
+m1 = 4
+b1 = 2
+m2 = 1
 
-def fun1(x):
-    return 3 * x + 2
+def line(m, b, x):
+    return m * x + b
 
+# functions for lines
+fun1 = partial(line, m1, b1)
 
-def fun2(x):
-    return x + 12
+b2 = fun1(x_split) - m2 * x_split
+fun2 = partial(line, m2, b2)
 
-
+# get y values
 y1 = fun1(x1) + np.random.normal(0, 1, 500)
 y2 = fun2(x2) + np.random.normal(0, 1, 500)
 
+# fit linear regression to X and Y
 X = np.concatenate((x1, x2))
 y = np.concatenate((y1, y2))
 X = np.concatenate((np.ones(1000).reshape(-1, 1), X.reshape(-1, 1)), axis=1)
 lr_fit = np.linalg.inv(X.T @ X) @ X.T @ y
 
-x_split = (x1.max() + x2.min()) / 2
 
-ratio = 14 / 10
+# define figure size
+ratio = 20 / 10 # width to height
 height = 8
 fig = plt.figure(figsize=(ratio * height, height), dpi=800)
 ax = fig.add_subplot()
