@@ -57,6 +57,10 @@ CHAR_VARS = [
     "Residence Time",
 ]
 
+MODEL_NAMES = {
+    "TD4-MSS0.10": "M2",
+    "TD5-MSS0.01": "M1"
+}
 
 def load_pickle(file):
     with open(file, "rb") as f:
@@ -363,6 +367,7 @@ def plot_variable_correlations():
 
     st = df.loc[:, ["release", "storage_pre", "storage_roll7", "storage_x_inflow"]]
     st["sto_diff"] = df["storage_pre"] - df["storage_roll7"]
+    st = st.drop("storage_roll7", axis=1)
 
     drop_res = [
         "Causey",
@@ -381,7 +386,7 @@ def plot_variable_correlations():
     stcorr = stcorr.drop("release", axis=1)
 
     # sns.set_context("notebook")
-    fig = plt.figure()
+    fig = plt.figure(figsize=(19, 10), dpi=600)
     fig.set_alpha(0.0)
     gs = GS.GridSpec(2, 2, height_ratios=[1, 1], width_ratios=[10, 0.5])
     axes = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[1, 0])]
@@ -431,7 +436,7 @@ def plot_variable_correlations():
     )
     axes[1].legend(loc="lower right", ncol=4)
 
-    axes[0].set_ylabel("$r(R_t, NI_L)$")
+    axes[0].set_ylabel("$r(R_t, NI_{t-L})$")
     axes[0].set_xlabel("Lag $L$ [days]")
 
     axes[-1].set_xlabel(r"Pearson's $r$ with Release")
@@ -439,7 +444,7 @@ def plot_variable_correlations():
     axes[-1].set_yticklabels(
         [
             r"$S_{t-1}$",
-            r"$\bar{S}_{t-1}^7$",
+            # r"$\bar{S}_{t-1}^7$",
             r"$S_{t-1} \times NI_{t}$",
             r"$S_{t-1} - \bar{S}_{t-1}^7$",
         ]
@@ -451,7 +456,18 @@ def plot_variable_correlations():
         mlines.Line2D([], [], linewidth=1.5, color="k"),
     ]
     labels = [r"Median Pearson's $r$", "25 - 75 quantiles"]
-    plt.show()
+    plt.subplots_adjust(
+        top=0.98,
+        bottom=0.075,
+        left=0.073,
+        right=0.989,
+        hspace=0.19,
+        wspace=0.025
+    )
+    plt.savefig(os.path.expanduser(
+        "~/Desktop/revised_figures/figure2_revised.png")
+    )
+    # plt.show()
 
 
 def make_map(ax=None, coords=None, other_bound=None):
@@ -1100,8 +1116,8 @@ def plot_grid_search_results(ds="simul", metric="NSE"):
 
     fg = sns.catplot(
         data=df,
-        hue="TD",
-        x="MSS",
+        x="TD",
+        hue="MSS",
         y=metric,
         kind="box",
         palette="tab10",
@@ -1110,7 +1126,20 @@ def plot_grid_search_results(ds="simul", metric="NSE"):
         legend=False
         # ci=None,
     )
-    fg.ax.legend(loc="best", ncol=4, title="Max Depth")
+    # medians = df.groupby(["TD", "MSS"])[metric].median().reset_index()
+
+    # medians = medians[medians["MSS"].isin([0.02, 0.04, 0.06, 0.08, 0.1])]
+    # fg = sns.catplot(
+    #     data=medians,
+    #     y=metric,
+    #     x="TD",
+    #     hue="MSS",
+    #     kind="bar",
+    #     palette="tab10",
+    #     legend=False
+    # )
+    # fg.ax.legend(loc="best", ncol=4, title="Max Depth")
+    fg.ax.legend(loc="best", ncol=4, title="MSS")
     # fg.ax.set_xticklabels(fg.ax.get_xticklabels(), rotation=45, ha="right")
     # if metric == "nRMSE":
     #     fg.ax.set_yscale("log")
@@ -1312,19 +1341,21 @@ def plot_data_assim_results(metric="NSE"):
     # simmed_scores_for_strip = simmed_scores.merge(simmed_diffs, indicator=True, how="outer").query(
     #     '_merge=="left_only"').drop("_merge", axis=1)
 
-    II()
-    sys.exit()
+    simmed_scores["Model"] = simmed_scores["TD"].replace({4: "M2", 5: "M1"})
     fg = sns.catplot(
         data=simmed_scores,
-        hue="TD",
+        hue="Model",
         x="Assim",
         y=metric,
+        # y="Assim",
+        # x=metric,
         kind="box",
         order=["daily", "weekly", "monthly", "seasonally", "semi-annually", "never"],
         whis=(5, 95),
         showfliers=False,
         legend_out=False,
         palette="colorblind",
+        hue_order=["M1", "M2"]
     )
     # stripplot(
     #     data=simmed_scores,
@@ -1344,16 +1375,19 @@ def plot_data_assim_results(metric="NSE"):
     # )
 
     fg.ax.set_xticklabels(
-        ["Daily", "Weekly", "Monthly", "Seasonally", "Semi-annually", "Never"]
+        ["Daily", "Weekly", "Monthly", "Seasonally", "Semi-annually", "Never"],
+        # ha="right",
+        # rotation=5
     )
-    fg.ax.set_xlabel("Assimilation Frequency")
+    fg.ax.set_xlabel("Reinitialization Frequency")
 
     fg.ax.set_xticks([], minor=True)
     fg.despine(left=False, right=False, top=False, bottom=False)
 
     handles, labels = fg.ax.get_legend_handles_labels()
     handles = handles[:2]
-    labels = ["TD4-MSS0.10", "TD5-MSS0.01"]
+    labels = labels[:2]
+    # labels = ["TD4-MSS0.10", "TD5-MSS0.01"]
     fg.ax.legend(handles, labels, loc="best")
     sns.despine(ax=fg.ax)
     # fg.ax.set_ylabel(f"Percent Improvement in RMSE")
@@ -1888,8 +1922,8 @@ def plot_characteristic_res_line_plot(metric="NSE"):
 
 
 def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
-    plt.style.use("seaborn-colorblind")
-    sns.set_context("talk")
+    # plt.style.use("seaborn-colorblind")
+    # sns.set_context("talk")
     char_df = get_res_characteristic(metric)
     cuts = {}
     for var in CHAR_VARS:
@@ -1898,10 +1932,9 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         cuts[var] = labels
 
     label_map = make_bin_label_map(nbins, start_index=1)
-    char_df = char_df.drop("TD5-MSS0.01", axis=1)
+    # char_df = char_df.drop("TD5-MSS0.01", axis=1)
     df = char_df.melt(
-        # id_vars=["TD4-MSS0.10", "TD5-MSS0.01"], value_name="bin", ignore_index=False
-        id_vars=["TD4-MSS0.10"],
+        id_vars=["TD4-MSS0.10", "TD5-MSS0.01"],
         value_name="bin",
         ignore_index=False,
     ).melt(
@@ -1911,14 +1944,16 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         ignore_index=False,
     )
     df["bin"] = df["bin"].replace(label_map)
+    df["model"] = df["model"].replace(MODEL_NAMES)
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     color = "#009e73"
     fg = sns.catplot(
         data=df,
         x="bin",
         y=metric,
-        # hue="model",
-        color=color,
+        hue="model",
+        hue_order=["M1", "M2"],
+        # color=color,
         col="variable",
         col_wrap=2,
         kind="bar",
@@ -1938,11 +1973,11 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         ax.spines["left"].set_color("black")
         ax.tick_params(axis="both", color="black", labelcolor="black", labelsize=16)
 
-    fg.set_titles("{col_name}", size=28)
-    fg.set_ylabels(metric, color="black", size=24)
-    fg.set_xlabels("Attribute Percentile", color="black", size=24)
+    fg.set_titles("{col_name}") #, size=28)
+    fg.set_ylabels(metric, color="black") #, size=24)
+    fg.set_xlabels("Attribute Percentile", color="black") #, size=24)
     handles, labels = fg.axes[0].get_legend_handles_labels()
-    fg.axes[0].legend(handles, labels, frameon=False, prop={"size": 16})
+    fg.axes[0].legend(handles, labels, frameon=False) #, prop={"size": 16})
     plt.show()
     # plt.savefig("../figures/agu_2022_figures/char_bin_nRMSE.png", dpi=800)
 
@@ -3211,8 +3246,6 @@ def plot_interannual_group_variability():
         # quants = quants.reset_index().rename(columns={"level_1": "quantile"})
         # quants = quants.melt(id_vars=["month", "quantile"], value_vars=[5, 7])
 
-        II()
-        sys.exit()
 
         # drop the first and last year as they are incomplete
         df = df.drop(df.index.min())
@@ -3288,8 +3321,6 @@ def plot_interannual_seasonal_group_variability():
     max_year = df.index.get_level_values("year").max()
     df = df[~df.index.get_level_values("year").isin([min_year, max_year])]
     df = df.rename(columns=group_names)
-    II()
-    sys.exit()
     # years = df.index.get_level_values("year").unique().sort_values()
     # # years = years[:3]
     # nyears = len(years)
@@ -3325,12 +3356,9 @@ if __name__ == "__main__":
     plt.style.use("tableau-colorblind10")
     # plt.style.use(["science", "nature"])
     # sns.set_context("poster", font_scale=1.2)
-    sns.set_context("talk", font_scale=1.1)
-    # results = read_results()
-    # plot_res_perf_map(results)
-    # plot_seasonal_performance(results)
-    # plot_upper_lower_perf(results)
-    # plot_perf_vs_datalength(results)
+    # sns.set_context("talk", font_scale=1.1)
+    # sns.set_context("paper", font_scale=1.8)
+    sns.set_context("paper", font_scale=1.4)
 
     # * FIGURE 1
     # plot_res_locs()
@@ -3343,7 +3371,7 @@ if __name__ == "__main__":
     # * FIGURE 5 - NOT INCLUDING AT THE MOMENT
     # plot_best_and_worst_reservoirs(metric)
     # * FIGURE 5
-    plot_res_characteristic_bin_performance(metric, 5)
+    # plot_res_characteristic_bin_performance(metric, 5)
     # plot_res_characteristic_scatter_performance(metric)
     # * FIGURE 6
     # * this is the attribute maps
@@ -3365,7 +3393,7 @@ if __name__ == "__main__":
     # get_unique_trees()
     # get_unique_paths()
     # get_operating_groups()
-    # plot_interannual_group_variability()
+    plot_interannual_group_variability()
     # plot_interannual_seasonal_group_variability()
 
     # plot_error_by_variable()

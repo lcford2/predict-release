@@ -7,10 +7,10 @@ import seaborn as sns
 from functools import partial
 
 # setup python
-# plt.style.use(["science", "nature"])
+plt.style.use(["science", "nature"])
 # plt.style.use("tableau-colorblind10")
 # plt.rcParams.update({"figure.dpi": 100})  # only for ieee
-sns.set_context("poster")
+sns.set_context("talk")
 colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
 # generate random data
@@ -48,7 +48,7 @@ lr_fit = np.linalg.inv(X.T @ X) @ X.T @ y
 # define figure size
 ratio = 20 / 10 # width to height
 height = 8
-fig = plt.figure(figsize=(ratio * height, height), dpi=800)
+fig = plt.figure(figsize=(ratio * height, height), dpi=100)
 ax = fig.add_subplot()
 
 ax.scatter(x1, y1, c=colors[0], s=32, alpha=0.6)
@@ -56,9 +56,9 @@ ax.scatter(x2, y2, c=colors[0], s=32, alpha=0.6)
 
 lw = 4
 
-ax.axhline(y1.mean(), 0, x_split / 10, c=colors[1], label="Regression Tree", lw=lw)
+ax.axhline(y1.mean(), 0, x_split / 10, c=colors[1], label="PCRT", lw=lw)
 ax.axhline(y2.mean(), x_split / 10, 1, c=colors[1], lw=lw)
-ax.axvline(x_split, c="k")
+ax.axvline(x_split, c="k", label=r"$\tau$")
 
 x_actual_1 = np.linspace(0, x_split, 500)
 x_actual_2 = np.linspace(x_split, 10, 500)
@@ -78,16 +78,31 @@ ax.plot(
     linestyle="-.",
     linewidth=lw,
 )
+
 ax.plot(
     x_actual_1, fun1(x_actual_1), c=colors[3], linestyle="--", label="PLRT", linewidth=lw
 )
 ax.plot(x_actual_2, fun2(x_actual_2), c=colors[3], linestyle="--", linewidth=lw)
 
-ax.set_xlabel("X")
-ax.set_ylabel("Y")
+ax.set_xlabel("X (e.g., Inflow)")
+ax.set_ylabel("Y (e.g., Discharge)")
 
-ax.legend(loc="upper left")
+handles, labels = ax.get_legend_handles_labels()
+order = [0, 3, 2, 1]
+handles = [handles[i] for i in order]
+labels = [labels[i] for i in order]
+ax.legend(handles, labels, loc="upper left", prop={"size": 16})
+# ax.legend()
 ax.set_xlim(0, 10)
 
-# plt.show()
-plt.savefig("../figures/agu_2022_figures/plrt_example_new.png", format="png", dpi=800)
+plt.subplots_adjust(
+    top=0.88,
+    bottom=0.11,
+    left=0.125,
+    right=0.6,
+    hspace=0.2,
+    wspace=0.2
+)
+
+plt.show()
+# plt.savefig("../figures/agu_2022_figures/plrt_example_paper.png", format="png", dpi=800)

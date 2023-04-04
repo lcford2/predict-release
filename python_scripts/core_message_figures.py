@@ -352,6 +352,7 @@ def plot_core_res_seasonal_group_percentages(core_res):
     counts.index.names = ["site_name", "datetime", "group"]
     counts.name = "count"
     counts = counts.reset_index()
+    # counts["group"] = counts["group"].replace(group_map)
 
     # fig, axes = plt.subplots(5, 2, sharex=True, sharey=True)
     # axes = axes.flatten()
@@ -383,6 +384,15 @@ def plot_core_res_seasonal_group_percentages(core_res):
         rdf = rdf.apply(lambda x: x / x.sum() * 100, axis=1)
         rdf = rdf.loc[water_year]
         rdf.plot.bar(stacked=True, ax=ax, width=0.7)
+        # nodes = list(rdf.columns)
+        # high_inflow = 7
+        # nodes.remove(high_inflow)
+        # low_release = min(nodes)
+        # normal = max(nodes)
+        # rdf[high_inflow] /= rdf[normal]
+        # rdf[low_release] /= rdf[normal]
+        # rdf = rdf.drop(normal, axis=1)
+        # rdf.plot.bar(ax=ax, width=0.7)
 
         core_res_row = core_res[core_res["name"] == res]
         pretty_name = core_res_row["pretty_name"].values[0]
@@ -398,17 +408,36 @@ def plot_core_res_seasonal_group_percentages(core_res):
         ax.tick_params(axis="x", labelrotation=0)
 
         handles, labels = ax.get_legend_handles_labels()
-        if i in legend_ax:
-            ax.legend(
-                handles, labels, title="", ncol=3, loc="lower left", prop={"size": 10}
-            )
-        else:
-            ax.get_legend().remove()
+        # group_map = {
+        #     "3": "4",
+        #     "4": "5",
+        #     "5": "6",
+        #     "6": "7",
+        #     "7": "3"
+        # }
+        group_map = {
+            "3": "Low Release",
+            "4": "Low Release",
+            "5": "Normal Operation",
+            "6": "Normal Operation",
+            "7": "High Inflow"
+        }
+        labels = [group_map.get(i) for i in labels]
+        # if i in legend_ax:
+        #     ax.legend(
+        #         handles, labels, title="", ncol=3, loc="lower left", prop={"size": 10}
+        #     )
+        # else:
+        ax.get_legend().remove()
         ax.set_xticklabels(
             [i[0] for i in water_year_months],
             fontsize=14,
         )
         ax.set_xlabel("")
+    
+    other_axes[0].legend(
+        handles, labels, title="Operational Mode", ncol=1, loc="center", prop={"size": 14}
+    )
 
     fig.text(
         0.02,
@@ -425,6 +454,7 @@ def plot_core_res_seasonal_group_percentages(core_res):
     )
 
     plt.show()
+    # plt.savefig("../figures/agu_2022_figures/seasonal_group_percentages.png", dpi=600)
 
 
 def plot_median_inflow_year_time_series(core_res):
@@ -560,9 +590,9 @@ def plot_median_inflow_year_time_series(core_res):
 
 if __name__ == "__main__":
     plt.style.use("seaborn-colorblind")
-    sns.set_context("notebook")
+    sns.set_context("notebook", font_scale=1.1)
     core_res = get_core_reservoirs()
     core_res = make_core_res_df(core_res)
     # make_core_reservoirs_split_map(core_res)
-    # plot_core_res_seasonal_group_percentages(core_res)
-    plot_median_inflow_year_time_series(core_res)
+    plot_core_res_seasonal_group_percentages(core_res)
+    # plot_median_inflow_year_time_series(core_res)

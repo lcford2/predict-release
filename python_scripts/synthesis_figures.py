@@ -14,11 +14,14 @@ import inflect
 import matplotlib.gridspec as GS
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatch
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import palettable
 import numba
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from copy import deepcopy
 from IPython import embed as II
 from joblib import Parallel, delayed
 from matplotlib.cm import ScalarMappable, get_cmap
@@ -29,6 +32,8 @@ from scipy.stats import zscore
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from tclr_model import read_basin_data
 
+from core_message_figures import get_core_reservoirs, make_core_res_df
+
 hostname = socket.gethostname()
 if hostname == "CCEE-DT-094":
     os.environ["PROJ_LIB"] = (
@@ -37,12 +42,23 @@ if hostname == "CCEE-DT-094":
     )
     GIS_DIR = pathlib.Path("G:/My Drive/PHD/GIS")
     HOME = "C:\\Users\\lcford2"
+    CLOUD_STORAGE_FOLDER = "G:\\My Drive\\PHD\\plrt_synthesis\\figures"
 elif hostname == "inspiron-laptop":
     os.environ[
         "PROJ_LIB"
     ] = r"C:\\Users\\lcford\\miniconda3\\envs\\sry-env\\Library\\share"
     GIS_DIR = pathlib.Path("/home/lford/data/GIS")
     HOME = "~"
+    CLOUD_STORAGE_FOLDER = (
+        f"{HOME}/Dropbox/PHD/multibasin_model_figures/new_paper_figures"
+    )
+elif hostname == "ganymede":
+    # os.environ[
+    #     "PROJ_LIB"
+    # ] = r"C:\\Users\os."
+    HOME = "C:\\Users\\lcfor"
+    GIS_DIR = pathlib.Path(HOME) / "GIS"
+    CLOUD_STORAGE_FOLDER = "G:\\My Drive\\PHD\\plrt_synthesis\\figures"
 
 
 from mpl_toolkits.basemap import Basemap  # noqa: I100, E402
@@ -649,12 +665,13 @@ def char_split_map_single_var(
 
     # mng = plt.get_current_fig_manager()
     # mng.window.showMaximized()
-    fig_file = (
-        "C:\\Users\\lcford2\\Dropbox\\PHD\\multibasin_model_figures"
-        + f"\\new_paper_figures\\split_char_map_{var}_larger.png"
-    )
+    # fig_file = (
+    #     "C:\\Users\\lcford2\\Dropbox\\PHD\\multibasin_model_figures"
+    #     + f"\\new_paper_figures\\split_char_map_{var}_larger.png"
+    # )
+    fig_file = pathlib.Path(CLOUD_STORAGE_FOLDER) / f"split_char_map_{var}_larger.png"
     if save:
-        plt.savefig(fig_file, dpi=400)
+        plt.savefig(fig_file.as_posix(), dpi=400)
     return fig, axes
 
 
@@ -1939,7 +1956,12 @@ def plot_res_group_colored_timeseries():
             for res in resers
         )
     else:
+        import ipdb
+
         for res in resers:
+            if res not in rbasins:
+                print("Res not in rbasins")
+                ipdb.set_trace()
             parallel_body_colored_group_plots(
                 df,
                 res,
@@ -1986,6 +2008,12 @@ def parallel_body_colored_group_plots(
     pdf["residual"] = pdf["modeled_release"] - pdf["release"]
 
     if ptype == "scatter":
+        #########################################################################
+        #  origiunal code
+        # new code to only plot last n years
+        n = 10
+        years_count = int(365.25 * n)
+        pdf = pdf.tail(years_count)
         colors = [style_colors[rgroups.index(i)] for i in pdf["groups"]]
         axes[0].scatter(pdf.index, pdf["storage_pre"], c=colors, s=10)
         axes[1].scatter(pdf.index, pdf["inflow"], c=colors, s=10)
@@ -1997,6 +2025,33 @@ def parallel_body_colored_group_plots(
                 c=colors,
                 s=10,
             )
+        #########################################################################
+        # this commented section plots the min, med, and max inflow years
+        # inflow = pdf[["datetime", "inflow"]].set_index("datetime")["inflow"]
+        # min_year, med_year, max_year = find_min_med_max_years(inflow)
+        # min_records = pdf[pdf["datetime"].dt.year == min_year]
+        # med_records = pdf[pdf["datetime"].dt.year == med_year]
+        # max_records = pdf[pdf["datetime"].dt.year == max_year]
+        # size = 10
+        # axes[0].scatter(
+        #     range(min_records.shape[0]),
+        #     min_records["storage_pre"],
+        #     c=[style_colors[rgroups.index(i)] for i in min_records["groups"]],
+        #     s=10
+        # )
+        # axes[1].scatter(
+        #     range(med_records.shape[0]),
+        #     med_records["storage_pre"],
+        #     c=[style_colors[rgroups.index(i)] for i in med_records["groups"]],
+        #     s=10
+        # )
+        # axes[2].scatter(
+        #     range(max_records.shape[0]),
+        #     max_records["storage_pre"],
+        #     c=[style_colors[rgroups.index(i)] for i in max_records["groups"]],
+        #     s=10
+        # )
+        #########################################################################
     else:
         make_multicolored_line_plot(
             pdf, "datetime", "storage_pre", "groups", style_colors, ax=axes[0]
@@ -2011,21 +2066,29 @@ def parallel_body_colored_group_plots(
             make_multicolored_line_plot(
                 pdf, "datetime", "residual", "groups", style_colors, ax=axes[3]
             )
-
+    ########################################
+    # original
     axes[0].set_ylabel("Storage [TAF]")
     axes[1].set_ylabel("Inflow [TAF/day]")
     axes[2].set_ylabel("Release [TAF/day]")
+    ########################################
+    # axes[0].set_ylabel("Storage [TAF]")
+    # axes[1].set_ylabel("Storage [TAF]")
+    # axes[2].set_ylabel("Storage [TAF]")
+    # axes[0].set_title("Lowest Inflow Year")
+    # axes[1].set_title("Median Inflow Year")
+    # axes[2].set_title("Maximum Inflow Year")
     bottom_ax = axes[2]
     if plot_resid:
         axes[3].set_ylabel("Residual [TAF/day]")
         bottom_ax = axes[3]
 
-    index = pdf["datetime"]
-    tick_years, ticks = get_tick_years(index, bottom_ax)
-    tick_labels = [str(i) for i in tick_years]
+    # index = pdf["datetime"]
+    # tick_years, ticks = get_tick_years(index, bottom_ax)
+    # tick_labels = [str(i) for i in tick_years]
 
-    bottom_ax.set_xticks(ticks)
-    bottom_ax.set_xticklabels(tick_labels)
+    # bottom_ax.set_xticks(ticks)
+    # bottom_ax.set_xticklabels(tick_labels)
 
     if ptype == "scatter":
         handles = [
@@ -2047,14 +2110,169 @@ def parallel_body_colored_group_plots(
     )
 
     if save:
-        plt.savefig(
-            f"{HOME}/Dropbox/PHD/multibasin_model_figures/new_paper_figures/"
-            f"group_colored_timeseries/{basin}_{res}.png",
-            dpi=450,
-        )
+        fig_dir = pathlib.Path(CLOUD_STORAGE_FOLDER) / "group_colored_timeseries"
+        if not fig_dir.exists():
+            fig_dir.mkdir()
+        plt.savefig((fig_dir / f"{basin}_{res}.png").as_posix(), dpi=450)
     if show:
         plt.show()
     plt.close()
+
+
+def plot_core_res_group_colored_lines():
+    sns.set_context("paper", font_scale=1.1)
+    results = load_pickle(RESULT_FILE)
+    data = load_pickle(DATA_FILE)
+    xtrain = data["xtrain"]
+    means = data["means"]
+    std = data["std"]
+
+    ydata = results["train_data"]
+    groups = results["groups"]
+    columns = ["storage_pre", "inflow"]
+
+    df = xtrain.loc[:, columns]
+
+    df["storage_pre"] = (
+        df["storage_pre"].unstack().T * std["storage_pre"] + means["storage_pre"]
+    ).T.stack()
+    df["inflow"] = (df["inflow"].unstack().T * std["inflow"] + means["inflow"]).T.stack()
+    df["release"] = ydata["actual"]
+    df["modeled_release"] = ydata["model"]
+    df["groups"] = groups
+    
+    from IPython import embed as II
+    II()
+    import sys; sys.exit()
+
+    rbasins = load_pickle("../pickles/res_basin_map.pickle")
+    rename = {
+        "upper_col": "colorado",
+        "lower_col": "colorado",
+        "pnw": "columbia",
+        "tva": "tennessee",
+    }
+    rbasins = rbasins.replace(rename)
+    rbasins = rbasins.str.capitalize()
+    name_replacements = get_name_replacements()
+
+
+    style_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    # style_colors = sns.color_palette("Spectral", 3)
+    # style_colors = palettable.cartocolors.qualitative.Vivid_3.mpl_colors
+    # style_colors = palettable.mycarta.Cube1_3.mpl_colors
+    core_res = get_core_reservoirs()
+    core_res = make_core_res_df(core_res)
+
+    # fig, all_axes = plt.subplots(3, 4, sharex=False, sharey=False)
+    fig, all_axes = plt.subplots(4, 1, sharex=True, sharey=False, figsize=(8.5, 10), dpi=600)
+    #           -------------------------
+    # sm st dam | Col | Mis | Ten |     |
+    #           -------------------------
+    # md st dam | Col | Mis | Ten | PNW |
+    #           -------------------------
+    # lg st dam | Col | Mis | Ten |     |
+    #           -------------------------
+    all_axes = list(all_axes.flatten())
+    axes = all_axes
+    # axes = all_axes[:3] + all_axes[4:11]
+    # axes = all_axes[:9] + [all_axes[10]]
+    # other_axes = [all_axes[9], all_axes[11]]
+    other_axes = []
+    for ax in other_axes:
+        ax.axis("off")
+
+    # core_res_order = [0, 3, 7, 1, 4, 8, 6, 2, 5, 9]
+    core_res_order = [0, 1, 2, 3, 4, 5, 7, 8, 9, 6]
+    core_res_order = [2, 4, 6, 7]
+    resers = core_res.loc[core_res_order, "name"]
+    core_res_storage = df.loc[pd.IndexSlice[resers, :], "storage_pre"].unstack().T.dropna(how="any")
+    print(core_res_storage.index.min(), core_res_storage.index.max())
+    gcl_fix_date = core_res_storage.index[349]
+    # fix data error in GCL
+    df.loc[pd.IndexSlice["GCL", gcl_fix_date], "storage_pre"] = np.mean([
+        core_res_storage.loc[core_res_storage.index[348], "GCL"],
+        core_res_storage.loc[core_res_storage.index[350], "GCL"],
+    ])
+
+    marker_size = 5
+    for i, (res, ax) in enumerate(zip(resers, axes)):
+        pdf = df.loc[pd.IndexSlice[res, core_res_storage.index], :]
+        pdf.index = pdf.index.droplevel(0)
+        pdf = deepcopy(pdf)
+        pdf["prev_group"] = pdf["groups"].shift(1)
+        pdf["same_group"] = pdf["prev_group"] == pdf["groups"]
+        rgroups = sorted(pdf["groups"].unique())
+        pdf["group_mapped"] = [rgroups.index(i) for i in pdf["groups"]]
+        print(res, f"{pdf['group_mapped'].rolling(7).var().mean():.3f}", f"{1 - pdf['same_group'].mean():.1%}")
+        continue
+        rgroups = sorted(pdf["groups"].unique())
+        colors = [style_colors[rgroups.index(i)] for i in pdf["groups"]]
+        ax.scatter(pdf.index, pdf["storage_pre"], c=colors, s=marker_size)
+
+        core_res_row = core_res[core_res["name"] == res]
+        pretty_name = core_res_row["pretty_name"].values[0]
+        basin = core_res_row["basin"].values[0]
+        group = core_res_row["group"].values[0]
+        group = re.sub("st", "st.", group)
+        group = " ".join(group.split("_")).title()
+
+        # title = pretty_name
+        title = f"{pretty_name} - {basin} - {group}"
+        ax.set_title(title, fontsize=12)
+
+        ax.tick_params(axis="x", labelrotation=0)
+
+        nyears = int(pdf.shape[0] / 365.25)
+        nticks = 8
+        year_space = nyears // nticks + 1
+        ax.xaxis.set_major_locator(mdates.YearLocator(year_space))
+        ax.set_xlabel("")
+    import sys
+    sys.exit()
+    handles = [
+        plt.scatter([], [], s=marker_size*8, c=style_colors[i])
+        for i in range(3)
+    ]
+    labels = [
+        "Low Release", "Normal Operations", "High Inflow"
+    ]
+    
+    axes[0].legend(
+        handles, labels, title="Operational Mode", ncol=3, loc="lower left", prop={"size": 10},
+        scatteryoffsets=[0.5], labelspacing=0.1, borderpad=0.2, handletextpad=0.2,
+        frameon=True, fancybox=True
+    )
+    axes[-1].set_xlabel("Date")
+
+    fig.text(
+        0.02,
+        0.5,
+        "End of Day Storage [1000 acre-feet]",
+        rotation=90,
+        ha="center",
+        va="center",
+        fontsize=12,
+    )
+
+    plt.subplots_adjust(
+        top=0.95, bottom=0.05, left=0.08, right=0.95, hspace=0.15, wspace=0.3
+    )
+
+    # plt.show()
+    fig_file = pathlib.Path(CLOUD_STORAGE_FOLDER) / "group_colored_storage_core_res.png"
+    plt.savefig(fig_file.as_posix())
+
+
+def find_min_med_max_years(series):
+    yearly = series.resample("Y").sum()
+    yearly = yearly.drop([yearly.index.min(), yearly.index.max()])
+    min_year = yearly.idxmin().year
+    max_year = yearly.idxmax().year
+    median = yearly.median()
+    diff = (yearly - median).abs()
+    median_year = diff.idxmin().year
+    return min_year, median_year, max_year
 
 
 def enso_correlation():
@@ -2414,13 +2632,15 @@ if __name__ == "__main__":
         metric = args[0]
     else:
         metric = "NSE"
-    plt.style.use("tableau-colorblind10")
+    import scienceplots
+    # plt.style.use("tableau-colorblind10")
+    plt.style.use(["science", "grid"])
     sns.set_context("talk", font_scale=1.1)
 
     # get_unique_trees()
     # get_unique_paths()
     # get_operating_groups()
-    # plot_interannual_group_variability()
+    # plot_interannual_group_variability().colors
     # plot_interannual_seasonal_group_variability()
     # plot_error_by_variable()
     # plot_transition_diagnostics()
@@ -2433,5 +2653,6 @@ if __name__ == "__main__":
     # determine_similar_operating_reservoirs()
     # plot_res_group_colored_timeseries()
     # enso_correlation()
-    plot_daily_most_likely_groups()
+    # plot_daily_most_likely_groups()
     # relate_groups_and_vars()
+    plot_core_res_group_colored_lines()
