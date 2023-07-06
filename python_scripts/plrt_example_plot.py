@@ -31,7 +31,8 @@ def line(m, b, x):
 # functions for lines
 fun1 = partial(line, m1, b1)
 
-b2 = fun1(x_split) - m2 * x_split
+# b2 = fun1(x_split) - m2 * x_split
+b2 = 30
 fun2 = partial(line, m2, b2)
 
 # get y values
@@ -63,21 +64,21 @@ ax.axvline(x_split, c="k", label=r"$\tau$")
 x_actual_1 = np.linspace(0, x_split, 500)
 x_actual_2 = np.linspace(x_split, 10, 500)
 
-ax.plot(
-    x_actual_1,
-    [lr_fit[0] + lr_fit[1] * i for i in x_actual_1],
-    c=colors[2],
-    linestyle="-.",
-    label="LR",
-    linewidth=lw,
-)
-ax.plot(
-    x_actual_2,
-    [lr_fit[0] + lr_fit[1] * i for i in x_actual_2],
-    c=colors[2],
-    linestyle="-.",
-    linewidth=lw,
-)
+# ax.plot(
+#     x_actual_1,
+#     [lr_fit[0] + lr_fit[1] * i for i in x_actual_1],
+#     c=colors[2],
+#     linestyle="-.",
+#     label="LR",
+#     linewidth=lw,
+# )
+# ax.plot(
+#     x_actual_2,
+#     [lr_fit[0] + lr_fit[1] * i for i in x_actual_2],
+#     c=colors[2],
+#     linestyle="-.",
+#     linewidth=lw,
+# )
 
 ax.plot(
     x_actual_1, fun1(x_actual_1), c=colors[3], linestyle="--", label="PLRT", linewidth=lw
@@ -88,9 +89,9 @@ ax.set_xlabel("X (e.g., Inflow)")
 ax.set_ylabel("Y (e.g., Discharge)")
 
 handles, labels = ax.get_legend_handles_labels()
-order = [0, 3, 2, 1]
-handles = [handles[i] for i in order]
-labels = [labels[i] for i in order]
+# order = [0, 3, 2, 1]
+# handles = [handles[i] for i in order]
+# labels = [labels[i] for i in order]
 ax.legend(handles, labels, loc="upper left", prop={"size": 16})
 # ax.legend()
 ax.set_xlim(0, 10)
@@ -105,4 +106,5 @@ plt.subplots_adjust(
 )
 
 plt.show()
-# plt.savefig("../figures/agu_2022_figures/plrt_example_paper.png", format="png", dpi=800)
+# plt.savefig("G:/My Drive/PHD/phd_exams/final_exam/slides/figures/predict_release/plrt_example_subplots/all.svg")
+

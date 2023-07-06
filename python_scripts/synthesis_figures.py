@@ -854,7 +854,7 @@ def get_operating_groups():
     op_mod_ids = pd.DataFrame(op_mods.apply(op_codes.index))
     op_mod_ids["Group Name"] = op_mod_ids["Group"].apply(OP_NAMES.get)
 
-    rbasins = pd.load_pickle("../pickles/res_basin_map.pickle")
+    rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
     rename = {
         "upper_col": "colorado",
         "lower_col": "colorado",
@@ -2127,6 +2127,30 @@ def plot_core_res_group_colored_lines():
     means = data["means"]
     std = data["std"]
 
+    # for defense
+    sns.set_context("talk")
+    simmed_data = results["simmed_data"]
+    simmed_data = simmed_data.rename(columns={"actual": "Observed", "model": "Simulated"})
+    ax = sns.scatterplot(
+        data=simmed_data,
+        x="Observed",
+        y="Simulated",
+        color="#4f81bd",
+    )
+    from plot_helpers import abline
+
+    abline(0, 1, ax=ax, color="#c0504d")
+    ax.set_xlabel("Observed Release [TAF/day]")
+    ax.set_ylabel("Simulated Release [TAF/day]")
+    ax.grid(False)
+    sns.despine(ax=ax, offset=12, trim=True)
+    plt.show()
+    #    from IPython import embed as II
+    #    II()
+    import sys
+
+    sys.exit()
+
     ydata = results["train_data"]
     groups = results["groups"]
     columns = ["storage_pre", "inflow"]
@@ -2140,10 +2164,13 @@ def plot_core_res_group_colored_lines():
     df["release"] = ydata["actual"]
     df["modeled_release"] = ydata["model"]
     df["groups"] = groups
-    
+
     from IPython import embed as II
+
     II()
-    import sys; sys.exit()
+    import sys
+
+    sys.exit()
 
     rbasins = load_pickle("../pickles/res_basin_map.pickle")
     rename = {
@@ -2156,7 +2183,6 @@ def plot_core_res_group_colored_lines():
     rbasins = rbasins.str.capitalize()
     name_replacements = get_name_replacements()
 
-
     style_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     # style_colors = sns.color_palette("Spectral", 3)
     # style_colors = palettable.cartocolors.qualitative.Vivid_3.mpl_colors
@@ -2165,7 +2191,9 @@ def plot_core_res_group_colored_lines():
     core_res = make_core_res_df(core_res)
 
     # fig, all_axes = plt.subplots(3, 4, sharex=False, sharey=False)
-    fig, all_axes = plt.subplots(4, 1, sharex=True, sharey=False, figsize=(8.5, 10), dpi=600)
+    fig, all_axes = plt.subplots(
+        4, 1, sharex=True, sharey=False, figsize=(8.5, 10), dpi=600
+    )
     #           -------------------------
     # sm st dam | Col | Mis | Ten |     |
     #           -------------------------
@@ -2186,14 +2214,18 @@ def plot_core_res_group_colored_lines():
     core_res_order = [0, 1, 2, 3, 4, 5, 7, 8, 9, 6]
     core_res_order = [2, 4, 6, 7]
     resers = core_res.loc[core_res_order, "name"]
-    core_res_storage = df.loc[pd.IndexSlice[resers, :], "storage_pre"].unstack().T.dropna(how="any")
+    core_res_storage = (
+        df.loc[pd.IndexSlice[resers, :], "storage_pre"].unstack().T.dropna(how="any")
+    )
     print(core_res_storage.index.min(), core_res_storage.index.max())
     gcl_fix_date = core_res_storage.index[349]
     # fix data error in GCL
-    df.loc[pd.IndexSlice["GCL", gcl_fix_date], "storage_pre"] = np.mean([
-        core_res_storage.loc[core_res_storage.index[348], "GCL"],
-        core_res_storage.loc[core_res_storage.index[350], "GCL"],
-    ])
+    df.loc[pd.IndexSlice["GCL", gcl_fix_date], "storage_pre"] = np.mean(
+        [
+            core_res_storage.loc[core_res_storage.index[348], "GCL"],
+            core_res_storage.loc[core_res_storage.index[350], "GCL"],
+        ]
+    )
 
     marker_size = 5
     for i, (res, ax) in enumerate(zip(resers, axes)):
@@ -2204,7 +2236,11 @@ def plot_core_res_group_colored_lines():
         pdf["same_group"] = pdf["prev_group"] == pdf["groups"]
         rgroups = sorted(pdf["groups"].unique())
         pdf["group_mapped"] = [rgroups.index(i) for i in pdf["groups"]]
-        print(res, f"{pdf['group_mapped'].rolling(7).var().mean():.3f}", f"{1 - pdf['same_group'].mean():.1%}")
+        print(
+            res,
+            f"{pdf['group_mapped'].rolling(7).var().mean():.3f}",
+            f"{1 - pdf['same_group'].mean():.1%}",
+        )
         continue
         rgroups = sorted(pdf["groups"].unique())
         colors = [style_colors[rgroups.index(i)] for i in pdf["groups"]]
@@ -2229,19 +2265,26 @@ def plot_core_res_group_colored_lines():
         ax.xaxis.set_major_locator(mdates.YearLocator(year_space))
         ax.set_xlabel("")
     import sys
+
     sys.exit()
     handles = [
-        plt.scatter([], [], s=marker_size*8, c=style_colors[i])
-        for i in range(3)
+        plt.scatter([], [], s=marker_size * 8, c=style_colors[i]) for i in range(3)
     ]
-    labels = [
-        "Low Release", "Normal Operations", "High Inflow"
-    ]
-    
+    labels = ["Low Release", "Normal Operations", "High Inflow"]
+
     axes[0].legend(
-        handles, labels, title="Operational Mode", ncol=3, loc="lower left", prop={"size": 10},
-        scatteryoffsets=[0.5], labelspacing=0.1, borderpad=0.2, handletextpad=0.2,
-        frameon=True, fancybox=True
+        handles,
+        labels,
+        title="Operational Mode",
+        ncol=3,
+        loc="lower left",
+        prop={"size": 10},
+        scatteryoffsets=[0.5],
+        labelspacing=0.1,
+        borderpad=0.2,
+        handletextpad=0.2,
+        frameon=True,
+        fancybox=True,
     )
     axes[-1].set_xlabel("Date")
 
@@ -2626,6 +2669,178 @@ def relate_groups_and_vars():
     II()
 
 
+def get_m1_m2_res_perf(metric):
+    RESULT_FILE_2 = (
+        "../results/tclr_model_testing/all/"
+        + "TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle"
+    )
+    results = load_pickle(RESULT_FILE)
+    results2 = load_pickle(RESULT_FILE_2)
+
+    train_data = results["train_data"]
+    test_data = results["test_data"]
+    simmed_data = results["simmed_data"]
+    train_data2 = results2["train_data"]
+    test_data2 = results2["test_data"]
+    simmed_data2 = results2["simmed_data"]
+
+    # metric = "nRMSE"
+    if metric == "nRMSE":
+        mfunc = get_nrmse
+    elif metric == "NSE":
+        mfunc = get_r2score
+
+    train_nse = mfunc(train_data, "site_name")
+    test_nse = mfunc(test_data, "site_name")
+    simmed_nse = mfunc(simmed_data, "site_name")
+
+    train_nse2 = mfunc(train_data2, "site_name")
+    test_nse2 = mfunc(test_data2, "site_name")
+    simmed_nse2 = mfunc(simmed_data2, "site_name")
+
+    scores = train_nse.rename(columns={metric: "Training"})
+    scores["Testing"] = test_nse[metric]
+    scores["Simulation"] = simmed_nse[metric]
+    scores["Model"] = "M2"
+
+    scores2 = train_nse2.rename(columns={metric: "Training"})
+    scores2["Testing"] = test_nse2[metric]
+    scores2["Simulation"] = simmed_nse2[metric]
+    scores2["Model"] = "M1"
+
+    scores = scores.reset_index().melt(
+        id_vars=["Model", "site_name"], var_name="Data Set", value_name=metric
+    )
+    scores2 = scores2.reset_index().melt(
+        id_vars=["Model", "site_name"], var_name="Data Set", value_name=metric
+    )
+
+    scores = pd.concat([scores, scores2])
+
+    # scores["NNSE"] = 1 / (2 - scores["NSE"])
+    return scores
+
+
+def plot_train_test_sim_scores():
+    metric = "nRMSE"
+    scores = get_m1_m2_res_perf(metric)
+
+    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+    sns.boxplot(
+        scores,
+        hue="Model",
+        y="Data Set",
+        x=metric,
+        showfliers=False,
+        hue_order=["M1", "M2"],
+        ax=ax
+    )
+    ax.set_ylabel("")
+    ax.tick_params(axis="y", which="minor", length=0)
+    ax.set_xlabel(metric)
+    plt.subplots_adjust(
+        top=0.96,
+        bottom=0.128,
+        left=0.134,
+        right=0.974,
+        hspace=0.2,
+        wspace=0.2
+    )
+    plt.savefig(os.path.expanduser("~/Desktop/dset_perf_hbar.png"))
+    plt.show()
+
+
+def plot_selected_timeseries():
+    RESULT_FILE_2 = (
+        "../results/tclr_model_testing/all/"
+        + "TD5_MSS0.01_RT_MS_exhaustive_new_hoover/results.pickle"
+    )
+    results = load_pickle(RESULT_FILE)
+    results2 = load_pickle(RESULT_FILE_2)
+
+    train_data = results["train_data"]
+    test_data = results["test_data"]
+    simmed_data = results["simmed_data"]
+    train_data2 = results2["train_data"]
+    test_data2 = results2["test_data"]
+    simmed_data2 = results2["simmed_data"]
+
+    resers = ["LAKE POWELL", "Kentucky", "GCL", "GavinsPoint"]
+    reser_pretty_name = {
+        "LAKE POWELL": "Glen Canyon",
+        "GCL": "Grand Coulee",
+        "GavinsPoint": "Gavins Point",
+    }
+
+    fig, axes = plt.subplots(4, 2, figsize=(8.5, 11), dpi=450)
+
+    act_color = "k"
+    train_color = "b"
+    test_color = "g"
+    sim_color = "r"
+
+    style_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+    act_color, train_color, test_color, sim_color = style_colors[:4]
+    legend = True
+    for reser, ax_row in zip(resers, axes):
+        ax1, ax2 = ax_row
+        actual = pd.concat(
+            [
+                train_data.loc[pd.IndexSlice[reser], "actual"],
+                test_data.loc[pd.IndexSlice[reser], "actual"],
+            ]
+        )
+        train1 = train_data.loc[pd.IndexSlice[reser], "model"]
+        train2 = train_data2.loc[pd.IndexSlice[reser], "model"]
+        test1 = test_data.loc[pd.IndexSlice[reser], "model"]
+        test2 = test_data2.loc[pd.IndexSlice[reser], "model"]
+        simmed1 = simmed_data.loc[pd.IndexSlice[reser], "model"]
+        simmed2 = simmed_data2.loc[pd.IndexSlice[reser], "model"]
+
+        ax1.scatter(
+            actual.index, actual.values, s=5, label="Observed", c=act_color, alpha=1.0
+        )
+        ax1.scatter(
+            train1.index, train1.values, s=5, label="Training", c=train_color, alpha=0.6
+        )
+        ax1.scatter(
+            test1.index, test1.values, s=5, label="Testing", c=test_color, alpha=0.6
+        )
+        ax1.scatter(
+            simmed1.index, simmed1.values, s=5, label="Simulation", c=sim_color, alpha=0.6
+        )
+
+        ax2.scatter(
+            actual.index, actual.values, s=5, label="Observed", c=act_color, alpha=1.0
+        )
+        ax2.scatter(
+            train2.index, train2.values, s=5, label="Training", c=train_color, alpha=0.6
+        )
+        ax2.scatter(
+            test2.index, test2.values, s=5, label="Testing", c=test_color, alpha=0.6
+        )
+        ax2.scatter(
+            simmed2.index, simmed2.values, s=5, label="Simulation", c=sim_color, alpha=0.6
+        )
+
+        pretty_name = reser_pretty_name.get(reser, reser)
+
+        ax1.set_title(f"M1 - {pretty_name}")
+        ax2.set_title(f"M2 - {pretty_name}")
+
+        if legend:
+            ax1.legend(loc="upper right", ncol=2, markerscale=2)
+            legend = False
+
+    fig.text(0.02, 0.5, "Discharge [1000 acre-ft/day]", rotation=90, va="center")
+    plt.subplots_adjust(
+        top=0.961, bottom=0.046, left=0.092, right=0.977, hspace=0.38, wspace=0.156
+    )
+    # plt.show()
+    plt.savefig(os.path.expanduser("~/Desktop/selected_timeseries.png"))
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) > 0:
@@ -2633,9 +2848,11 @@ if __name__ == "__main__":
     else:
         metric = "NSE"
     import scienceplots
+
     # plt.style.use("tableau-colorblind10")
-    plt.style.use(["science", "grid"])
-    sns.set_context("talk", font_scale=1.1)
+    plt.style.use(["science", "nature"])
+    # sns.set_context("paper", font_scale=1.0)
+    sns.set_context("talk", font_scale=1.0)
 
     # get_unique_trees()
     # get_unique_paths()
@@ -2655,4 +2872,8 @@ if __name__ == "__main__":
     # enso_correlation()
     # plot_daily_most_likely_groups()
     # relate_groups_and_vars()
-    plot_core_res_group_colored_lines()
+    # plot_core_res_group_colored_lines()
+
+    # plot_train_test_sim_scores()
+    # plot_selected_timeseries()
+    plot_operation_group_map()

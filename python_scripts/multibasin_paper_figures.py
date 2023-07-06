@@ -34,6 +34,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from IPython import embed as II
+from matplotlib import rcParams
 from matplotlib.cm import ScalarMappable, get_cmap
 from matplotlib.colors import ListedColormap, LogNorm, Normalize
 from matplotlib.transforms import Bbox
@@ -1921,10 +1922,85 @@ def plot_characteristic_res_line_plot(metric="NSE"):
     plt.show()
 
 
+def plot_res_characteristic_bin_performance_for_defense(nbins=3):
+    nse_df = get_res_characteristic("NSE")
+    nrmse_df = get_res_characteristic("nRMSE")
+    nse_df["TD4-MSS0.10"] = 1 / (2 - nse_df["TD4-MSS0.10"])
+    nse_df = nse_df.rename(columns={"TD4-MSS0.10": "nNSE"})
+    nse_df["nRMSE"] = nrmse_df["TD4-MSS0.10"]
+    nse_df = nse_df.drop("TD5-MSS0.01", axis=1)
+
+    cuts = {}
+    for var in CHAR_VARS:
+        values, labels = pd.qcut(nse_df[var], nbins, labels=False, retbins=True)
+        nse_df[var] = values + 1
+        cuts[var] = labels
+
+    label_map = make_bin_label_map(nbins, start_index=1)
+
+    df = nse_df.melt(
+        id_vars=["nNSE", "nRMSE"],
+        value_name="bin",
+    ).melt(
+        id_vars=["variable", "bin"],
+        var_name="metric",
+        value_name="score",
+    )
+    
+    df["bin"] = df["bin"].replace(label_map)
+    df = df[~df["variable"].isin(["Storage Seasonality", "Release Seasonality"])]
+    df = df[df["metric"] == "nNSE"]
+
+    # color = "#c0504d"
+    # color = "#5d82af"
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    color = colors[0]
+    fg = sns.catplot(
+        data=df,
+        y="bin",
+        x="score",
+        # hue="metric",
+        # hue_order=["nNSE", "nRMSE"],
+        color=color,
+        col="variable",
+        col_wrap=2,
+        kind="bar",
+        # legend_out=False,
+        # errorbar=None,
+        errwidth=1,
+        capsize=0.1,
+        order=[label_map[i] for i in range(1, nbins + 1)],
+        width=0.8,
+        # alpha=1.0,
+        saturation=0.6,
+    )
+    for ax in fg.axes:
+        ax.grid(False)
+        ax.patch.set_alpha(0.0)
+        ax.set_axis_on()
+        ax.spines["bottom"].set_color("black")
+        ax.spines["left"].set_color("black")
+        ax.tick_params(axis="both", color="black", labelcolor="black", labelsize=16)
+
+    fg.set_titles("{col_name}")
+    # label = "nNSE\nnRMSE"
+    label = "nNSE"
+    fg.set_xlabels(label, color="black")
+    fg.set_ylabels("Attribute Percentile", color="black")
+    # handles, labels = fg.axes[0].get_legend_handles_labels()
+    # fg.axes[0].legend(handles, labels, ncol=1, loc="lower right", frameon=True)
+    for ax in fg.axes:
+        ax.set_xlim(0, 1.1)
+    plt.show()
+
+
 def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
     # plt.style.use("seaborn-colorblind")
     # sns.set_context("talk")
     char_df = get_res_characteristic(metric)
+    if metric == "NSE":
+       char_df["TD4-MSS0.10"] = 1 / (2 - char_df["TD4-MSS0.10"])
+       char_df["TD5-MSS0.01"] = 1 / (2 - char_df["TD5-MSS0.01"])
     cuts = {}
     for var in CHAR_VARS:
         values, labels = pd.qcut(char_df[var], nbins, labels=False, retbins=True)
@@ -1943,27 +2019,32 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         value_name=metric,
         ignore_index=False,
     )
+    df = df[df["model"] == "TD4-MSS0.10"]
     df["bin"] = df["bin"].replace(label_map)
     df["model"] = df["model"].replace(MODEL_NAMES)
-    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-    color = "#009e73"
+    # colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    df = df[~df["variable"].isin(["Storage Seasonality", "Release Seasonality"])]
+    from IPython import embed as II
+    II()
+    color = "#d67b6d"
     fg = sns.catplot(
         data=df,
-        x="bin",
-        y=metric,
-        hue="model",
-        hue_order=["M1", "M2"],
-        # color=color,
+        y="bin",
+        x=metric,
+        # hue="model",
+        # hue_order=["M1", "M2"],
+        color=color,
         col="variable",
         col_wrap=2,
         kind="bar",
-        legend_out=False,
+        # legend_out=False,
         # errorbar=None,
         errwidth=1,
         capsize=0.1,
         # palette="colorblind",
         order=[label_map[i] for i in range(1, nbins + 1)],
-        alpha=0.8,
+        alpha=1.0,
+        saturation=0.6,
     )
     for ax in fg.axes:
         ax.grid(False)
@@ -1974,17 +2055,26 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         ax.tick_params(axis="both", color="black", labelcolor="black", labelsize=16)
 
     fg.set_titles("{col_name}") #, size=28)
-    fg.set_ylabels(metric, color="black") #, size=24)
-    fg.set_xlabels("Attribute Percentile", color="black") #, size=24)
+    if metric == "NSE":
+        label = "nNSE"
+    else:
+        label = metric
+    fg.set_xlabels(label, color="black") #, size=24)
+    fg.set_ylabels("Attribute Percentile", color="black") #, size=24)
     handles, labels = fg.axes[0].get_legend_handles_labels()
-    fg.axes[0].legend(handles, labels, frameon=False) #, prop={"size": 16})
+    fg.axes[0].legend(handles, labels, ncol=2, loc="upper left", frameon=False) #, prop={"size": 16})
+    for ax in fg.axes:
+        ax.set_xlim(0, 1.1)
     plt.show()
     # plt.savefig("../figures/agu_2022_figures/char_bin_nRMSE.png", dpi=800)
 
 
 def plot_res_characteristic_scatter_performance(metric="NSE"):
     char_df = get_res_characteristic(metric)
-
+    if metric == "NSE":
+        char_df["TD4-MSS0.10"] = 1 / (2 - char_df["TD4-MSS0.10"])
+        char_df["TD5-MSS0.01"] = 1 / (2 - char_df["TD5-MSS0.01"])
+    
     df = char_df.melt(id_vars=["TD4-MSS0.10", "TD5-MSS0.01"], ignore_index=False).melt(
         id_vars=["variable", "value"],
         var_name="model",
@@ -1992,15 +2082,20 @@ def plot_res_characteristic_scatter_performance(metric="NSE"):
         ignore_index=False,
     )
 
+    df = df[df["model"] == "TD4-MSS0.10"]
+
     fg = sns.relplot(
         data=df,
         x="value",
         y=metric,
-        hue="model",
+        # hue="model",
         col="variable",
         col_wrap=2,
         kind="scatter",
         palette="colorblind",
+        facet_kws={
+            "sharex": False
+        }
     )
     for ax in fg.axes:
         ax.grid(False)
@@ -3348,18 +3443,21 @@ def plot_interannual_seasonal_group_variability():
 
 
 if __name__ == "__main__":
+    ncsu_colors = "#4f81bd,#c0504d,#9bbb59,#1f497d,#8064a2,#4bacc6,#f79646".split(",")
+    sns.set_palette(sns.color_palette(ncsu_colors))
     args = sys.argv[1:]
     if len(args) > 0:
         metric = args[0]
     else:
         metric = "NSE"
-    plt.style.use("tableau-colorblind10")
+    # plt.style.use("tableau-colorblind10")
     # plt.style.use(["science", "nature"])
     # sns.set_context("poster", font_scale=1.2)
-    # sns.set_context("talk", font_scale=1.1)
+    sns.set_context("talk", font_scale=1.0)
     # sns.set_context("paper", font_scale=1.8)
-    sns.set_context("paper", font_scale=1.4)
-
+    # sns.set_context("paper", font_scale=1.4)
+    rcParams["font.family"] = "sans-serif"
+    rcParams["font.sans-serif"] = ["Arial"]
     # * FIGURE 1
     # plot_res_locs()
     # * FIGURE 2
@@ -3393,7 +3491,8 @@ if __name__ == "__main__":
     # get_unique_trees()
     # get_unique_paths()
     # get_operating_groups()
-    plot_interannual_group_variability()
+    # plot_interannual_group_variability()
     # plot_interannual_seasonal_group_variability()
 
     # plot_error_by_variable()
+    plot_res_characteristic_bin_performance_for_defense(nbins=5)
