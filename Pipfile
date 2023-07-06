@@ -81,8 +81,13 @@ wcwidth = "==0.2.5"
 wrapt = "==1.14.1"
 scienceplots = "*"
 data-science-types = "*"
+ipdb = "*"
+ruff = "*"
+ruff-lsp = "*"
+python-lsp-server = "*"
 
 [dev-packages]
+black = "*"
 
 [requires]
 python_version = "3.10"
