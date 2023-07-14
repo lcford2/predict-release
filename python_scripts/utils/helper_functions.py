@@ -1,6 +1,9 @@
 import pathlib
 import pickle
 import sys
+import socket
+import os
+import json
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -8,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from IPython import embed as II
-from utils.timing_function import time_function
+# from utils.timing_function import time_function
 
 tva_res = [
     "BlueRidge",
@@ -41,6 +44,11 @@ tva_res = [
 ]
 
 acf_res = ["Woodruff", "Buford", "George", "West"]
+
+if socket.gethostname() == "inspiron-laptop":
+    PROJECT_ROOT = os.path.expanduser("~/Desktop/cloned_repos/predict-release")
+else:
+    PROJECT_ROOT = os.path.expanduser("~/projects/predict-release")
 
 
 # @time_function
@@ -324,3 +332,106 @@ class ColorInterpolator:
 
     def __repr__(self):
         return f"ColorInterpolator({self.start_color}, {self.stop_color}, {self.start_value}, {self.stop_value})"
+
+
+def read_pickle(file):
+    with open(file, "rb") as f:
+        data = pickle.load(f)
+    return data
+
+
+def write_pickle(file, data):
+    with open(file, "wb") as f:
+        pickle.dump(data, f)
+
+
+def get_name_replacements():
+    with open(f"{PROJECT_ROOT}/pnw_data/dam_names.json", "r") as f:
+        pnw = json.load(f)
+
+    with open(f"{PROJECT_ROOT}/missouri_data/dam_names.json", "r") as f:
+        missouri = json.load(f)
+
+    tva = {}
+    with open(f"{PROJECT_ROOT}/python_scripts/actual_names.csv", "r") as f:
+        for line in f.readlines():
+            line = line.strip("\n\r")
+            key, value = line.split(",")
+            tva[key] = value
+    return pnw | tva | missouri
+
+
+def load_rbasins():
+    rbasins = pd.read_pickle(f"{PROJECT_ROOT}/pickles/res_basin_map.pickle")
+    rename = {
+        "upper_col": "colorado",
+        "lower_col": "colorado",
+        "pnw": "columbia",
+        "tva": "tennessee",
+    }
+    rbasins = rbasins.replace(rename)
+    rbasins = rbasins.str.capitalize()
+    return rbasins
+
+
+def is_approx_equal(a, b, e):
+    return np.abs(a - b) <= e
+
+
+def get_n_median_index(series, ngroups=0):
+    """Get the index of the median value for each nsplits number of splits
+
+    The number of indices returned will always be nsplits + 1
+    When nsplits = 0, the median of the data set is returned.
+    When nsplits is 1, the 25th and 75th percentile values are returned.
+    The data set is split nsplits number of times, and the median of those
+    sub data sets is returned.
+
+    """
+    indices = []
+    if ngroups > 0:
+        splits = [0] + [(i+1) / (ngroups) for i in range(ngroups)]
+        medians = [round(sum(splits[i:i+2]) / 2 * series.size, 0) for i in range(ngroups)]
+        ranks = series.rank()
+        for i, median in enumerate(medians):
+            entry = ranks[ranks == median]
+            index = entry.index[0]
+            indices.append(index)
+    return indices
+
+def idxquantile(s, q=0.5, *args, **kwargs):
+    qv = s.quantile(q, *args, **kwargs)
+    return (s.sort_values()[::-1] <= qv).idxmax()
+
+def get_julian_day(day, month, year, year_start=1):
+    dt = datetime(year, month, day)
+
+    if month >= year_start:
+        year_start_offset = datetime(year, year_start, 1)
+    else:
+        year_start_offset = datetime(year - 1, year_start, 1)
+    
+    if dt < year_start_offset:
+        raise ValueError("Day cannot be before the start of the year.")
+    
+    return (dt - year_start_offset).days + 1
+
+def test_get_julian_day():
+    assert get_julian_day(2, 1, 2022, 1) == 2
+    assert get_julian_day(1, 1, 2022, 1) == 1
+    assert get_julian_day(31, 12, 2022, 1) == 365 
+    assert get_julian_day(2, 10, 2022, 10) == 2
+    assert get_julian_day(30, 9, 2022, 10) == 365
+
+def get_julian_day_for_month_starts(year, year_start=1):
+    months = [(i + year_start - 1) % 12 + 1 for i in range(12)]
+    days = [
+        get_julian_day(1, m, year, year_start)
+        for m in months
+    ]
+    return days
+    
+
+if __name__ == "__main__":
+    from IPython import embed as II
+    II()

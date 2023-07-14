@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import calendar
 import glob
 import json
@@ -32,6 +34,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from IPython import embed as II
+from matplotlib import rcParams
 from matplotlib.cm import ScalarMappable, get_cmap
 from matplotlib.colors import ListedColormap, LogNorm, Normalize
 from matplotlib.transforms import Bbox
@@ -42,8 +45,9 @@ from utils.helper_functions import linear_scale_values, make_bin_label_map
 
 if hostname == "CCEE-DT-094":
     GIS_DIR = pathlib.Path("G:/My Drive/PHD/GIS")
-elif hostname == "inspiron13":
-    GIS_DIR = pathlib.Path("/home/lford/data/GIS")
+# elif hostname == "inspiron13":
+else:
+    GIS_DIR = pathlib.Path("/home/lucas/data/GIS")
 
 CHAR_VARS = [
     "Release Seasonality",
@@ -54,6 +58,10 @@ CHAR_VARS = [
     "Residence Time",
 ]
 
+MODEL_NAMES = {
+    "TD4-MSS0.10": "M2",
+    "TD5-MSS0.01": "M1"
+}
 
 def load_pickle(file):
     with open(file, "rb") as f:
@@ -360,6 +368,7 @@ def plot_variable_correlations():
 
     st = df.loc[:, ["release", "storage_pre", "storage_roll7", "storage_x_inflow"]]
     st["sto_diff"] = df["storage_pre"] - df["storage_roll7"]
+    st = st.drop("storage_roll7", axis=1)
 
     drop_res = [
         "Causey",
@@ -378,7 +387,7 @@ def plot_variable_correlations():
     stcorr = stcorr.drop("release", axis=1)
 
     # sns.set_context("notebook")
-    fig = plt.figure()
+    fig = plt.figure(figsize=(19, 10), dpi=600)
     fig.set_alpha(0.0)
     gs = GS.GridSpec(2, 2, height_ratios=[1, 1], width_ratios=[10, 0.5])
     axes = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[1, 0])]
@@ -428,7 +437,7 @@ def plot_variable_correlations():
     )
     axes[1].legend(loc="lower right", ncol=4)
 
-    axes[0].set_ylabel("$r(R_t, NI_L)$")
+    axes[0].set_ylabel("$r(R_t, NI_{t-L})$")
     axes[0].set_xlabel("Lag $L$ [days]")
 
     axes[-1].set_xlabel(r"Pearson's $r$ with Release")
@@ -436,7 +445,7 @@ def plot_variable_correlations():
     axes[-1].set_yticklabels(
         [
             r"$S_{t-1}$",
-            r"$\bar{S}_{t-1}^7$",
+            # r"$\bar{S}_{t-1}^7$",
             r"$S_{t-1} \times NI_{t}$",
             r"$S_{t-1} - \bar{S}_{t-1}^7$",
         ]
@@ -448,7 +457,18 @@ def plot_variable_correlations():
         mlines.Line2D([], [], linewidth=1.5, color="k"),
     ]
     labels = [r"Median Pearson's $r$", "25 - 75 quantiles"]
-    plt.show()
+    plt.subplots_adjust(
+        top=0.98,
+        bottom=0.075,
+        left=0.073,
+        right=0.989,
+        hspace=0.19,
+        wspace=0.025
+    )
+    plt.savefig(os.path.expanduser(
+        "~/Desktop/revised_figures/figure2_revised.png")
+    )
+    # plt.show()
 
 
 def make_map(ax=None, coords=None, other_bound=None):
@@ -710,43 +730,60 @@ def plot_res_locs(colors=None):
         ((GIS_DIR / "tennessee_shp" / "Shape" / "WBDHU2").as_posix(), color_map[3]),
     ]
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(19, 10), dpi=800)
     ax = fig.add_subplot()
     m = make_map(ax, other_bound=basins)
     x, y = m(res_locs.long, res_locs.lat)
-    # max_size = 600
-    # min_size = 50
-    # size_var = "max_sto"
-    # max_value = res_locs[size_var].max()
-    # min_value = res_locs[size_var].min()
+    max_size = 600
+    min_size = 50
+    size_var = "max_sto"
+    max_value = res_locs[size_var].max()
+    min_value = res_locs[size_var].min()
 
-    # ratio = (max_size - min_size) / (max_value - min_value)
-    # sizes = [min_size + i * ratio for i in res_locs[size_var]]
-    # markers = ax.scatter(x, y, marker="v", edgecolor="k", s=sizes, zorder=4)
-    markers = ax.scatter(x, y, marker="v", edgecolor="k", s=150, zorder=4)
-    marker_color = markers.get_facecolor()
+    ratio = (max_size - min_size) / (max_value - min_value)
+    sizes = [min_size + i * ratio for i in res_locs[size_var]]
+
+    from core_message_figures import get_core_reservoirs
+
+    core_res = get_core_reservoirs()
+    core_res = [i[2][0] for i in core_res if i[2]]
+
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    marker_colors = []
+    for res in res_locs.index:
+        if res in core_res:
+            marker_colors.append(colors[1])
+        else:
+            marker_colors.append(colors[0])
+
+    markers = ax.scatter(
+        x, y, marker="v", edgecolor="k", c=marker_colors, s=sizes, zorder=4
+    )
+    # markers = ax.scatter(x, y, marker="v", edgecolor="k", s=150, zorder=4)
+    # marker_color = markers.get_facecolor()
+    marker_color = colors[0]
 
     river_line = mlines.Line2D([], [], color="b", alpha=1, linewidth=0.5)
     river_basins = [mpatch.Patch(facecolor=color_map[i], alpha=0.5) for i in range(4)]
-    # size_legend_sizes = np.linspace(min_size, max_size, 4)
-    # # size_legend_labels = [(i-min_size) / ratio for i in size_legend_sizes]
-    # size_legend_labels = np.linspace(min_value, max_value, 4)
+    size_legend_sizes = np.linspace(min_size, max_size, 4)
+    # size_legend_labels = [(i-min_size) / ratio for i in size_legend_sizes]
+    size_legend_labels = np.linspace(min_value, max_value, 4)
 
-    # size_markers = [
-    #     plt.scatter([], [], s=i, edgecolors="k", c=marker_color, marker="v")
-    #     for i in size_legend_sizes
-    # ]
+    size_markers = [
+        plt.scatter([], [], s=i, edgecolors="k", c=marker_color, marker="v")
+        for i in size_legend_sizes
+    ]
 
-    # size_legend = plt.legend(
-    #     size_markers,
-    #     [
-    #         f"{round(size_legend_labels[0]*1000, -2):.0f}",
-    #         *[f"{round(i / 1000, 0):,.0f} million" for i in size_legend_labels[1:]],
-    #     ],
-    #     title="Maximum Storage [acre-feet]",
-    #     loc="lower left",
-    #     ncol=4,
-    # )
+    size_legend = plt.legend(
+        size_markers,
+        [
+            f"{round(size_legend_labels[0]*1000, -2):.0f}",
+            *[f"{round(i / 1000, 0):,.0f} million" for i in size_legend_labels[1:]],
+        ],
+        title="Maximum Storage [acre-feet]",
+        loc="lower left",
+        ncol=4,
+    )
     hydro_legend = plt.legend(
         [river_line, *river_basins],
         [
@@ -758,10 +795,11 @@ def plot_res_locs(colors=None):
         ],
         loc="lower right",
     )
-    # ax.add_artist(size_legend)
+    ax.add_artist(size_legend)
     ax.add_artist(hydro_legend)
 
-    plt.show()
+    # plt.show()
+    plt.savefig("../figures/agu_2022_figures/res_map.png", format="png", dpi=800)
 
 
 def plot_res_perf_map(results):
@@ -1079,8 +1117,8 @@ def plot_grid_search_results(ds="simul", metric="NSE"):
 
     fg = sns.catplot(
         data=df,
-        hue="TD",
-        x="MSS",
+        x="TD",
+        hue="MSS",
         y=metric,
         kind="box",
         palette="tab10",
@@ -1089,7 +1127,20 @@ def plot_grid_search_results(ds="simul", metric="NSE"):
         legend=False
         # ci=None,
     )
-    fg.ax.legend(loc="best", ncol=4, title="Max Depth")
+    # medians = df.groupby(["TD", "MSS"])[metric].median().reset_index()
+
+    # medians = medians[medians["MSS"].isin([0.02, 0.04, 0.06, 0.08, 0.1])]
+    # fg = sns.catplot(
+    #     data=medians,
+    #     y=metric,
+    #     x="TD",
+    #     hue="MSS",
+    #     kind="bar",
+    #     palette="tab10",
+    #     legend=False
+    # )
+    # fg.ax.legend(loc="best", ncol=4, title="Max Depth")
+    fg.ax.legend(loc="best", ncol=4, title="MSS")
     # fg.ax.set_xticklabels(fg.ax.get_xticklabels(), rotation=45, ha="right")
     # if metric == "nRMSE":
     #     fg.ax.set_yscale("log")
@@ -1291,19 +1342,21 @@ def plot_data_assim_results(metric="NSE"):
     # simmed_scores_for_strip = simmed_scores.merge(simmed_diffs, indicator=True, how="outer").query(
     #     '_merge=="left_only"').drop("_merge", axis=1)
 
-    II()
-    sys.exit()
+    simmed_scores["Model"] = simmed_scores["TD"].replace({4: "M2", 5: "M1"})
     fg = sns.catplot(
         data=simmed_scores,
-        hue="TD",
+        hue="Model",
         x="Assim",
         y=metric,
+        # y="Assim",
+        # x=metric,
         kind="box",
         order=["daily", "weekly", "monthly", "seasonally", "semi-annually", "never"],
         whis=(5, 95),
         showfliers=False,
         legend_out=False,
         palette="colorblind",
+        hue_order=["M1", "M2"]
     )
     # stripplot(
     #     data=simmed_scores,
@@ -1323,16 +1376,19 @@ def plot_data_assim_results(metric="NSE"):
     # )
 
     fg.ax.set_xticklabels(
-        ["Daily", "Weekly", "Monthly", "Seasonally", "Semi-annually", "Never"]
+        ["Daily", "Weekly", "Monthly", "Seasonally", "Semi-annually", "Never"],
+        # ha="right",
+        # rotation=5
     )
-    fg.ax.set_xlabel("Assimilation Frequency")
+    fg.ax.set_xlabel("Reinitialization Frequency")
 
     fg.ax.set_xticks([], minor=True)
     fg.despine(left=False, right=False, top=False, bottom=False)
 
     handles, labels = fg.ax.get_legend_handles_labels()
     handles = handles[:2]
-    labels = ["TD4-MSS0.10", "TD5-MSS0.01"]
+    labels = labels[:2]
+    # labels = ["TD4-MSS0.10", "TD5-MSS0.01"]
     fg.ax.legend(handles, labels, loc="best")
     sns.despine(ax=fg.ax)
     # fg.ax.set_ylabel(f"Percent Improvement in RMSE")
@@ -1757,6 +1813,8 @@ def get_res_characteristic(metric=None):
     # test_scores =  get_model_scores(test_data, metric=metric, grouper="site_name")
     if metric:
         simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+    import ipdb
+    ipdb.set_trace()
 
     df = read_basin_data("all")
     meta = get_basin_meta_data("all")
@@ -1866,39 +1924,57 @@ def plot_characteristic_res_line_plot(metric="NSE"):
     plt.show()
 
 
-def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
-    char_df = get_res_characteristic(metric)
+def plot_res_characteristic_bin_performance_for_defense(nbins=3):
+    nse_df = get_res_characteristic("NSE")
+    nrmse_df = get_res_characteristic("nRMSE")
+    nse_df["TD4-MSS0.10"] = 1 / (2 - nse_df["TD4-MSS0.10"])
+    nse_df = nse_df.rename(columns={"TD4-MSS0.10": "nNSE"})
+    nse_df["nRMSE"] = nrmse_df["TD4-MSS0.10"]
+    nse_df = nse_df.drop("TD5-MSS0.01", axis=1)
+
     cuts = {}
     for var in CHAR_VARS:
-        values, labels = pd.qcut(char_df[var], nbins, labels=False, retbins=True)
-        char_df[var] = values + 1
+        values, labels = pd.qcut(nse_df[var], nbins, labels=False, retbins=True)
+        nse_df[var] = values + 1
         cuts[var] = labels
 
     label_map = make_bin_label_map(nbins, start_index=1)
-    df = char_df.melt(
-        id_vars=["TD4-MSS0.10", "TD5-MSS0.01"], value_name="bin", ignore_index=False
+
+    df = nse_df.melt(
+        id_vars=["nNSE", "nRMSE"],
+        value_name="bin",
     ).melt(
         id_vars=["variable", "bin"],
-        var_name="model",
-        value_name=metric,
-        ignore_index=False,
+        var_name="metric",
+        value_name="score",
     )
+    
     df["bin"] = df["bin"].replace(label_map)
+    df = df[~df["variable"].isin(["Storage Seasonality", "Release Seasonality"])]
+    df = df[df["metric"] == "nNSE"]
 
+    # color = "#c0504d"
+    # color = "#5d82af"
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    color = colors[0]
     fg = sns.catplot(
         data=df,
-        x="bin",
-        y=metric,
-        hue="model",
+        y="bin",
+        x="score",
+        # hue="metric",
+        # hue_order=["nNSE", "nRMSE"],
+        color=color,
         col="variable",
         col_wrap=2,
         kind="bar",
-        legend_out=False,
-        errorbar=None,
-        # errwidth=1,
-        # capsize=0.1,
-        palette="colorblind",
+        # legend_out=False,
+        # errorbar=None,
+        errwidth=1,
+        capsize=0.1,
         order=[label_map[i] for i in range(1, nbins + 1)],
+        width=0.8,
+        # alpha=1.0,
+        saturation=0.6,
     )
     for ax in fg.axes:
         ax.grid(False)
@@ -1906,19 +1982,101 @@ def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
         ax.set_axis_on()
         ax.spines["bottom"].set_color("black")
         ax.spines["left"].set_color("black")
-        ax.tick_params(axis="both", color="black", labelcolor="black")
+        ax.tick_params(axis="both", color="black", labelcolor="black", labelsize=16)
 
     fg.set_titles("{col_name}")
-    fg.set_ylabels(metric, color="black")
-    fg.set_xlabels("Attribute Percentile", color="black")
-    handles, labels = fg.axes[0].get_legend_handles_labels()
-    fg.axes[0].legend(handles, labels, frameon=False)
+    # label = "nNSE\nnRMSE"
+    label = "nNSE"
+    fg.set_xlabels(label, color="black")
+    fg.set_ylabels("Attribute Percentile", color="black")
+    # handles, labels = fg.axes[0].get_legend_handles_labels()
+    # fg.axes[0].legend(handles, labels, ncol=1, loc="lower right", frameon=True)
+    for ax in fg.axes:
+        ax.set_xlim(0, 1.1)
     plt.show()
+
+
+def plot_res_characteristic_bin_performance(metric="NSE", nbins=3):
+    # plt.style.use("seaborn-colorblind")
+    # sns.set_context("talk")
+    char_df = get_res_characteristic(metric)
+    if metric == "NSE":
+       char_df["TD4-MSS0.10"] = 1 / (2 - char_df["TD4-MSS0.10"])
+       char_df["TD5-MSS0.01"] = 1 / (2 - char_df["TD5-MSS0.01"])
+    cuts = {}
+    for var in CHAR_VARS:
+        values, labels = pd.qcut(char_df[var], nbins, labels=False, retbins=True)
+        char_df[var] = values + 1
+        cuts[var] = labels
+
+    label_map = make_bin_label_map(nbins, start_index=1)
+    # char_df = char_df.drop("TD5-MSS0.01", axis=1)
+    df = char_df.melt(
+        id_vars=["TD4-MSS0.10", "TD5-MSS0.01"],
+        value_name="bin",
+        ignore_index=False,
+    ).melt(
+        id_vars=["variable", "bin"],
+        var_name="model",
+        value_name=metric,
+        ignore_index=False,
+    )
+    df = df[df["model"] == "TD4-MSS0.10"]
+    df["bin"] = df["bin"].replace(label_map)
+    df["model"] = df["model"].replace(MODEL_NAMES)
+    # colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    df = df[~df["variable"].isin(["Storage Seasonality", "Release Seasonality"])]
+    from IPython import embed as II
+    II()
+    color = "#d67b6d"
+    fg = sns.catplot(
+        data=df,
+        y="bin",
+        x=metric,
+        # hue="model",
+        # hue_order=["M1", "M2"],
+        color=color,
+        col="variable",
+        col_wrap=2,
+        kind="bar",
+        # legend_out=False,
+        # errorbar=None,
+        errwidth=1,
+        capsize=0.1,
+        # palette="colorblind",
+        order=[label_map[i] for i in range(1, nbins + 1)],
+        alpha=1.0,
+        saturation=0.6,
+    )
+    for ax in fg.axes:
+        ax.grid(False)
+        ax.patch.set_alpha(0.0)
+        ax.set_axis_on()
+        ax.spines["bottom"].set_color("black")
+        ax.spines["left"].set_color("black")
+        ax.tick_params(axis="both", color="black", labelcolor="black", labelsize=16)
+
+    fg.set_titles("{col_name}") #, size=28)
+    if metric == "NSE":
+        label = "nNSE"
+    else:
+        label = metric
+    fg.set_xlabels(label, color="black") #, size=24)
+    fg.set_ylabels("Attribute Percentile", color="black") #, size=24)
+    handles, labels = fg.axes[0].get_legend_handles_labels()
+    fg.axes[0].legend(handles, labels, ncol=2, loc="upper left", frameon=False) #, prop={"size": 16})
+    for ax in fg.axes:
+        ax.set_xlim(0, 1.1)
+    plt.show()
+    # plt.savefig("../figures/agu_2022_figures/char_bin_nRMSE.png", dpi=800)
 
 
 def plot_res_characteristic_scatter_performance(metric="NSE"):
     char_df = get_res_characteristic(metric)
-
+    if metric == "NSE":
+        char_df["TD4-MSS0.10"] = 1 / (2 - char_df["TD4-MSS0.10"])
+        char_df["TD5-MSS0.01"] = 1 / (2 - char_df["TD5-MSS0.01"])
+    
     df = char_df.melt(id_vars=["TD4-MSS0.10", "TD5-MSS0.01"], ignore_index=False).melt(
         id_vars=["variable", "value"],
         var_name="model",
@@ -1926,15 +2084,20 @@ def plot_res_characteristic_scatter_performance(metric="NSE"):
         ignore_index=False,
     )
 
+    df = df[df["model"] == "TD4-MSS0.10"]
+
     fg = sns.relplot(
         data=df,
         x="value",
         y=metric,
-        hue="model",
+        # hue="model",
         col="variable",
         col_wrap=2,
         kind="scatter",
         palette="colorblind",
+        facet_kws={
+            "sharex": False
+        }
     )
     for ax in fg.axes:
         ax.grid(False)
@@ -2113,7 +2276,7 @@ def plot_res_characteristic_map(metric="NSE"):
 
 
 def plot_res_characteristic_split_map():
-    char_df = get_res_characteristic()
+    char_df = get_res_characteristic("nRMSE")
     rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
     rename = {
         "upper_col": "colorado",
@@ -2124,6 +2287,8 @@ def plot_res_characteristic_split_map():
     rbasins = rbasins.replace(rename)
     rbasins = rbasins.str.capitalize()
     char_df["basin"] = rbasins
+    import ipdb
+    ipdb.set_trace()
 
     res_locs = pd.read_csv("../geo_data/reservoirs.csv")
     res_locs = res_locs.set_index("site_name")
@@ -3164,15 +3329,22 @@ def plot_interannual_group_variability():
         df = df.fillna(0.0)
         df.columns = df.columns.values
         df = df.reset_index().melt(id_vars=["year", "month"], var_name="group")
-        sns.barplot(data=df, x="month", y="value", hue="group", estimator=np.mean, errorbar=("ci", 90), capsize=0.15, errwidth=2)
+        sns.barplot(
+            data=df,
+            x="month",
+            y="value",
+            hue="group",
+            estimator=np.mean,
+            errorbar=("ci", 90),
+            capsize=0.15,
+            errwidth=2,
+        )
 
         # quants = df.groupby("month").quantile([0.1, 0.25, 0.5, 0.75, 0.9])
         # quants.columns = quants.columns.values
         # quants = quants.reset_index().rename(columns={"level_1": "quantile"})
         # quants = quants.melt(id_vars=["month", "quantile"], value_vars=[5, 7])
 
-        II()
-        sys.exit()
 
         # drop the first and last year as they are incomplete
         df = df.drop(df.index.min())
@@ -3248,8 +3420,6 @@ def plot_interannual_seasonal_group_variability():
     max_year = df.index.get_level_values("year").max()
     df = df[~df.index.get_level_values("year").isin([min_year, max_year])]
     df = df.rename(columns=group_names)
-    II()
-    sys.exit()
     # years = df.index.get_level_values("year").unique().sort_values()
     # # years = years[:3]
     # nyears = len(years)
@@ -3277,20 +3447,21 @@ def plot_interannual_seasonal_group_variability():
 
 
 if __name__ == "__main__":
+    ncsu_colors = "#4f81bd,#c0504d,#9bbb59,#1f497d,#8064a2,#4bacc6,#f79646".split(",")
+    sns.set_palette(sns.color_palette(ncsu_colors))
     args = sys.argv[1:]
     if len(args) > 0:
         metric = args[0]
     else:
         metric = "NSE"
-    plt.style.use("tableau-colorblind10")
+    # plt.style.use("tableau-colorblind10")
     # plt.style.use(["science", "nature"])
-    sns.set_context("talk", font_scale=1.1)
-    # results = read_results()
-    # plot_res_perf_map(results)
-    # plot_seasonal_performance(results)
-    # plot_upper_lower_perf(results)
-    # plot_perf_vs_datalength(results)
-
+    # sns.set_context("poster", font_scale=1.2)
+    sns.set_context("talk", font_scale=1.0)
+    # sns.set_context("paper", font_scale=1.8)
+    # sns.set_context("paper", font_scale=1.4)
+    rcParams["font.family"] = "sans-serif"
+    rcParams["font.sans-serif"] = ["Arial"]
     # * FIGURE 1
     # plot_res_locs()
     # * FIGURE 2
@@ -3324,7 +3495,10 @@ if __name__ == "__main__":
     # get_unique_trees()
     # get_unique_paths()
     # get_operating_groups()
-    plot_interannual_group_variability()
+    # plot_interannual_group_variability()
     # plot_interannual_seasonal_group_variability()
 
     # plot_error_by_variable()
+    # plot_res_characteristic_bin_performance_for_defense(nbins=5)
+
+    plot_res_characteristic_split_map()

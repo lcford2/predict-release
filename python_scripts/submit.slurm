@@ -35,7 +35,7 @@
 #SBATCH -c 56		   # # of cpus per task
 #SBATCH -t 02:00:00        # Run time (hh:mm:ss)
 #SBATCH --mail-type=all    # Send email at begin and end of job
-#SBATCH --mail-user=lcford2@ncsu.edu
+#SBATCH --mail-user=
 #SBATCH -A ECS21018        # Project/Allocation name (req'd if you have more than 1)
 
 # load remora module

@@ -18,7 +18,7 @@
 
 ### set email notification
 #PBS -m bea
-#PBS -M lcford2@ncsu.edu
+#PBS -M 
 ### In case of multiple allocations, select which one to charge
 ### Set umask so users in my group can read job stdout and stderr files
 ##PBS -W umask=0027
