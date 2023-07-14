@@ -1813,6 +1813,8 @@ def get_res_characteristic(metric=None):
     # test_scores =  get_model_scores(test_data, metric=metric, grouper="site_name")
     if metric:
         simmed_scores = get_model_scores(simmed_data, metric=metric, grouper="site_name")
+    import ipdb
+    ipdb.set_trace()
 
     df = read_basin_data("all")
     meta = get_basin_meta_data("all")
@@ -2274,7 +2276,7 @@ def plot_res_characteristic_map(metric="NSE"):
 
 
 def plot_res_characteristic_split_map():
-    char_df = get_res_characteristic()
+    char_df = get_res_characteristic("nRMSE")
     rbasins = pd.read_pickle("../pickles/res_basin_map.pickle")
     rename = {
         "upper_col": "colorado",
@@ -2285,6 +2287,8 @@ def plot_res_characteristic_split_map():
     rbasins = rbasins.replace(rename)
     rbasins = rbasins.str.capitalize()
     char_df["basin"] = rbasins
+    import ipdb
+    ipdb.set_trace()
 
     res_locs = pd.read_csv("../geo_data/reservoirs.csv")
     res_locs = res_locs.set_index("site_name")
@@ -3495,4 +3499,6 @@ if __name__ == "__main__":
     # plot_interannual_seasonal_group_variability()
 
     # plot_error_by_variable()
-    plot_res_characteristic_bin_performance_for_defense(nbins=5)
+    # plot_res_characteristic_bin_performance_for_defense(nbins=5)
+
+    plot_res_characteristic_split_map()
